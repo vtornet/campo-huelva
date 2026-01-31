@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// TABLA MAESTRA DE USUARIOS (Vinculada con Firebase por el ID)
+model User {
+  id        String   @id // Aquí guardaremos el UID de Firebase
+  email     String   @unique
+  role      Role     @default(USER) // ADMIN o USER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  workerProfile  WorkerProfile?
+  companyProfile CompanyProfile?
+  communityOffers Offer[]        @relation("CommunityOffers")
+  applications    Application[]
+  reports         Report[]
+
+  @@map("users")
+}
+
+// PERFIL DEL TRABAJADOR
+model WorkerProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fullName       String
+  city           String?
+  province       String?
+  phone          String?
+  
+  // Datos específicos del campo
+  experience     String[] // Ej: ["Fresa", "Aceituna"]
+  hasVehicle     Boolean  @default(false)
+  canRelocate    Boolean  @default(false)
+  hasTools       Boolean  @default(false)
+  bio            String?  @db.Text
+  
+  isPublic       Boolean  @default(true)
+
+  @@map("worker_profiles")
+}
+
+// PERFIL DE EMPRESA
+model CompanyProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  cif            String   @unique
+  companyName    String
+  address        String?
+  contactEmail   String?
+  contactPhone   String?
+  
+  // Configuración
+  isVerified     Boolean  @default(false) // Check azul
+  cropTypes      String[] // Cultivos que maneja
+  hasHousing     Boolean  @default(false)
+  hasTransport   Boolean  @default(false)
+  
+  // Privacidad (qué mostramos públicamente)
+  showPhone      Boolean  @default(false)
+  showAddress    Boolean  @default(false)
+  showEmail      Boolean  @default(true)
+
+  // Relaciones
+  officialOffers Offer[]  @relation("OfficialOffers")
+
+  @@map("company_profiles")
+}
+
+// OFERTAS DE TRABAJO
+model Offer {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  location    String
+  
+  type        OfferType @default(COMMUNITY)
+  status      OfferStatus @default(ACTIVE)
+  
+  // Metadatos
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reportCount Int      @default(0) // Si pasa de X, se oculta (Shadowban)
+
+  // Relaciones
+  // Opción A: Es oficial (de una empresa)
+  companyId   String?
+  company     CompanyProfile? @relation("OfficialOffers", fields: [companyId], references: [id])
+  
+  // Opción B: Es compartida (de un usuario)
+  publisherId String?
+  publisher   User?    @relation("CommunityOffers", fields: [publisherId], references: [id])
+
+  applications Application[]
+  reports      Report[]
+
+  @@map("offers")
+}
+
+// INSCRIPCIONES A OFERTAS
+model Application {
+  id        String   @id @default(cuid())
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  status    AppStatus @default(PENDING)
+  message   String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  @@map("applications")
+}
+
+// DENUNCIAS (REPORTES)
+model Report {
+  id         String   @id @default(cuid())
+  offerId    String
+  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@map("reports")
+}
+
+// TIPOS DE DATOS (ENUMS)
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OfferType {
+  OFFICIAL   // Empresa verificada
+  COMMUNITY  // Usuario comparte oferta que vio
+}
+
+enum OfferStatus {
+  ACTIVE
+  CLOSED
+  BANNED     // Oculta por denuncias
+}
+
+enum AppStatus {
+  PENDING    // Pendiente
+  REVIEWED   // Vista por la empresa
+  CONTACTED  // Empresa contactó (Habilita chat)
+  REJECTED   // Descartado
+}
