@@ -7,154 +7,132 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// TABLA MAESTRA DE USUARIOS (Vinculada con Firebase por el ID)
+// === USUARIOS ===
 model User {
-  id        String   @id // Aquí guardaremos el UID de Firebase
-  email     String   @unique
-  role      Role     @default(USER) // ADMIN o USER
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id
+  email         String    @unique
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  
+  // Perfiles
+  workerProfile   WorkerProfile?
+  companyProfile  CompanyProfile?
+  foremanProfile  ForemanProfile?
 
-  // Relaciones
-  workerProfile  WorkerProfile?
-  companyProfile CompanyProfile?
-  communityOffers Offer[]        @relation("CommunityOffers")
-  applications    Application[]
-  reports         Report[]
-
-  @@map("users")
+  // Actividad
+  posts           Post[]           @relation("UserPosts")
+  applications    Application[]    // Ofertas a las que se ha inscrito
+  
+  // Sistema de Compañeros (Relación N a N)
+  followedBy      Connection[]  @relation("followedBy")
+  following       Connection[]  @relation("following")
 }
 
-// PERFIL DEL TRABAJADOR
+enum Role {
+  USER      // Trabajador
+  ADMIN
+  COMPANY   // Empresa
+  FOREMAN   // Manijero
+}
+
+// === PERFILES ===
 model WorkerProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
   
-  fullName       String
-  city           String?
-  province       String?
-  phone          String?
-  
-  // Datos específicos del campo
-  experience     String[] // Ej: ["Fresa", "Aceituna"]
-  hasVehicle     Boolean  @default(false)
-  canRelocate    Boolean  @default(false)
-  hasTools       Boolean  @default(false)
-  bio            String?  @db.Text
-  
-  isPublic       Boolean  @default(true)
-
-  @@map("worker_profiles")
+  fullName    String?
+  city        String?
+  province    String?
+  phone       String?
+  experience  String[]
+  bio         String?
+  hasVehicle  Boolean  @default(false)
+  canRelocate Boolean  @default(false)
+  foodHandler Boolean  @default(false)
+  phytosanitaryLevel String?
 }
 
-// PERFIL DE EMPRESA
+model ForemanProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  fullName    String
+  phone       String
+  province    String
+  city        String?
+  crewSize    Int
+  workArea    String[]
+  hasVan      Boolean  @default(false)
+  needsBus    Boolean  @default(false)
+  ownTools    Boolean  @default(false)
+  yearsExperience Int?
+  specialties     String[]
+  bio             String?
+}
+
 model CompanyProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  cif            String   @unique
-  companyName    String
-  address        String?
-  contactEmail   String?
-  contactPhone   String?
-  
-  // Configuración
-  isVerified     Boolean  @default(false) // Check azul
-  cropTypes      String[] // Cultivos que maneja
-  hasHousing     Boolean  @default(false)
-  hasTransport   Boolean  @default(false)
-  
-  // Privacidad (qué mostramos públicamente)
-  showPhone      Boolean  @default(false)
-  showAddress    Boolean  @default(false)
-  showEmail      Boolean  @default(true)
-
-  // Relaciones
-  officialOffers Offer[]  @relation("OfficialOffers")
-
-  @@map("company_profiles")
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  cif         String   @unique
+  companyName String
+  posts       Post[]
 }
 
-// OFERTAS DE TRABAJO
-model Offer {
+// === PUBLICACIONES (OFERTAS Y DEMANDAS) ===
+// Hemos renombrado 'Offer' a 'Post' para que sea más genérico
+model Post {
   id          String   @id @default(cuid())
   title       String
-  description String   @db.Text
-  location    String
+  description String
+  location    String   
+  province    String?  
   
-  type        OfferType @default(COMMUNITY)
-  status      OfferStatus @default(ACTIVE)
+  type        PostType @default(SHARED) // El tipo define si es Oferta o Demanda
   
-  // Metadatos
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  reportCount Int      @default(0) // Si pasa de X, se oculta (Shadowban)
-
-  // Relaciones
-  // Opción A: Es oficial (de una empresa)
-  companyId   String?
-  company     CompanyProfile? @relation("OfficialOffers", fields: [companyId], references: [id])
   
-  // Opción B: Es compartida (de un usuario)
+  // Autor
   publisherId String?
-  publisher   User?    @relation("CommunityOffers", fields: [publisherId], references: [id])
+  publisher   User?    @relation("UserPosts", fields: [publisherId], references: [id])
+  
+  // Si es oficial de empresa
+  companyId   String?
+  company     CompanyProfile? @relation(fields: [companyId], references: [id])
 
   applications Application[]
-  reports      Report[]
-
-  @@map("offers")
 }
 
-// INSCRIPCIONES A OFERTAS
+enum PostType {
+  OFFICIAL // Oferta de Empresa (Verificada)
+  SHARED   // Oferta vista por ahí (Compartida por trabajador)
+  DEMAND   // Demanda (Trabajador/Manijero pide trabajo)
+}
+
+// === INSCRIPCIONES ===
 model Application {
   id        String   @id @default(cuid())
-  offerId   String
-  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  status    AppStatus @default(PENDING)
-  message   String?   @db.Text
-  createdAt DateTime  @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
 
-  @@map("applications")
+  @@unique([postId, userId]) // No puedes inscribirte 2 veces a la misma
 }
 
-// DENUNCIAS (REPORTES)
-model Report {
-  id         String   @id @default(cuid())
-  offerId    String
-  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  reporterId String
-  reporter   User     @relation(fields: [reporterId], references: [id])
-  reason     String
-  createdAt  DateTime @default(now())
+// === COMPAÑEROS / CONEXIONES ===
+model Connection {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("following", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("followedBy", fields: [followingId], references: [id])
+  status      String   @default("ACCEPTED") // Podría ser PENDING si queremos confirmación
 
-  @@map("reports")
-}
-
-// TIPOS DE DATOS (ENUMS)
-enum Role {
-  USER
-  ADMIN
-}
-
-enum OfferType {
-  OFFICIAL   // Empresa verificada
-  COMMUNITY  // Usuario comparte oferta que vio
-}
-
-enum OfferStatus {
-  ACTIVE
-  CLOSED
-  BANNED     // Oculta por denuncias
-}
-
-enum AppStatus {
-  PENDING    // Pendiente
-  REVIEWED   // Vista por la empresa
-  CONTACTED  // Empresa contactó (Habilita chat)
-  REJECTED   // Descartado
+  createdAt   DateTime @default(now())
+  @@unique([followerId, followingId])
 }
