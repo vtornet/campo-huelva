@@ -6,11 +6,12 @@ const prisma = new PrismaClient();
 // GET: Obtener el Feed (Soporta paginación, filtros y modo Oferta/Demanda)
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  
+
   const page = parseInt(searchParams.get("page") || "1");
   const limit = 5;
   const province = searchParams.get("province");
   const viewMode = searchParams.get("view"); // "OFFERS" o "DEMANDS"
+  const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
 
   // Calculamos el offset para paginación
   const skip = (page - 1) * limit;
@@ -31,6 +32,19 @@ export async function GET(request: Request) {
     where.type = { in: [PostType.OFFICIAL, PostType.SHARED] };
   }
 
+  // 3. Filtro por usuario (para ver sus propias publicaciones)
+  if (userId) {
+    // Si se pide un userId, filtramos por ese usuario
+    where.OR = [
+      { publisherId: userId },
+      { companyId: userId }
+    ];
+  }
+
+  // 4. Solo mostrar posts activos (no ocultos ni eliminados)
+  // Nota: Comentado temporalmente hasta que se migre la BD correctamente
+  // where.status = "ACTIVE";
+
   try {
     const posts = await prisma.post.findMany({
       where,
@@ -39,11 +53,37 @@ export async function GET(request: Request) {
       skip: skip,
       // Incluimos los datos del autor para mostrar nombre/avatar en la tarjeta
       include: {
-        company: true,    // Si es empresa
-        publisher: {      // Si es usuario/manijero
+        company: {
           include: {
-            workerProfile: true,
-            foremanProfile: true
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true
+              }
+            }
+          }
+        },
+        publisher: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            workerProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true
+              }
+            },
+            foremanProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                crewSize: true
+              }
+            }
           }
         }
       }
@@ -77,6 +117,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
+    // 2. Verificar que el usuario no esté baneado o silenciado
+    if (user.isBanned) {
+      return NextResponse.json({ error: "Tu cuenta está suspendida" }, { status: 403 });
+    }
+
+    if (user.isSilenced) {
+      // Verificar si el silencio es temporal y ha expirado
+      if (user.silencedUntil && user.silencedUntil < new Date()) {
+        // Silencio expirado, quitarlo
+        await prisma.user.update({
+          where: { id: uid },
+          data: { isSilenced: false, silencedUntil: null }
+        });
+      } else {
+        return NextResponse.json({ error: "Tu cuenta está temporalmente silenciada" }, { status: 403 });
+      }
+    }
+
+    // 2.1. Si es empresa, verificar que esté aprobada para publicar ofertas OFICIALES
+    if (user.role === Role.COMPANY && type === "OFFICIAL") {
+      if (!user.companyProfile?.isApproved) {
+        return NextResponse.json({
+          error: "Tu empresa debe estar aprobada por un administrador para publicar ofertas oficiales. Contacta con soporte para solicitar la aprobación."
+        }, { status: 403 });
+      }
+    }
+
+    if (user.isSilenced) {
+      // Verificar si el silencio es temporal y ha expirado
+      if (user.silencedUntil && user.silencedUntil < new Date()) {
+        // Silencio expirado, quitarlo
+        await prisma.user.update({
+          where: { id: uid },
+          data: { isSilenced: false, silencedUntil: null }
+        });
+      } else {
+        return NextResponse.json({ error: "Tu cuenta está temporalmente silenciada" }, { status: 403 });
+      }
+    }
+
     // 2. Preparar datos para Prisma
     let postData: any = {
       title,
@@ -93,9 +173,10 @@ export async function POST(request: Request) {
       postData.type = PostType.OFFICIAL;
       postData.companyId = user.companyProfile?.id;
       // También guardamos publisherId por trazabilidad, aunque sea opcional
-      postData.publisherId = user.id; 
+      postData.publisherId = user.id;
     } else {
-      // Si es Trabajador/Manijero, es publisherId directo
+      // Si es Trabajador/Manijero, respetamos el tipo que envía el frontend (DEMAND o SHARED)
+      // Ya se asignó arriba: type: type as PostType
       postData.publisherId = user.id;
     }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Role } from "@prisma/client"; // <--- IMPORTANTE: Importamos 'Role'
+import { PrismaClient, Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -12,39 +12,56 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
     }
 
-    // Comprobar si ya existe
-    const existingUser = await prisma.user.findUnique({ where: { id: uid } });
-    if (existingUser) {
-      return NextResponse.json({ message: "El usuario ya existe" }, { status: 200 });
-    }
-
     // MAPEO SEGURO DE ROLES USANDO EL ENUM DE PRISMA
-    let dbRole: Role = Role.USER; // Por defecto
+    let dbRole: Role = Role.USER;
     if (role === "COMPANY") dbRole = Role.COMPANY;
     if (role === "FOREMAN") dbRole = Role.FOREMAN;
+    if (role === "ENGINEER") dbRole = Role.ENGINEER;
 
-    // Crear usuario en base de datos
-    // SOLUCIÓN UPSERT: Si existe actualiza, si no crea.
-    // Esto evita el error P2002 si el usuario ya está registrado.
-    await prisma.user.upsert({
-      where: { email: email }, // Buscamos por email (que es único)
-      update: { 
-        // Si ya existe, actualizamos el rol y aseguramos el ID
-        role: dbRole, 
-        // Nota: No tocamos el ID en el update para evitar conflictos de Primary Key,
-        // confiamos en que el email vincula a la cuenta correcta.
-      },
-      create: {
+    // 1. Buscar usuario por UID (el identificador correcto de Firebase)
+    const existingUserByUid = await prisma.user.findUnique({ where: { id: uid } });
+
+    if (existingUserByUid) {
+      // El usuario ya existe con este UID, actualizamos el rol si es necesario
+      if (existingUserByUid.role !== dbRole) {
+        await prisma.user.update({
+          where: { id: uid },
+          data: { role: dbRole }
+        });
+      }
+      return NextResponse.json({ success: true, message: "Usuario actualizado" });
+    }
+
+    // 2. Si no existe por UID, verificar si existe por email
+    // Esto puede pasar si el usuario se registró antes con un UID diferente
+    const existingUserByEmail = await prisma.user.findFirst({ where: { email: email } });
+
+    if (existingUserByEmail) {
+      // El email ya está registrado pero con un UID diferente
+      // Actualizamos el UID al nuevo (el actual de Firebase) para mantener consistencia
+      await prisma.user.update({
+        where: { id: existingUserByEmail.id },
+        data: {
+          id: uid, // Actualizamos el ID al UID actual de Firebase
+          role: dbRole
+        }
+      });
+      return NextResponse.json({ success: true, message: "Usuario recuperado y actualizado" });
+    }
+
+    // 3. Crear nuevo usuario
+    await prisma.user.create({
+      data: {
         id: uid,
         email: email,
         role: dbRole,
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Usuario creado" });
 
   } catch (error) {
     console.error("Error en registro:", error);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

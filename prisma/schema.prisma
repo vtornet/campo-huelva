@@ -13,19 +13,42 @@ model User {
   email         String    @unique
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
-  
+
+  // Campos de administración
+  isBanned      Boolean   @default(false)
+  banReason     String?
+  bannedUntil   DateTime? // null = ban permanente, fecha = ban temporal
+  isSilenced    Boolean   @default(false) // Silenciado (no puede publicar)
+  silencedUntil DateTime? // null = silencio permanente, fecha = temporal
+
   // Perfiles
   workerProfile   WorkerProfile?
   companyProfile  CompanyProfile?
   foremanProfile  ForemanProfile?
+  engineerProfile EngineerProfile?
 
   // Actividad
   posts           Post[]           @relation("UserPosts")
   applications    Application[]    // Ofertas a las que se ha inscrito
-  
+
   // Sistema de Compañeros (Relación N a N)
   followedBy      Connection[]  @relation("followedBy")
   following       Connection[]  @relation("following")
+
+  // Mensajería
+  sentMessages      Message[]     @relation("MessageSender")
+  receivedMessages  Message[]     @relation("MessageReceiver")
+  conversations     ConversationParticipant[]
+
+  // Notificaciones
+  notifications     Notification[]
+
+  // Denuncias (reportado por otros usuarios)
+  reportsReceived Report[]   @relation("ReportedUser")
+  reportsFiled    Report[]   @relation("Reporter")
+
+  // Notificaciones donde este usuario es la entidad relacionada
+  notificationsAsRelated Notification[] @relation("NotificationUser")
 }
 
 enum Role {
@@ -33,6 +56,7 @@ enum Role {
   ADMIN
   COMPANY   // Empresa
   FOREMAN   // Manijero
+  ENGINEER  // Ingeniero Técnico Agrícola
 }
 
 // === PERFILES ===
@@ -40,7 +64,7 @@ model WorkerProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
-  
+
   fullName    String?
   city        String?
   province    String?
@@ -72,43 +96,106 @@ model ForemanProfile {
 }
 
 model CompanyProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  cif         String   @unique
-  companyName String
-  posts       Post[]
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  cif            String   @unique
+  companyName    String
+  address        String?
+  city           String?
+  province       String?
+  phone          String?
+  contactPerson  String?
+  website        String?
+  description    String?
+
+  // Aprobación de empresa (requerida para publicar ofertas)
+  isApproved     Boolean  @default(false) // Debe ser aprobada por admin para publicar ofertas
+  approvedAt     DateTime?            // Fecha de aprobación
+  approvedBy     String?             // UID del admin que aprobó
+
+  // Verificación de empresa
+  isVerified     Boolean  @default(false) // Solo visible como "verificada" si esto es true
+  verifiedAt     DateTime?
+  verifiedBy     String?  // UID del admin que verificó
+
+  posts          Post[]
+}
+
+model EngineerProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+
+  // Información básica
+  fullName          String?
+  phone             String?
+  province          String?
+  city              String?
+  bio               String?
+
+  // Credenciales legales
+  collegiateNumber  String?  // Número de colegiado
+
+  // Experiencia profesional
+  yearsExperience   Int?     // Años de experiencia
+  cropExperience    String[] // Tipos de cultivo en los que tiene experiencia (Fresa, Cítricos, Arándanos, etc.)
+
+  // Especialidades y servicios
+  specialties       String[] // Ej: Gestión de riego, Fitopatología, Nutrición vegetal, etc.
+  servicesOffered   String[] // Ej: Asesoramiento, Peritajes, Auditorías, Formación, etc.
+
+  // Disponibilidad
+  isAvailable       Boolean  @default(true)  // ¿Está disponible para nuevos proyectos?
+  canTravel         Boolean  @default(false) // ¿Puede desplazarse a otras provincias?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // === PUBLICACIONES (OFERTAS Y DEMANDAS) ===
-// Hemos renombrado 'Offer' a 'Post' para que sea más genérico
 model Post {
   id          String   @id @default(cuid())
   title       String
   description String
-  location    String   
-  province    String?  
-  
-  type        PostType @default(SHARED) // El tipo define si es Oferta o Demanda
-  
+  location    String
+  province    String?
+
+  type        PostType @default(SHARED)
+
+  // Moderación
+  status      PostStatus @default(ACTIVE) // ACTIVE, HIDDEN, REMOVED
+  moderatedBy String?  // UID del admin que moderó
+  moderatedAt DateTime?
+  moderationReason String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Autor
   publisherId String?
   publisher   User?    @relation("UserPosts", fields: [publisherId], references: [id])
-  
+
   // Si es oficial de empresa
   companyId   String?
   company     CompanyProfile? @relation(fields: [companyId], references: [id])
 
   applications Application[]
+  reports     Report[]   @relation("ReportedPost")
+  conversations Conversation[] @relation("PostConversations")
+  notifications Notification[] @relation("NotificationPost")
 }
 
 enum PostType {
   OFFICIAL // Oferta de Empresa (Verificada)
   SHARED   // Oferta vista por ahí (Compartida por trabajador)
   DEMAND   // Demanda (Trabajador/Manijero pide trabajo)
+}
+
+enum PostStatus {
+  ACTIVE   // Visible en el feed
+  HIDDEN   // Oculto temporalmente (puede reactivarse)
+  REMOVED  // Eliminado (no se puede recuperar)
 }
 
 // === INSCRIPCIONES ===
@@ -135,4 +222,160 @@ model Connection {
 
   createdAt   DateTime @default(now())
   @@unique([followerId, followingId])
+}
+
+// === DENUNCIAS ===
+model Report {
+  id          String   @id @default(cuid())
+  type        ReportType
+
+  // Quién denuncia
+  reporterId  String
+  reporter    User     @relation("Reporter", fields: [reporterId], references: [id])
+
+  // Qué se denuncia (opcional según el tipo)
+  reportedUserId  String?
+  reportedUser    User?    @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reportedPostId  String?
+  reportedPost    Post?    @relation("ReportedPost", fields: [reportedPostId], references: [id])
+
+  reason      String   // Razón de la denuncia
+  description String?  // Descripción adicional
+
+  // Estado y resolución
+  status      ReportStatus @default(PENDING)
+  resolvedBy  String?  // UID del admin que resolvió
+  resolvedAt  DateTime?
+  resolution  String?  // Nota sobre la resolución
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ReportType {
+  USER     // Denunciar usuario
+  POST     // Denunciar publicación
+}
+
+enum ReportStatus {
+  PENDING  // Pendiente de revisión
+  REVIEWED // Revisado (en proceso)
+  RESOLVED // Resuelto
+  DISMISSED // Desestimado (sin acción)
+}
+
+// === LOG DE ACCIONES DE ADMIN ===
+model AdminLog {
+  id          String   @id @default(cuid())
+  adminId     String   // UID del admin
+  action      AdminAction
+  targetType  String   // "USER", "POST", "COMPANY", "REPORT"
+  targetId    String   // ID del objeto afectado
+  details     String?  // Detalles adicionales (JSON)
+  createdAt   DateTime @default(now())
+}
+
+enum AdminAction {
+  BAN_USER
+  UNBAN_USER
+  SILENCE_USER
+  UNSILENCE_USER
+  VERIFY_COMPANY
+  UNVERIFY_COMPANY
+  HIDE_POST
+  SHOW_POST
+  REMOVE_POST
+  RESOLVE_REPORT
+  DELETE_USER
+  CHANGE_ROLE
+}
+
+// === MENSAJERÍA INTERNA ===
+model Conversation {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Participantes de la conversación
+  participants ConversationParticipant[]
+
+  // Mensajes de la conversación
+  messages    Message[]
+
+  // Relacionado con (opcional) - post que originó la conversación
+  relatedPostId String?
+  relatedPost   Post?    @relation("PostConversations", fields: [relatedPostId], references: [id])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Control de lectura
+  lastReadAt     DateTime?
+
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId     String       // Denormalizado para facilitar búsquedas
+  receiver       User         @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content        String
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+// === NOTIFICACIONES ===
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        NotificationType
+  title       String
+  message     String
+  link        String?  // URL a la que lleva la notificación
+
+  // Relación con la entidad que genera la notificación (opcional)
+  relatedPostId   String?
+  relatedPost     Post?    @relation("NotificationPost", fields: [relatedPostId], references: [id])
+  relatedUserId   String?
+  relatedUser     User?   @relation("NotificationUser", fields: [relatedUserId], references: [id])
+
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  NEW_MESSAGE       // Nuevo mensaje en chat
+  NEW_APPLICATION   // Alguien se aplicó a tu oferta
+  APPLICATION_ACCEPTED // Te aceptaron para un trabajo
+  POST_NEARBY       // Nueva oferta cerca de tu ubicación
+  PROFILE_VIEW      // Alguien vio tu perfil
+  COMPANY_VERIFIED  // Empresa verificada (para la empresa)
+  ADMIN_ACTION      // Acción de administrador
 }

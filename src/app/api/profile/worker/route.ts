@@ -22,14 +22,27 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    
-    const { 
-      uid, email, // <--- Importante: Recibimos el email
-      fullName, city, province, phone, experience, bio,
-      hasVehicle, canRelocate, foodHandler, phytosanitaryLevel 
+
+    // Logging para depuración
+    console.log("Datos recibidos en worker profile:", JSON.stringify(body, null, 2));
+
+    const {
+      uid,
+      email, // <--- Importante: Recibimos el email
+      fullName,
+      city,
+      province,
+      phone,
+      experience = [], // Valor por defecto: array vacío
+      bio,
+      hasVehicle,
+      canRelocate,
+      foodHandler,
+      phytosanitaryLevel
     } = body;
 
     if (!uid) {
+      console.error("UID faltante en request. Body completo:", body);
       return NextResponse.json({ error: "Faltan datos (UID)" }, { status: 400 });
     }
 
@@ -41,7 +54,7 @@ export async function PUT(request: Request) {
         create: {
             id: uid,
             // Si el email no llega, usamos uno temporal para no bloquear, pero debería llegar.
-            email: email || `usuario_${uid}@recuperado.com`, 
+            email: email || `usuario_${uid}@recuperado.com`,
             role: Role.USER, // Asumimos rol de trabajador
         }
     });
@@ -50,13 +63,29 @@ export async function PUT(request: Request) {
     const updatedProfile = await prisma.workerProfile.upsert({
       where: { userId: uid },
       update: {
-        fullName, city, province, phone, experience, bio,
-        hasVehicle, canRelocate, foodHandler, phytosanitaryLevel,
+        fullName,
+        city,
+        province,
+        phone,
+        experience: experience || [], // Aseguramos array vacío si es null/undefined
+        bio,
+        hasVehicle,
+        canRelocate,
+        foodHandler,
+        phytosanitaryLevel,
       },
       create: {
         userId: uid,
-        fullName, city, province, phone, experience, bio,
-        hasVehicle, canRelocate, foodHandler, phytosanitaryLevel,
+        fullName,
+        city,
+        province,
+        phone,
+        experience: experience || [], // Aseguramos array vacío si es null/undefined
+        bio,
+        hasVehicle,
+        canRelocate,
+        foodHandler,
+        phytosanitaryLevel,
       }
     });
 

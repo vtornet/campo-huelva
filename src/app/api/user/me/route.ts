@@ -20,6 +20,7 @@ export async function GET(request: Request) {
         workerProfile: true,
         companyProfile: true,
         foremanProfile: true,
+        engineerProfile: true,
       },
     });
 
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
     if (user.role === 'USER') selectedProfile = user.workerProfile;
     else if (user.role === 'FOREMAN') selectedProfile = user.foremanProfile;
     else if (user.role === 'COMPANY') selectedProfile = user.companyProfile;
+    else if (user.role === 'ENGINEER') selectedProfile = user.engineerProfile;
 
     // 2. FALLBACK INTELIGENTE (Si falló lo anterior, buscamos qué perfil existe realmente)
     if (!selectedProfile) {
@@ -42,6 +44,9 @@ export async function GET(request: Request) {
       } else if (user.companyProfile) {
         selectedProfile = user.companyProfile;
         effectiveRole = 'COMPANY';
+      } else if (user.engineerProfile) {
+        selectedProfile = user.engineerProfile;
+        effectiveRole = 'ENGINEER';
       } else if (user.workerProfile) {
         selectedProfile = user.workerProfile;
         effectiveRole = 'USER';

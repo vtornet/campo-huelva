@@ -2,17 +2,44 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import { auth } from "@/lib/firebase";
 
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Aceptamos ahora FOREMAN también
-  const handleSelectRole = async (role: "WORKER" | "COMPANY" | "FOREMAN") => {
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push("/login");
+  };
+
+  // Proteger la página: si no hay usuario, ir a login
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push("/login");
+      } else {
+        setPageLoading(false);
+      }
+    }
+  }, [user, loading, router]);
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+    );
+  }
+
+  // Aceptamos ahora FOREMAN y ENGINEER también
+  const handleSelectRole = async (role: "WORKER" | "COMPANY" | "FOREMAN" | "ENGINEER") => {
     if (!user) return;
-    setLoading(true);
+    setActionLoading(true);
 
     try {
       const response = await fetch("/api/register", {
@@ -27,7 +54,9 @@ export default function Onboarding() {
 
       if (response.ok) {
         if (role === "WORKER") router.push("/profile/worker");
-        else if (role === "FOREMAN") router.push("/profile/foreman"); // <--- NUEVA RUTA
+        else if (role === "FOREMAN") router.push("/profile/foreman");
+        else if (role === "COMPANY") router.push("/profile/company");
+        else if (role === "ENGINEER") router.push("/profile/engineer");
         else router.push("/");
       } else {
         alert("Error al guardar perfil.");
@@ -36,20 +65,42 @@ export default function Onboarding() {
       console.error(error);
       alert("Error de conexión");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+      {/* Botón de cerrar sesión */}
+      <button
+        onClick={handleSignOut}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Cerrar sesión
+      </button>
+
       <div className="max-w-5xl w-full text-center">
-        <h1 className="text-3xl font-bold text-green-800 mb-4">¡Bienvenido a Red Agrícola!</h1>
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/logo.png"
+            alt="Agro Red"
+            width={200}
+            height={58}
+            priority
+          />
+        </div>
+        <h1 className="text-3xl font-bold mb-4">
+          ¡Bienvenido a <span className="text-emerald-600">Agro</span><span className="text-red-500"> Red</span>!
+        </h1>
         <p className="text-xl text-gray-600 mb-10">Elige tu perfil para continuar:</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
           {/* TRABAJADOR */}
-          <button onClick={() => handleSelectRole("WORKER")} disabled={loading}
+          <button onClick={() => handleSelectRole("WORKER")} disabled={actionLoading}
             className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-green-500 transition text-left h-full">
             <div className="text-4xl mb-4">👨‍🌾</div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Busco Trabajo</h3>
@@ -57,7 +108,7 @@ export default function Onboarding() {
           </button>
 
           {/* MANIJERO (NUEVO) */}
-          <button onClick={() => handleSelectRole("FOREMAN")} disabled={loading}
+          <button onClick={() => handleSelectRole("FOREMAN")} disabled={actionLoading}
             className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-orange-500 transition text-left h-full">
             <div className="text-4xl mb-4">📋</div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Manijero</h3>
@@ -65,11 +116,19 @@ export default function Onboarding() {
           </button>
 
           {/* EMPRESA */}
-          <button onClick={() => handleSelectRole("COMPANY")} disabled={loading}
+          <button onClick={() => handleSelectRole("COMPANY")} disabled={actionLoading}
             className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-500 transition text-left h-full">
             <div className="text-4xl mb-4">🚜</div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Empresa</h3>
             <p className="text-gray-500 text-sm">Busco personal o cuadrillas para mi finca o cooperativa.</p>
+          </button>
+
+          {/* INGENIERO (NUEVO) */}
+          <button onClick={() => handleSelectRole("ENGINEER")} disabled={actionLoading}
+            className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-purple-500 transition text-left h-full">
+            <div className="text-4xl mb-4">👷‍♂️</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Ingeniero</h3>
+            <p className="text-gray-500 text-sm">Ingeniero Técnico Agrícola. Ofrezco servicios técnicos y asesoramiento.</p>
           </button>
 
         </div>
