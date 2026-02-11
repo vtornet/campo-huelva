@@ -123,3 +123,10 @@ export const RANGOS_EXPERIENCIA = [
   { label: "6-10 años", min: 6, max: 10 },
   { label: "Más de 10 años", min: 11, max: 999 }
 ];
+
+// Tipos de tarea para demandas de empleo
+export const TIPOS_TAREA = [
+  "Recolección", "Plantación", "Poda", "Riego",
+  "Limpieza", "Embalaje", "Manipulación", "Conducción tractor",
+  "Tratamientos", "Invernadero", "Cosecha", "Otros"
+];

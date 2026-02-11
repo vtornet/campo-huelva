@@ -2,7 +2,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA } from "@/lib/constants";
 
 
 // Componente interno que lee los parámetros
@@ -36,6 +36,7 @@ function PublishForm() {
     province: "",
     location: "",
     description: "",
+    taskType: "", // Tipo de tarea para demandas
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +100,19 @@ function PublishForm() {
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200"
             value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
         </div>
+
+        {/* Selector de tipo de tarea - solo para demandas */}
+        {isDemand && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de tarea *</label>
+            <select required
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
+              value={formData.taskType} onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}>
+              <option value="">Selecciona el tipo de tarea...</option>
+              {TIPOS_TAREA.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
+            </select>
+          </div>
+        )}
 
         {/* Reutilizamos los selectores de Provincia/Pueblo que ya tenías... */}
         {/* ... (Mantén aquí tu código de inputs de Ubicación y Descripción igual que antes) ... */}

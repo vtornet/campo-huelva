@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const province = searchParams.get("province");
   const viewMode = searchParams.get("view"); // "OFFERS" o "DEMANDS"
   const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
+  const taskType = searchParams.get("taskType"); // Tipo de tarea para demandas (Recolección, Poda, etc.)
 
   // Calculamos el offset para paginación
   const skip = (page - 1) * limit;
@@ -27,6 +28,10 @@ export async function GET(request: Request) {
   // 2. Filtro por Tipo (Ofertas vs Demandas)
   if (viewMode === "DEMANDS") {
     where.type = PostType.DEMAND;
+    // Si se especifica taskType, filtramos por ese tipo
+    if (taskType) {
+      where.taskType = taskType;
+    }
   } else {
     // Si vemos ofertas, queremos las OFICIALES y las COMPARTIDAS
     where.type = { in: [PostType.OFFICIAL, PostType.SHARED] };
@@ -163,8 +168,9 @@ export async function POST(request: Request) {
       description,
       location,
       province,
+      taskType: body.taskType || null, // Tipo de tarea para demandas
       // Convertimos el string que llega del front al Enum de Prisma
-      type: type as PostType, 
+      type: type as PostType,
     };
 
     // 3. Vinculación Inteligente según el ROL

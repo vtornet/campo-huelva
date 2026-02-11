@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
-import { PROVINCIAS } from "@/lib/constants";
+import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
 
 export default function Dashboard() {
   const { user, loading, error: authError } = useAuth();
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"OFFERS" | "DEMANDS">("OFFERS"); // ¿Qué estamos viendo?
   const [posts, setPosts] = useState<any[]>([]); // Usamos 'posts' en vez de 'offers' porque pueden ser demandas
   const [filterProvince, setFilterProvince] = useState("todas");
+  const [filterTaskType, setFilterTaskType] = useState(""); // Filtro por tipo de tarea (solo para demandas)
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -96,7 +97,9 @@ export default function Dashboard() {
     try {
       const currentPage = reset ? 1 : page;
       // Enviamos viewMode para que la API sepa si devolver ofertas o demandas
-      const res = await fetch(`/api/posts?page=${currentPage}&province=${filterProvince}&view=${viewMode}`);
+      // Si hay filtro de tarea, lo añadimos a la URL
+      const taskParam = filterTaskType ? `&taskType=${filterTaskType}` : "";
+      const res = await fetch(`/api/posts?page=${currentPage}&province=${filterProvince}&view=${viewMode}${taskParam}`);
 
       if (!res.ok) {
         console.error("Error en API:", res.status);
@@ -133,7 +136,7 @@ export default function Dashboard() {
     setPage(1);
     setHasMore(true);
     fetchPosts(true);
-  }, [filterProvince, viewMode]);
+  }, [filterProvince, viewMode, filterTaskType]);
 
   // Cargar contador de mensajes no leídos
   useEffect(() => {
@@ -385,6 +388,37 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* FILTRO POR TIPO DE TAREA - Solo para demandas */}
+          {viewMode === "DEMANDS" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3 mb-5 overflow-x-auto">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilterTaskType("")}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                    filterTaskType === ""
+                      ? "bg-orange-600 text-white shadow-md shadow-orange-500/20"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Todas
+                </button>
+                {TIPOS_TAREA.map((tipo) => (
+                  <button
+                    key={tipo}
+                    onClick={() => setFilterTaskType(tipo)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                      filterTaskType === tipo
+                        ? "bg-orange-600 text-white shadow-md shadow-orange-500/20"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {tipo}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* LISTADO DE POSTS (CON ESTILOS SEGÚN TIPO) */}
           <div className="space-y-4">
             {posts.length === 0 && !loadingPosts ? (
@@ -416,6 +450,12 @@ export default function Dashboard() {
                       <h3 className={`font-bold text-lg tracking-tight ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'} group-hover:text-emerald-600 transition-colors`}>
                         {post.title}
                       </h3>
+                      {/* Mostrar tipo de tarea solo para demandas */}
+                      {post.type === 'DEMAND' && post.taskType && (
+                        <span className="inline-block ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                          {post.taskType}
+                        </span>
+                      )}
                       <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

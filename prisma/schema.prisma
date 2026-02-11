@@ -162,6 +162,7 @@ model Post {
   province    String?
 
   type        PostType @default(SHARED)
+  taskType    String?  // Tipo de tarea: Recolección, Plantación, Poda, etc. (para demandas)
 
   // Moderación
   status      PostStatus @default(ACTIVE) // ACTIVE, HIDDEN, REMOVED
