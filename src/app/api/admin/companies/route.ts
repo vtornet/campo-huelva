@@ -20,16 +20,25 @@ export async function GET(request: Request) {
     else if (filter === "approved") {
       where.isApproved = true;
     } else if (filter === "unapproved") {
+      // Para "por aprobar", mostramos las verificadas pero no aprobadas
+      where.isVerified = true;
       where.isApproved = false;
-      isVerified = true; // Solo mostrar aprobadas las que están verificadas
     }
 
     const companies = await prisma.companyProfile.findMany({
       where,
       include: {
-        user: { select: { email: true, role: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isBanned: true,
+            isSilenced: true,
+          }
+        },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { id: "desc" },
     });
 
     return NextResponse.json(companies);

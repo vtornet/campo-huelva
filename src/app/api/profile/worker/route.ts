@@ -38,7 +38,8 @@ export async function PUT(request: Request) {
       hasVehicle,
       canRelocate,
       foodHandler,
-      phytosanitaryLevel
+      phytosanitaryLevel,
+      profileImage
     } = body;
 
     if (!uid) {
@@ -73,6 +74,7 @@ export async function PUT(request: Request) {
         canRelocate,
         foodHandler,
         phytosanitaryLevel,
+        profileImage,
       },
       create: {
         userId: uid,
@@ -86,6 +88,7 @@ export async function PUT(request: Request) {
         canRelocate,
         foodHandler,
         phytosanitaryLevel,
+        profileImage,
       }
     });
 

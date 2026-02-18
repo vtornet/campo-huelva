@@ -115,13 +115,22 @@ export default function UserProfilePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 shadow-black/5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg ${
-                role === 'FOREMAN' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
-                role === 'COMPANY' ? 'bg-gradient-to-br from-blue-400 to-blue-500' :
-                'bg-gradient-to-br from-emerald-400 to-emerald-500'
-              }`}>
-                {(profile?.fullName || profile?.companyName || user.email)?.[0]?.toUpperCase() || "?"}
-              </div>
+              {/* Foto de perfil o avatar con inicial */}
+              {profile?.profileImage ? (
+                <img
+                  src={profile.profileImage}
+                  alt="Foto de perfil"
+                  className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white"
+                />
+              ) : (
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg ${
+                  role === 'FOREMAN' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
+                  role === 'COMPANY' ? 'bg-gradient-to-br from-blue-400 to-blue-500' :
+                  'bg-gradient-to-br from-emerald-400 to-emerald-500'
+                }`}>
+                  {(profile?.fullName || profile?.companyName || user.email)?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
               <div>
                 <h2 className="text-xl font-bold text-slate-800">{profile?.fullName || profile?.companyName || "Usuario"}</h2>
                 <p className="text-sm text-slate-500">

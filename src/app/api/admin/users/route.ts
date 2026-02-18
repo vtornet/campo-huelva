@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 // Validar que el filtro de rol es valido
 const isValidRoleFilter = (filter: string | null): boolean => {
-  if (!filter || filter === "ALL") return true;
-  return ["USER", "FOREMAN", "COMPANY", "ADMIN", "BANNED", "SILENCED"].includes(filter);
+  if (!filter || filter === "all") return true;
+  return ["user", "foreman", "engineer", "company", "admin", "banned", "silenced"].includes(filter);
 };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const filter = searchParams.get("filter") || "ALL";
+  const filter = searchParams.get("filter") || "all";
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "50");
@@ -28,13 +28,14 @@ export async function GET(request: Request) {
     // Construir clausula where dinamica
     const where: any = {};
 
-    // Filtrar por rol
-    if (filter === "BANNED") {
+    // Filtrar por rol o estado
+    if (filter === "banned") {
       where.isBanned = true;
-    } else if (filter === "SILENCED") {
+    } else if (filter === "silenced") {
       where.isSilenced = true;
-    } else if (filter !== "ALL") {
-      where.role = filter as Role;
+    } else if (filter !== "all") {
+      // Convertir filtro a mayúsculas para el enum de Prisma
+      where.role = filter.toUpperCase() as Role;
     }
 
     // Busqueda por email o nombre
@@ -43,6 +44,7 @@ export async function GET(request: Request) {
         { email: { contains: search, mode: "insensitive" } },
         { workerProfile: { fullName: { contains: search, mode: "insensitive" } } },
         { foremanProfile: { fullName: { contains: search, mode: "insensitive" } } },
+        { engineerProfile: { fullName: { contains: search, mode: "insensitive" } } },
         { companyProfile: { companyName: { contains: search, mode: "insensitive" } } },
       ];
     }
@@ -67,6 +69,14 @@ export async function GET(request: Request) {
             city: true,
             province: true,
             crewSize: true,
+          },
+        },
+        engineerProfile: {
+          select: {
+            fullName: true,
+            city: true,
+            province: true,
+            collegiateNumber: true,
           },
         },
         companyProfile: {

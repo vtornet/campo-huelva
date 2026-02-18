@@ -9,10 +9,14 @@ export async function GET(request: Request) {
 
   const page = parseInt(searchParams.get("page") || "1");
   const limit = 5;
-  const province = searchParams.get("province");
+
+  // Soportar múltiples valores para provincia y taskType (multiselección)
+  const allProvinces = searchParams.getAll("province");
+  const allTaskTypes = searchParams.getAll("taskType");
+
   const viewMode = searchParams.get("view"); // "OFFERS" o "DEMANDS"
   const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
-  const taskType = searchParams.get("taskType"); // Tipo de tarea para demandas (Recolección, Poda, etc.)
+  const currentUserId = searchParams.get("currentUserId"); // Usuario autenticado actual (para verificar sus likes)
 
   // Calculamos el offset para paginación
   const skip = (page - 1) * limit;
@@ -20,17 +24,17 @@ export async function GET(request: Request) {
   // Construimos el filtro dinámico
   const where: any = {};
 
-  // 1. Filtro por Provincia (si no es 'todas')
-  if (province && province !== "todas") {
-    where.province = province;
+  // 1. Filtro por Provincia (soporta múltiples valores)
+  if (allProvinces.length > 0 && !allProvinces.includes("todas") && !allProvinces.includes("")) {
+    where.province = { in: allProvinces };
   }
 
   // 2. Filtro por Tipo (Ofertas vs Demandas)
   if (viewMode === "DEMANDS") {
     where.type = PostType.DEMAND;
-    // Si se especifica taskType, filtramos por ese tipo
-    if (taskType) {
-      where.taskType = taskType;
+    // Si se especifican taskTypes, filtramos por esos tipos
+    if (allTaskTypes.length > 0 && !allTaskTypes.includes("todos") && !allTaskTypes.includes("")) {
+      where.taskType = { in: allTaskTypes };
     }
   } else {
     // Si vemos ofertas, queremos las OFICIALES y las COMPARTIDAS
@@ -59,7 +63,11 @@ export async function GET(request: Request) {
       // Incluimos los datos del autor para mostrar nombre/avatar en la tarjeta
       include: {
         company: {
-          include: {
+          select: {
+            id: true,
+            companyName: true,
+            profileImage: true,
+            isApproved: true,
             user: {
               select: {
                 id: true,
@@ -78,7 +86,8 @@ export async function GET(request: Request) {
               select: {
                 fullName: true,
                 city: true,
-                province: true
+                province: true,
+                profileImage: true
               }
             },
             foremanProfile: {
@@ -86,7 +95,16 @@ export async function GET(request: Request) {
                 fullName: true,
                 city: true,
                 province: true,
-                crewSize: true
+                crewSize: true,
+                profileImage: true
+              }
+            },
+            engineerProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                profileImage: true
               }
             }
           }
@@ -94,7 +112,29 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json(posts);
+    // Si hay un usuario autenticado, verificamos sus likes para cada post
+    let postsWithLikedInfo = posts;
+
+    if (currentUserId) {
+      // Obtener todos los likes del usuario actual
+      const userLikes = await prisma.like.findMany({
+        where: {
+          userId: currentUserId,
+          postId: { in: posts.map(p => p.id) }
+        },
+        select: { postId: true }
+      });
+
+      const likedPostIds = new Set(userLikes.map(l => l.postId));
+
+      // Añadir propiedad 'liked' a cada post
+      postsWithLikedInfo = posts.map(post => ({
+        ...post,
+        liked: likedPostIds.has(post.id)
+      }));
+    }
+
+    return NextResponse.json(postsWithLikedInfo);
   } catch (error) {
     console.error("Error cargando feed:", error);
     return NextResponse.json({ error: "Error al cargar publicaciones" }, { status: 500 });
@@ -105,11 +145,45 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description, location, province, type, uid } = body;
+    const {
+      title,
+      description,
+      location,
+      province,
+      type,
+      uid,
+      taskType,
+      // Campos adicionales para ofertas de empleo
+      contractType,
+      providesAccommodation,
+      salaryAmount,
+      salaryPeriod,
+      hoursPerWeek,
+      startDate,
+      endDate
+    } = body;
 
     // Validación básica
     if (!title || !province || !uid || !type) {
       return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 });
+    }
+
+    // Para ofertas (no demandas), validar campos adicionales
+    const isDemand = type === "DEMAND";
+    if (!isDemand) {
+      // Para ofertas, estos campos son obligatorios
+      if (!contractType) {
+        return NextResponse.json({ error: "El tipo de contrato es obligatorio para ofertas" }, { status: 400 });
+      }
+      if (!salaryAmount) {
+        return NextResponse.json({ error: "El salario es obligatorio para ofertas" }, { status: 400 });
+      }
+      if (!salaryPeriod) {
+        return NextResponse.json({ error: "El periodo de salario es obligatorio para ofertas" }, { status: 400 });
+      }
+      if (!hoursPerWeek) {
+        return NextResponse.json({ error: "Las horas semanales son obligatorias para ofertas" }, { status: 400 });
+      }
     }
 
     // 1. Identificar al Autor para vincularlo correctamente
@@ -168,10 +242,21 @@ export async function POST(request: Request) {
       description,
       location,
       province,
-      taskType: body.taskType || null, // Tipo de tarea para demandas
+      taskType: taskType || null, // Tipo de tarea para demandas
       // Convertimos el string que llega del front al Enum de Prisma
       type: type as PostType,
     };
+
+    // Añadir campos específicos para ofertas de empleo
+    if (!isDemand) {
+      postData.contractType = contractType || null;
+      postData.providesAccommodation = providesAccommodation || false;
+      postData.salaryAmount = salaryAmount || null;
+      postData.salaryPeriod = salaryPeriod || null;
+      postData.hoursPerWeek = hoursPerWeek ? parseInt(hoursPerWeek) : null;
+      postData.startDate = startDate || null;
+      postData.endDate = endDate || null;
+    }
 
     // 3. Vinculación Inteligente según el ROL
     if (user.role === Role.COMPANY) {

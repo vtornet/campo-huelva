@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { CULTIVOS, PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
+import AIBioGenerator from "@/components/AIBioGenerator";
 
 export default function WorkerProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -16,6 +18,32 @@ export default function WorkerProfilePage() {
       router.push("/login");
     }
   }, [user, authLoading, router]);
+
+  // Cargar perfil existente
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/profile/worker?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id) {
+            setFormData({
+              fullName: data.fullName || "",
+              phone: data.phone || "",
+              province: data.province || "",
+              city: data.city || "",
+              bio: data.bio || "",
+              hasVehicle: data.hasVehicle || false,
+              canRelocate: data.canRelocate || false,
+              foodHandler: data.foodHandler || false,
+              phytosanitaryLevel: data.phytosanitaryLevel || "",
+              experience: data.experience || [],
+              profileImage: data.profileImage || "",
+            });
+          }
+        })
+        .catch(err => console.error("Error cargando perfil:", err));
+    }
+  }, [user]);
 
   // Mostrar loading mientras verificamos autenticación
   if (authLoading) {
@@ -42,6 +70,7 @@ export default function WorkerProfilePage() {
     foodHandler: false,
     phytosanitaryLevel: "",
     experience: [] as string[],
+    profileImage: "",
   });
 
   const toggleCrop = (crop: string) => {
@@ -118,6 +147,14 @@ export default function WorkerProfilePage() {
           <p className="text-slate-500">
             Cuantos más datos rellenes, más fácil será que las empresas te encuentren.
           </p>
+        </div>
+
+        {/* Foto de perfil */}
+        <div className="flex justify-center mb-8">
+          <ProfileImageUpload
+            currentImage={formData.profileImage}
+            onImageUploaded={(url) => setFormData({ ...formData, profileImage: url })}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -245,6 +282,25 @@ export default function WorkerProfilePage() {
             </div>
           </div>
           {/* ----------------------------------------------- */}
+
+          {/* BIO / DESCRIPCIÓN CON IA */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-5 rounded-2xl border border-purple-100">
+            <AIBioGenerator
+              value={formData.bio}
+              onChange={(value) => setFormData({ ...formData, bio: value })}
+              rol="USER"
+              profileData={{
+                fullName: formData.fullName,
+                experience: formData.experience,
+                hasVehicle: formData.hasVehicle,
+                canRelocate: formData.canRelocate,
+                phytosanitaryLevel: formData.phytosanitaryLevel,
+                foodHandler: formData.foodHandler,
+              }}
+              placeholder="Describe tu experiencia y habilidades profesionales..."
+              label="Sobre ti (descripción profesional)"
+            />
+          </div>
 
           {/* EXPERIENCIA */}
           <div>

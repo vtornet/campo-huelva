@@ -30,6 +30,8 @@ model User {
   // Actividad
   posts           Post[]           @relation("UserPosts")
   applications    Application[]    // Ofertas a las que se ha inscrito
+  likes           Like[]          @relation("PostLikes")
+  shares          Share[]         @relation("PostShares")
 
   // Sistema de Compañeros (Relación N a N)
   followedBy      Connection[]  @relation("followedBy")
@@ -38,14 +40,14 @@ model User {
   // Mensajería
   sentMessages      Message[]     @relation("MessageSender")
   receivedMessages  Message[]     @relation("MessageReceiver")
-  conversations     ConversationParticipant[]
+  conversations    ConversationParticipant[]
 
   // Notificaciones
   notifications     Notification[]
 
   // Denuncias (reportado por otros usuarios)
-  reportsReceived Report[]   @relation("ReportedUser")
-  reportsFiled    Report[]   @relation("Reporter")
+  reportsReceived   Report[]   @relation("ReportedUser")
+  reportsFiled     Report[]   @relation("Reporter")
 
   // Notificaciones donde este usuario es la entidad relacionada
   notificationsAsRelated Notification[] @relation("NotificationUser")
@@ -61,7 +63,7 @@ enum Role {
 
 // === PERFILES ===
 model WorkerProfile {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
 
@@ -75,12 +77,27 @@ model WorkerProfile {
   canRelocate Boolean  @default(false)
   foodHandler Boolean  @default(false)
   phytosanitaryLevel String?
+
+  // Experiencia en maquinaria y herramientas
+  machineryExperience String[]
+  yearsExperience    Int?
+  canWorkAway        Boolean  @default(false)
+
+  // Tipos de carnet (multi-selección)
+  licenseTypes String[]
+
+  // Control de modificación de nombre (60 días)
+  nameLastModified DateTime?
+
+  // Foto de perfil (URL de Firebase Storage)
+  profileImage String?
 }
 
 model ForemanProfile {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
+
   fullName    String
   phone       String
   province    String
@@ -93,19 +110,26 @@ model ForemanProfile {
   yearsExperience Int?
   specialties     String[]
   bio             String?
+
+  // Control de modificación de nombre (60 días)
+  nameLastModified DateTime?
+
+  // Foto de perfil (URL de Firebase Storage)
+  profileImage String?
 }
 
 model CompanyProfile {
-  id             String   @id @default(cuid())
+  id             String   @id @default(uuid())
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id])
+
   cif            String   @unique
   companyName    String
   address        String?
   city           String?
   province       String?
   phone          String?
-  contactPerson  String?
+  contactPerson   String?
   website        String?
   description    String?
 
@@ -117,13 +141,16 @@ model CompanyProfile {
   // Verificación de empresa
   isVerified     Boolean  @default(false) // Solo visible como "verificada" si esto es true
   verifiedAt     DateTime?
-  verifiedBy     String?  // UID del admin que verificó
+  verifiedBy     String? // UID del admin que verificó
+
+  // Foto de perfil (logo de empresa - URL de Firebase Storage)
+  profileImage   String?
 
   posts          Post[]
 }
 
 model EngineerProfile {
-  id                String   @id @default(cuid())
+  id                String   @id @default(uuid())
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id])
 
@@ -135,43 +162,59 @@ model EngineerProfile {
   bio               String?
 
   // Credenciales legales
-  collegiateNumber  String?  // Número de colegiado
+  collegiateNumber  String? // Número de colegiado
 
   // Experiencia profesional
-  yearsExperience   Int?     // Años de experiencia
-  cropExperience    String[] // Tipos de cultivo en los que tiene experiencia (Fresa, Cítricos, Arándanos, etc.)
+  yearsExperience  Int?     // Años de experiencia
+  cropExperience   String[] // Tipos de cultivo en los que tiene experiencia (Fresa, Cítricos, Arándanos, etc.)
 
   // Especialidades y servicios
-  specialties       String[] // Ej: Gestión de riego, Fitopatología, Nutrición vegetal, etc.
-  servicesOffered   String[] // Ej: Asesoramiento, Peritajes, Auditorías, Formación, etc.
+  specialties      String[] // Ej: Gestión de riego, Fitopatología, Nutrición vegetal, etc.
+  servicesOffered  String[] // Ej: Asesoramiento, Peritajes, Auditorías, Formación, etc.
 
   // Disponibilidad
-  isAvailable       Boolean  @default(true)  // ¿Está disponible para nuevos proyectos?
-  canTravel         Boolean  @default(false) // ¿Puede desplazarse a otras provincias?
+  isAvailable       Boolean  @default(true) // ¿Está disponible para nuevos proyectos?
+  canTravel          Boolean  @default(false) // ¿Puede desplazarse a otras provincias?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // Foto de perfil (URL de Firebase Storage)
+  profileImage      String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 // === PUBLICACIONES (OFERTAS Y DEMANDAS) ===
 model Post {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   title       String
   description String
   location    String
   province    String?
 
   type        PostType @default(SHARED)
-  taskType    String?  // Tipo de tarea: Recolección, Plantación, Poda, etc. (para demandas)
+  taskType    String? // Tipo de tarea: Recolección, Plantación, Poda, etc. (para demandas)
+
+  // Campos para ofertas de empleo (solo para OFICIAL y SHARED)
+  contractType    String?  // Tipo de contrato: Eventual, Fijo discontinuo, Indefinido, etc.
+  providesAccommodation Boolean? // Si ofrece alojamiento
+  salaryAmount    String?  // Cantidad salarial (texto libre para flexibilidad)
+  salaryPeriod    String?  // Periodo de salario: HORA, JORNADA, MENSUAL, ANUAL
+  hoursPerWeek    Int?     // Horas semanales (jornada)
+  startDate       String?  // Fecha de inicio estimada
+  endDate         String?  // Fecha de fin (para contratos eventuales)
+
+  // Contadores
+  likesCount     Int      @default(0)
+  sharesCount    Int      @default(0)
 
   // Moderación
   status      PostStatus @default(ACTIVE) // ACTIVE, HIDDEN, REMOVED
-  moderatedBy String?  // UID del admin que moderó
+  moderatedBy String? // UID del admin que moderó
   moderatedAt DateTime?
   moderationReason String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Autor
   publisherId String?
@@ -181,16 +224,19 @@ model Post {
   companyId   String?
   company     CompanyProfile? @relation(fields: [companyId], references: [id])
 
+  // Relaciones
   applications Application[]
   reports     Report[]   @relation("ReportedPost")
   conversations Conversation[] @relation("PostConversations")
   notifications Notification[] @relation("NotificationPost")
+  likes        Like[]
+  shares       Share[]
 }
 
 enum PostType {
   OFFICIAL // Oferta de Empresa (Verificada)
-  SHARED   // Oferta vista por ahí (Compartida por trabajador)
-  DEMAND   // Demanda (Trabajador/Manijero pide trabajo)
+  SHARED  // Oferta vista allí (Compartida por trabajador)
+  DEMAND  // Demanda (Trabajador/Manijero pide trabajo)
 }
 
 enum PostStatus {
@@ -201,7 +247,7 @@ enum PostStatus {
 
 // === INSCRIPCIONES ===
 model Application {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   postId    String
   post      Post     @relation(fields: [postId], references: [id])
   userId    String
@@ -212,22 +258,47 @@ model Application {
   @@unique([postId, userId]) // No puedes inscribirte 2 veces a la misma
 }
 
+// === LIKES ===
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation("PostLikes", fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) // Un usuario solo puede dar like una vez
+}
+
+// === SHARES (Compartidos) ===
+model Share {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation("PostShares", fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) // Un usuario solo puede compartir una vez
+}
+
 // === COMPAÑEROS / CONEXIONES ===
 model Connection {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   followerId  String
   follower    User     @relation("following", fields: [followerId], references: [id])
   followingId String
   following   User     @relation("followedBy", fields: [followingId], references: [id])
   status      String   @default("ACCEPTED") // Podría ser PENDING si queremos confirmación
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+
   @@unique([followerId, followingId])
 }
 
 // === DENUNCIAS ===
 model Report {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   type        ReportType
 
   // Quién denuncia
@@ -240,17 +311,17 @@ model Report {
   reportedPostId  String?
   reportedPost    Post?    @relation("ReportedPost", fields: [reportedPostId], references: [id])
 
-  reason      String   // Razón de la denuncia
-  description String?  // Descripción adicional
+  reason      String // Razón de la denuncia
+  description String? // Descripción adicional
 
   // Estado y resolución
   status      ReportStatus @default(PENDING)
-  resolvedBy  String?  // UID del admin que resolvió
-  resolvedAt  DateTime?
-  resolution  String?  // Nota sobre la resolución
+  resolvedBy   String? // UID del admin que resolvió
+  resolvedAt   DateTime?
+  resolution   String? // Nota sobre la resolución
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 enum ReportType {
@@ -259,20 +330,20 @@ enum ReportType {
 }
 
 enum ReportStatus {
-  PENDING  // Pendiente de revisión
-  REVIEWED // Revisado (en proceso)
-  RESOLVED // Resuelto
-  DISMISSED // Desestimado (sin acción)
+  PENDING    // Pendiente de revisión
+  REVIEWED   // Revisado (en proceso)
+  RESOLVED   // Resuelto
+  DISMISSED  // Desestimado (sin acción)
 }
 
 // === LOG DE ACCIONES DE ADMIN ===
 model AdminLog {
-  id          String   @id @default(cuid())
-  adminId     String   // UID del admin
+  id          String   @id @default(uuid())
+  adminId     String // UID del admin
   action      AdminAction
-  targetType  String   // "USER", "POST", "COMPANY", "REPORT"
-  targetId    String   // ID del objeto afectado
-  details     String?  // Detalles adicionales (JSON)
+  targetType   String // "USER", "POST", "COMPANY", "REPORT"
+  targetId    String // ID del objeto afectado
+  details     String? // Detalles adicionales (JSON)
   createdAt   DateTime @default(now())
 }
 
@@ -293,9 +364,9 @@ enum AdminAction {
 
 // === MENSAJERÍA INTERNA ===
 model Conversation {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Participantes de la conversación
   participants ConversationParticipant[]
@@ -309,7 +380,7 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   userId         String
@@ -324,14 +395,14 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   senderId       String
   sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  receiverId     String       // Denormalizado para facilitar búsquedas
+  receiverId     String       // Desnormalizado para facilitar búsquedas
   receiver       User         @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   content        String
@@ -347,25 +418,25 @@ model Message {
 
 // === NOTIFICACIONES ===
 model Notification {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type        NotificationType
   title       String
   message     String
-  link        String?  // URL a la que lleva la notificación
+  link        String? // URL a la que lleva la notificación
 
   // Relación con la entidad que genera la notificación (opcional)
-  relatedPostId   String?
-  relatedPost     Post?    @relation("NotificationPost", fields: [relatedPostId], references: [id])
-  relatedUserId   String?
-  relatedUser     User?   @relation("NotificationUser", fields: [relatedUserId], references: [id])
+  relatedPostId  String?
+  relatedPost    Post?    @relation("NotificationPost", fields: [relatedPostId], references: [id])
+  relatedUserId  String?
+  relatedUser    User?    @relation("NotificationUser", fields: [relatedUserId], references: [id])
 
   isRead      Boolean  @default(false)
   readAt      DateTime?
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@index([userId])
   @@index([userId, isRead])
@@ -375,8 +446,10 @@ enum NotificationType {
   NEW_MESSAGE       // Nuevo mensaje en chat
   NEW_APPLICATION   // Alguien se aplicó a tu oferta
   APPLICATION_ACCEPTED // Te aceptaron para un trabajo
-  POST_NEARBY       // Nueva oferta cerca de tu ubicación
+  POST_NEARBY      // Nueva oferta cerca de tu ubicación
   PROFILE_VIEW      // Alguien vio tu perfil
-  COMPANY_VERIFIED  // Empresa verificada (para la empresa)
+  COMPANY_VERIFIED // Empresa verificada (para la empresa)
   ADMIN_ACTION      // Acción de administrador
+  POST_LIKE         // Alguien dio like a tu publicación
+  POST_SHARE        // Alguien compartió tu publicación
 }

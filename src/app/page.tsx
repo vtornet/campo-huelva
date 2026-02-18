@@ -7,6 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
 import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
+import RecommendedOffers from "@/components/RecommendedOffers";
+import MultiSelectDropdown from "@/components/MultiSelectDropdown";
+import PostActions from "@/components/PostActions";
 
 export default function Dashboard() {
   const { user, loading, error: authError } = useAuth();
@@ -18,8 +21,8 @@ export default function Dashboard() {
   // ESTADOS DEL FEED (NUEVOS)
   const [viewMode, setViewMode] = useState<"OFFERS" | "DEMANDS">("OFFERS"); // ¿Qué estamos viendo?
   const [posts, setPosts] = useState<any[]>([]); // Usamos 'posts' en vez de 'offers' porque pueden ser demandas
-  const [filterProvince, setFilterProvince] = useState("todas");
-  const [filterTaskType, setFilterTaskType] = useState(""); // Filtro por tipo de tarea (solo para demandas)
+  const [filterProvinces, setFilterProvinces] = useState<string[]>([]); // Multiselección de provincias
+  const [filterTaskTypes, setFilterTaskTypes] = useState<string[]>([]); // Multiselección de tipos de tarea
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -91,15 +94,24 @@ export default function Dashboard() {
 
   // 2. FUNCIÓN PARA CARGAR PUBLICACIONES (OFERTAS O DEMANDAS)
   const fetchPosts = async (reset = false) => {
-    if (loadingPosts) return;
+    if (loadingPosts || !user) return;
     setLoadingPosts(true);
 
     try {
       const currentPage = reset ? 1 : page;
       // Enviamos viewMode para que la API sepa si devolver ofertas o demandas
-      // Si hay filtro de tarea, lo añadimos a la URL
-      const taskParam = filterTaskType ? `&taskType=${filterTaskType}` : "";
-      const res = await fetch(`/api/posts?page=${currentPage}&province=${filterProvince}&view=${viewMode}${taskParam}`);
+      // Para filtros múltiples, usamos query params repetidos
+      const provinceParams = filterProvinces.map(p => `province=${encodeURIComponent(p)}`).join('&');
+      const taskParams = filterTaskTypes.map(t => `taskType=${encodeURIComponent(t)}`).join('&');
+      const queryParams = [
+        `page=${currentPage}`,
+        `view=${viewMode}`,
+        `currentUserId=${user.uid}`, // Pasamos el ID del usuario actual para verificar likes
+        provinceParams,
+        taskParams
+      ].filter(Boolean).join('&');
+
+      const res = await fetch(`/api/posts?${queryParams}`);
 
       if (!res.ok) {
         console.error("Error en API:", res.status);
@@ -136,7 +148,7 @@ export default function Dashboard() {
     setPage(1);
     setHasMore(true);
     fetchPosts(true);
-  }, [filterProvince, viewMode, filterTaskType]);
+  }, [filterProvinces, viewMode, filterTaskTypes]);
 
   // Cargar contador de mensajes no leídos
   useEffect(() => {
@@ -208,6 +220,11 @@ export default function Dashboard() {
   // Función para ir a publicar el tipo correcto
   const handlePublish = (type: "OFFER" | "DEMAND") => {
     router.push(`/publish?type=${type}`);
+  };
+
+  // Función para ver detalle de oferta
+  const handleViewOffer = (postId: string) => {
+    router.push(`/offer/${postId}`);
   };
 
   // Función para contactar con el autor de una publicación
@@ -318,6 +335,9 @@ export default function Dashboard() {
 
       <div className="max-w-6xl mx-auto p-4 md:p-6">
 
+        {/* === OFERTAS RECOMENDADAS (IA) === */}
+        <RecommendedOffers userId={user.uid} userRole={userData?.role} />
+
         {/* === BOTONES DE ACCIÓN (PUBLICAR) === */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 flex flex-wrap gap-4 items-center shadow-black/5">
            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Publicar</h3>
@@ -380,44 +400,40 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* FILTRO PROVINCIAS */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3 mb-5 overflow-x-auto flex gap-2 no-scrollbar shadow-black/5">
-            <button onClick={() => setFilterProvince("todas")} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${filterProvince === "todas" ? "bg-slate-800 text-white shadow-md shadow-slate-500/20" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Todas</button>
-            {PROVINCIAS.map(p => (
-              <button key={p} onClick={() => setFilterProvince(p)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${filterProvince === p ? "bg-slate-800 text-white shadow-md shadow-slate-500/20" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{p}</button>
-            ))}
-          </div>
-
-          {/* FILTRO POR TIPO DE TAREA - Solo para demandas */}
-          {viewMode === "DEMANDS" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3 mb-5 overflow-x-auto">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterTaskType("")}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    filterTaskType === ""
-                      ? "bg-orange-600 text-white shadow-md shadow-orange-500/20"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  Todas
-                </button>
-                {TIPOS_TAREA.map((tipo) => (
-                  <button
-                    key={tipo}
-                    onClick={() => setFilterTaskType(tipo)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                      filterTaskType === tipo
-                        ? "bg-orange-600 text-white shadow-md shadow-orange-500/20"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {tipo}
-                  </button>
-                ))}
-              </div>
+          {/* FILTROS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            {/* Filtro de Provincias */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Filtrar por provincia
+              </label>
+              <MultiSelectDropdown
+                options={PROVINCIAS}
+                selected={filterProvinces}
+                onChange={setFilterProvinces}
+                placeholder="Todas las provincias"
+                allLabel="Todas"
+                color="slate"
+              />
             </div>
-          )}
+
+            {/* Filtro por Tipo de Tarea - Solo para demandas */}
+            {viewMode === "DEMANDS" && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Filtrar por tipo de tarea
+                </label>
+                <MultiSelectDropdown
+                  options={TIPOS_TAREA}
+                  selected={filterTaskTypes}
+                  onChange={setFilterTaskTypes}
+                  placeholder="Todos los tipos"
+                  allLabel="Todos"
+                  color="orange"
+                />
+              </div>
+            )}
+          </div>
 
           {/* LISTADO DE POSTS (CON ESTILOS SEGÚN TIPO) */}
           <div className="space-y-4">
@@ -429,7 +445,9 @@ export default function Dashboard() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">No hay publicaciones</h3>
-                <p className="text-slate-500 text-sm">Sé el primero en publicar en {filterProvince === "todas" ? "tu zona" : filterProvince}.</p>
+                <p className="text-slate-500 text-sm">
+                  Sé el primero en publicar{filterProvinces.length > 0 ? ` en ${filterProvinces.join(', ')}` : ''}.
+                </p>
               </div>
             ) : (
               posts.map((post) => (
@@ -440,58 +458,137 @@ export default function Dashboard() {
                 }`}>
 
                   {/* ETIQUETA DE TIPO */}
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-4 right-4 z-10 pointer-events-none">
                      {post.type === "OFFICIAL" && <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-emerald-200 shadow-sm">Empresa verificada</span>}
                      {post.type === "SHARED" && <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-3 py-1 rounded-full border border-slate-200">Compartida</span>}
                      {post.type === "DEMAND" && <span className="bg-orange-100 text-orange-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-orange-200">Demanda</span>}
                   </div>
 
-                  <div className="pr-20">
-                      <h3 className={`font-bold text-lg tracking-tight ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'} group-hover:text-emerald-600 transition-colors`}>
-                        {post.title}
-                      </h3>
-                      {/* Mostrar tipo de tarea solo para demandas */}
-                      {post.type === 'DEMAND' && post.taskType && (
-                        <span className="inline-block ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
-                          {post.taskType}
-                        </span>
-                      )}
-                      <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {post.location}{post.province && `, ${post.province}`}
-                      </p>
+                  {/* Área clickeable para ver detalle - SOLO el contenido principal */}
+                  <div
+                    className="cursor-pointer pb-4 border-b border-slate-100"
+                    onClick={() => handleViewOffer(post.id)}
+                  >
+                    <div className="pr-20">
+                        <h3 className={`font-bold text-lg tracking-tight ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'} group-hover:text-emerald-600 transition-colors`}>
+                          {post.title}
+                        </h3>
+                        {/* Mostrar tipo de tarea solo para demandas */}
+                        {post.type === 'DEMAND' && post.taskType && (
+                          <span className="inline-block ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                            {post.taskType}
+                          </span>
+                        )}
+                        <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {post.location}{post.province && `, ${post.province}`}
+                        </p>
+                    </div>
+
+                    <p className="mt-4 text-slate-600 text-sm line-clamp-3 bg-slate-50 p-4 rounded-xl italic border border-slate-100">
+                      "{post.description}"
+                    </p>
+
+                    {/* Etiquetas de condiciones laborales - Solo para ofertas */}
+                    {post.type !== 'DEMAND' && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {/* Tipo de contrato */}
+                        {post.contractType && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium border border-blue-100">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {post.contractType}
+                          </span>
+                        )}
+                        {/* Salario */}
+                        {post.salaryAmount && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium border border-green-100">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {post.salaryAmount}
+                            {post.salaryPeriod && `/${post.salaryPeriod === 'HORA' ? 'hora' : post.salaryPeriod === 'JORNADA' ? 'jornada' : post.salaryPeriod === 'MENSUAL' ? 'mes' : post.salaryPeriod === 'ANUAL' ? 'año' : post.salaryPeriod.toLowerCase()}`}
+                          </span>
+                        )}
+                        {/* Horas */}
+                        {post.hoursPerWeek && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-medium border border-purple-100">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {post.hoursPerWeek}h/semana
+                          </span>
+                        )}
+                        {/* Alojamiento */}
+                        {post.providesAccommodation && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-medium border border-amber-100">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Alojamiento
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <p className="mt-4 text-slate-600 text-sm line-clamp-3 bg-slate-50 p-4 rounded-xl italic border border-slate-100">
-                    "{post.description}"
-                  </p>
-
-                  <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                  {/* Footer - Avatar y Acciones (NO clickeable) */}
+                  <div className="mt-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        {/* Avatar con inicial */}
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${
-                            post.type === 'DEMAND' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
-                            post.type === 'OFFICIAL' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
-                            'bg-gradient-to-br from-slate-400 to-slate-500'
-                        }`}>
-                            {post.company?.companyName?.[0] || post.publisher?.workerProfile?.fullName?.[0] || post.publisher?.foremanProfile?.fullName?.[0] || "?"}
-                        </div>
+                        {/* Avatar con foto o inicial */}
+                        {post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage ? (
+                          <img
+                            src={post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage}
+                            alt="Avatar"
+                            className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-200"
+                          />
+                        ) : (
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${
+                              post.type === 'DEMAND' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
+                              post.type === 'OFFICIAL' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
+                              'bg-gradient-to-br from-slate-400 to-slate-500'
+                          }`}>
+                              {post.company?.companyName?.[0] || post.publisher?.workerProfile?.fullName?.[0] || post.publisher?.foremanProfile?.fullName?.[0] || "?"}
+                          </div>
+                        )}
                         <span className="text-sm text-slate-700 font-medium">
                             {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
                         </span>
                     </div>
-                    <button
-                      onClick={() => handleContact(post)}
-                      className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1"
-                    >
-                      Contactar
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </button>
+
+                    {/* Botón de contacto y acciones sociales */}
+                    <div className="flex items-center gap-3">
+                      {/* Acciones sociales */}
+                      <PostActions
+                        postId={post.id}
+                        initialLiked={post.liked || false}
+                        initialLikesCount={post.likesCount || 0}
+                        initialSharesCount={post.sharesCount || 0}
+                        isOwner={
+                          (post.companyId && userData?.profile?.id === post.companyId) ||
+                          (post.publisherId && user.uid === post.publisherId)
+                        }
+                        type={post.type}
+                      />
+
+                      {/* Botón de contacto */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContact(post);
+                        }}
+                        className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
+                      >
+                        Contactar
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

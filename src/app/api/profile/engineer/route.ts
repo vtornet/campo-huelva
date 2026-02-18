@@ -18,26 +18,26 @@ export async function GET(request: Request) {
   }
 }
 
-// PUT: Guardar perfil (Upsert con Auto-Reparación)
+// PUT: Guardar perfil (Upsert con Auto-Creación)
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    // Desestructuramos los campos que vienen del formulario
     const {
       uid, email,
       fullName, city, province, phone,
       collegiateNumber,
       yearsExperience, cropExperience,
       specialties, servicesOffered,
-      isAvailable, canTravel, bio
+      isAvailable, canTravel, bio,
+      profileImage
     } = body;
 
     if (!uid) {
       return NextResponse.json({ error: "Faltan datos (UID)" }, { status: 400 });
     }
 
-    // 1. AUTO-REPARACIÓN: Aseguramos que el usuario exista en la tabla User con rol ENGINEER
+    // 1. AUTO-CREACIÓN: Aseguramos que el usuario existe en la tabla User con rol ENGINEER
     await prisma.user.upsert({
       where: { id: uid },
       update: {}, // Si existe, no tocamos nada del usuario base
@@ -51,35 +51,32 @@ export async function PUT(request: Request) {
     // 2. UPSERT DEL PERFIL DE INGENIERO
     const expInt = yearsExperience ? parseInt(yearsExperience) || 0 : null;
 
+    const profileData: any = {
+      fullName, city, province, phone,
+      collegiateNumber,
+      yearsExperience: expInt,
+      cropExperience,
+      specialties,
+      servicesOffered,
+      isAvailable,
+      canTravel,
+      bio
+    };
+
+    if (profileImage !== undefined) {
+      profileData.profileImage = profileImage;
+    }
+
     const updatedProfile = await prisma.engineerProfile.upsert({
       where: { userId: uid },
-      update: {
-        fullName, city, province, phone,
-        collegiateNumber,
-        yearsExperience: expInt,
-        cropExperience,      // String[]
-        specialties,         // String[]
-        servicesOffered,     // String[]
-        isAvailable,
-        canTravel,
-        bio
-      },
+      update: profileData,
       create: {
         userId: uid,
-        fullName, city, province, phone,
-        collegiateNumber,
-        yearsExperience: expInt,
-        cropExperience,
-        specialties,
-        servicesOffered,
-        isAvailable,
-        canTravel,
-        bio
+        ...profileData
       }
     });
 
     return NextResponse.json(updatedProfile);
-
   } catch (error) {
     console.error("Error guardando perfil ingeniero:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

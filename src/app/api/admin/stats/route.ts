@@ -9,20 +9,25 @@ export async function GET() {
       totalUsers,
       workers, // USER role
       foremen, // FOREMAN role
+      engineers, // ENGINEER role
       totalCompanies,
       totalPosts,
       pendingReports,
       pendingVerifications,
+      pendingApprovals,
       bannedUsers,
       silencedUsers,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: "USER" } }),
       prisma.user.count({ where: { role: "FOREMAN" } }),
+      prisma.user.count({ where: { role: "ENGINEER" } }),
       prisma.companyProfile.count(),
       prisma.post.count(),
       prisma.report.count({ where: { status: "PENDING" } }),
       prisma.companyProfile.count({ where: { isVerified: false } }),
+      // Empresas verificadas pero no aprobadas
+      prisma.companyProfile.count({ where: { isVerified: true, isApproved: false } }),
       prisma.user.count({ where: { isBanned: true } }),
       prisma.user.count({ where: { isSilenced: true } }),
     ]);
@@ -31,10 +36,12 @@ export async function GET() {
       totalUsers,
       workers,
       foremen,
+      engineers,
       totalCompanies,
       totalPosts,
       pendingReports,
       pendingVerifications,
+      pendingApprovals,
       bannedUsers,
       silencedUsers,
     });

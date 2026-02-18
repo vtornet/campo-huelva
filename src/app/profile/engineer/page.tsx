@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS } from "@/lib/constants";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
+import AIBioGenerator from "@/components/AIBioGenerator";
 
 const ESPECIALIDADES_INGENIERO = [
   "Gestión de riego", "Fitopatología", "Nutrición vegetal",
@@ -30,6 +32,34 @@ export default function EngineerProfilePage() {
     }
   }, [user, authLoading, router]);
 
+  // Cargar perfil existente
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/profile/engineer?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id) {
+            setFormData({
+              fullName: data.fullName || "",
+              phone: data.phone || "",
+              province: data.province || "",
+              city: data.city || "",
+              collegiateNumber: data.collegiateNumber || "",
+              yearsExperience: data.yearsExperience?.toString() || "",
+              bio: data.bio || "",
+              cropExperience: data.cropExperience || [],
+              specialties: data.specialties || [],
+              servicesOffered: data.servicesOffered || [],
+              isAvailable: data.isAvailable ?? true,
+              canTravel: data.canTravel || false,
+              profileImage: data.profileImage || "",
+            });
+          }
+        })
+        .catch(err => console.error("Error cargando perfil:", err));
+    }
+  }, [user]);
+
   // Mostrar loading mientras verificamos autenticación
   if (authLoading) {
     return (
@@ -56,7 +86,8 @@ export default function EngineerProfilePage() {
     specialties: [] as string[],
     servicesOffered: [] as string[],
     isAvailable: true,
-    canTravel: false
+    canTravel: false,
+    profileImage: ""
   });
 
   const toggleItem = (list: string[], item: string, field: keyof typeof formData) => {
@@ -104,6 +135,14 @@ export default function EngineerProfilePage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Perfil de Ingeniero Técnico Agrícola</h1>
           <p className="text-slate-500">Muestra tus credenciales y servicios profesionales.</p>
+        </div>
+
+        {/* Foto de perfil */}
+        <div className="flex justify-center mb-8">
+          <ProfileImageUpload
+            currentImage={formData.profileImage}
+            onImageUploaded={(url) => setFormData({ ...formData, profileImage: url })}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -266,11 +305,23 @@ export default function EngineerProfilePage() {
             </label>
           </div>
 
-          {/* Bio */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Sobre ti / Descripción profesional</label>
-            <textarea placeholder="Ej: Ingeniero Técnico Agrícola con 10 años de experiencia en gestión de explotaciones de fresa y cítricos. Ofrezco asesoramiento técnico, redacción de proyectos y gestión de subvenciones..." rows={3} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white transition-all duration-200"
-              value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} />
+          {/* BIO CON IA */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-5 rounded-2xl border border-purple-100">
+            <AIBioGenerator
+              value={formData.bio}
+              onChange={(value) => setFormData({ ...formData, bio: value })}
+              rol="ENGINEER"
+              profileData={{
+                fullName: formData.fullName,
+                collegiateNumber: formData.collegiateNumber,
+                yearsExperience: formData.yearsExperience ? parseInt(formData.yearsExperience) : undefined,
+                cropExperience: formData.cropExperience,
+                specialties: formData.specialties,
+                servicesOffered: formData.servicesOffered,
+              }}
+              placeholder="Describe tu formación, experiencia y servicios profesionales..."
+              label="Sobre ti / Descripción profesional"
+            />
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white font-semibold py-4 rounded-2xl hover:from-purple-700 hover:to-purple-600 transition-all duration-200 shadow-lg shadow-purple-500/25 disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none text-lg flex items-center justify-center gap-2">

@@ -130,3 +130,33 @@ export const TIPOS_TAREA = [
   "Limpieza", "Embalaje", "Manipulación", "Conducción tractor",
   "Tratamientos", "Invernadero", "Cosecha", "Otros"
 ];
+
+// Tipos de contrato para ofertas de empleo
+export const TIPOS_CONTRATO = [
+  "Eventual por temporada",
+  "Fijo discontinuo",
+  "Obra o labor determinada",
+  "Indefinido",
+  "Prácticas",
+  "Formación",
+  "Autónomo",
+  "A determinar"
+];
+
+// Periodos salariales para ofertas
+export const PERIODOS_SALARIALES = [
+  { value: "HORA", label: "Por hora" },
+  { value: "JORNADA", label: "Por jornada" },
+  { value: "MENSUAL", label: "Mensual" },
+  { value: "ANUAL", label: "Anual" },
+  { value: "TEMPORADA", label: "Por temporada" },
+  { value: "A_CONVENIR", label: "A convenir" }
+];
+
+// Jornadas laborales
+export const TIPOS_JORNADA = [
+  { value: "COMPLETA", label: "Jornada completa", horas: 40 },
+  { value: "MEDIA", label: "Media jornada", horas: 20 },
+  { value: "PART_TIME", label: "Part-time", horas: 15 },
+  { value: "POR_HORAS", label: "Por horas", horas: null }
+];

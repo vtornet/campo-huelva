@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
+import AIBioGenerator from "@/components/AIBioGenerator";
 
 const ESPECIALIDADES = [
     "Fresa - Recolección", "Fresa - Plantación",
@@ -25,6 +27,34 @@ export default function ForemanProfilePage() {
     }
   }, [user, authLoading, router]);
 
+  // Cargar perfil existente
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/profile/foreman?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id) {
+            setFormData({
+              fullName: data.fullName || "",
+              phone: data.phone || "",
+              province: data.province || "",
+              city: data.city || "",
+              crewSize: data.crewSize?.toString() || "",
+              yearsExperience: data.yearsExperience?.toString() || "",
+              bio: data.bio || "",
+              hasVan: data.hasVan || false,
+              needsBus: data.needsBus || false,
+              ownTools: data.ownTools || false,
+              workArea: data.workArea || [],
+              specialties: data.specialties || [],
+              profileImage: data.profileImage || "",
+            });
+          }
+        })
+        .catch(err => console.error("Error cargando perfil:", err));
+    }
+  }, [user]);
+
   // Mostrar loading mientras verificamos autenticación
   if (authLoading) {
     return (
@@ -44,7 +74,8 @@ export default function ForemanProfilePage() {
     crewSize: "", yearsExperience: "", bio: "",
     hasVan: false, needsBus: false, ownTools: false,
     workArea: [] as string[],
-    specialties: [] as string[]
+    specialties: [] as string[],
+    profileImage: ""
   });
 
   const toggleItem = (list: string[], item: string, field: "workArea" | "specialties") => {
@@ -91,6 +122,14 @@ export default function ForemanProfilePage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Perfil de manijero</h1>
           <p className="text-slate-500">Ofrece los servicios de tu cuadrilla a las empresas.</p>
+        </div>
+
+        {/* Foto de perfil */}
+        <div className="flex justify-center mb-8">
+          <ProfileImageUpload
+            currentImage={formData.profileImage}
+            onImageUploaded={(url) => setFormData({ ...formData, profileImage: url })}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -239,10 +278,24 @@ export default function ForemanProfilePage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Más detalles sobre tu cuadrilla</label>
-            <textarea placeholder="Ej: Somos una cuadrilla seria de Coria del Río, expertos en cítricos..." rows={3} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
-              value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} />
+          {/* BIO CON IA */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-5 rounded-2xl border border-purple-100">
+            <AIBioGenerator
+              value={formData.bio}
+              onChange={(value) => setFormData({ ...formData, bio: value })}
+              rol="FOREMAN"
+              profileData={{
+                fullName: formData.fullName,
+                crewSize: formData.crewSize ? parseInt(formData.crewSize) : undefined,
+                yearsExperience: formData.yearsExperience ? parseInt(formData.yearsExperience) : undefined,
+                hasVan: formData.hasVan,
+                ownTools: formData.ownTools,
+                specialties: formData.specialties,
+                workArea: formData.workArea,
+              }}
+              placeholder="Describe tu cuadrilla, experiencia y recursos disponibles..."
+              label="Sobre tu cuadrilla (descripción profesional)"
+            />
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white font-semibold py-4 rounded-2xl hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-lg shadow-orange-500/25 disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none text-lg flex items-center justify-center gap-2">

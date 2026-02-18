@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(if exist .nextdevlock del .nextdevlock)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "WebSearch",
+      "Bash(npm install:*)"
     ]
   }
 }

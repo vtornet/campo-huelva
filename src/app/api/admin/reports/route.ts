@@ -18,14 +18,63 @@ export async function GET(request: Request) {
 
     // Filtro por tipo
     if (type !== "all") {
-      where.reportType = type;
+      where.type = type;
     }
 
     const reports = await prisma.report.findMany({
       where,
       include: {
-        reporter: { select: { email: true } },
-        reportedUser: { select: { email: true } },
+        // Quién hace la denuncia
+        reporter: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            workerProfile: { select: { fullName: true } },
+            foremanProfile: { select: { fullName: true } },
+            companyProfile: { select: { companyName: true } },
+          }
+        },
+        // Usuario denunciado (si es una denuncia de usuario)
+        reportedUser: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isBanned: true,
+            isSilenced: true,
+            workerProfile: { select: { fullName: true, city: true, province: true } },
+            foremanProfile: { select: { fullName: true, city: true, province: true } },
+            companyProfile: { select: { companyName: true, city: true, province: true, isApproved: true, isVerified: true } },
+          }
+        },
+        // Publicación denunciada (si es una denuncia de publicación)
+        reportedPost: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            type: true,
+            status: true,
+            location: true,
+            province: true,
+            createdAt: true,
+            company: {
+              select: {
+                id: true,
+                companyName: true,
+                isVerified: true,
+              }
+            },
+            publisher: {
+              select: {
+                id: true,
+                workerProfile: { select: { fullName: true } },
+                foremanProfile: { select: { fullName: true } },
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       take: 50,
