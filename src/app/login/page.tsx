@@ -144,6 +144,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none"
                 required
+                autoComplete="email"
               />
             </div>
             <div>
@@ -155,6 +156,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-emerald-500 focus:outline-none"
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -194,6 +196,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none"
                 required
+                autoComplete="email"
               />
             </div>
             <div>
@@ -206,6 +209,7 @@ export default function LoginPage() {
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-emerald-500 focus:outline-none"
                   required
                   minLength={6}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -235,6 +239,7 @@ export default function LoginPage() {
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-emerald-500 focus:outline-none"
                   required
                   minLength={6}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
