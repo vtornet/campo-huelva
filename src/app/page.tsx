@@ -29,6 +29,10 @@ export default function Dashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
 
+  // Estado para seguimiento de inscripciones
+  const [applications, setApplications] = useState<Record<string, string>>({}); // postId -> status
+  const [applying, setApplying] = useState<Record<string, boolean>>({}); // postId -> loading
+
    // 1. CARGA DE DATOS Y PROTECCIÓN
   useEffect(() => {
     if (!loading) {
@@ -194,6 +198,33 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  // Necesitamos declarar role antes del useEffect que lo usa
+  const profile = userData?.profile;
+  const role = userData?.role;
+
+  // Cargar inscripciones del usuario
+  useEffect(() => {
+    if (user && role !== 'COMPANY') {
+      const loadApplications = async () => {
+        try {
+          const res = await fetch(`/api/applications?userId=${user.uid}`);
+          if (res.ok) {
+            const data = await res.json();
+            // Crear mapa de postId -> status
+            const appMap: Record<string, string> = {};
+            data.forEach((app: any) => {
+              appMap[app.postId] = app.status;
+            });
+            setApplications(appMap);
+          }
+        } catch (error) {
+          console.error("Error loading applications:", error);
+        }
+      };
+      loadApplications();
+    }
+  }, [user, role]);
+
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>;
   if (!user) return null;
@@ -216,9 +247,6 @@ export default function Dashboard() {
     );
   }
 
-  const profile = userData?.profile;
-  const role = userData?.role;
-
   // Función para ir a publicar el tipo correcto
   const handlePublish = (type: "OFFER" | "DEMAND") => {
     router.push(`/publish?type=${type}`);
@@ -229,7 +257,87 @@ export default function Dashboard() {
     router.push(`/offer/${postId}`);
   };
 
-  // Función para contactar con el autor de una publicación
+  // Función para inscribirse en una oferta
+  const handleApply = async (post: any) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    // Las empresas no se inscriben
+    if (role === 'COMPANY') {
+      alert("Las empresas no pueden inscribirse en ofertas");
+      return;
+    }
+
+    // No puedes inscribirte en tu propia publicación
+    if (post.company?.userId === user.uid || post.publisherId === user.uid) {
+      alert("No puedes inscribirte en tu propia oferta");
+      return;
+    }
+
+    // No te puedes inscribir en demandas
+    if (post.type === 'DEMAND') {
+      alert("Las demandas son publicaciones de trabajadores buscando empleo. Usa el botón de contacto para conectar directamente.");
+      return;
+    }
+
+    // Si ya está inscrito, permitir retirarse
+    const currentStatus = applications[post.id];
+    if (currentStatus && currentStatus !== "WITHDRAWN") {
+      const confirmWithdraw = confirm("Ya estás inscrito en esta oferta. ¿Quieres retirar tu inscripción?");
+      if (!confirmWithdraw) return;
+
+      setApplying(prev => ({ ...prev, [post.id]: true }));
+      try {
+        const res = await fetch(`/api/posts/${post.id}/apply?userId=${user.uid}`, {
+          method: "DELETE"
+        });
+        if (res.ok) {
+          setApplications(prev => {
+            const newApps = { ...prev };
+            delete newApps[post.id];
+            return newApps;
+          });
+          alert("Inscripción retirada correctamente");
+        } else {
+          const data = await res.json();
+          alert(data.error || "Error al retirar inscripción");
+        }
+      } catch (error) {
+        console.error("Error withdrawing:", error);
+        alert("Error al retirar inscripción");
+      } finally {
+        setApplying(prev => ({ ...prev, [post.id]: false }));
+      }
+      return;
+    }
+
+    setApplying(prev => ({ ...prev, [post.id]: true }));
+    try {
+      const res = await fetch(`/api/posts/${post.id}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setApplications(prev => ({ ...prev, [post.id]: "PENDING" }));
+        alert("¡Te has inscrito correctamente en la oferta! La empresa será notificada.");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Error al inscribirse");
+      }
+    } catch (error) {
+      console.error("Error applying:", error);
+      alert("Error al inscribirse");
+    } finally {
+      setApplying(prev => ({ ...prev, [post.id]: false }));
+    }
+  };
+
+  // Función para contactar (solo para demandas o si ya estás inscrito)
   const handleContact = async (post: any) => {
     if (!user) {
       router.push("/login");
@@ -322,6 +430,28 @@ export default function Dashboard() {
                 </span>
               )}
             </button>
+            {/* Botón de inscripciones o gestión de candidatos */}
+            {role === 'COMPANY' ? (
+              <button
+                onClick={() => router.push("/applications")}
+                className="relative bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-xl transition-all duration-200"
+                title="Gestionar candidatos"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/my-applications")}
+                className="relative bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-2 rounded-xl transition-all duration-200"
+                title="Mis inscripciones"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </button>
+            )}
             <button onClick={() => router.push("/profile")} className="flex items-center gap-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-2 px-3 rounded-xl transition-all duration-200 text-sm font-medium">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -564,19 +694,103 @@ export default function Dashboard() {
                           </span>
                       </div>
 
-                      {/* Botón de contacto */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleContact(post);
-                        }}
-                        className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                      >
-                        Contactar
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                      </button>
+                      {/* Botón de acción según tipo y rol */}
+                      {role === 'COMPANY' ? (
+                        // Para empresas: botón de contacto (para demandas)
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleContact(post);
+                          }}
+                          className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
+                        >
+                          Contactar
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </button>
+                      ) : post.type === 'DEMAND' ? (
+                        // Para demandas: botón de contacto
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleContact(post);
+                          }}
+                          className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
+                        >
+                          Contactar
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </button>
+                      ) : (
+                        // Para ofertas: botón de inscribirse
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApply(post);
+                          }}
+                          disabled={applying[post.id]}
+                          className={`text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm backdrop-blur-sm border ${
+                            applications[post.id]
+                              ? applications[post.id] === 'ACCEPTED'
+                                ? 'bg-green-100 text-green-700 border-green-200'
+                                : applications[post.id] === 'REJECTED'
+                                  ? 'bg-red-50 text-red-600 border-red-200'
+                                  : applications[post.id] === 'CONTACTED'
+                                    ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                              : 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700'
+                          } ${applying[post.id] ? 'opacity-70 cursor-wait' : ''}`}
+                        >
+                          {applying[post.id] ? (
+                            <>
+                              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Procesando...
+                            </>
+                          ) : applications[post.id] ? (
+                            applications[post.id] === 'ACCEPTED' ? (
+                              <>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Aceptado
+                              </>
+                            ) : applications[post.id] === 'REJECTED' ? (
+                              <>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                No seleccionado
+                              </>
+                            ) : applications[post.id] === 'CONTACTED' ? (
+                              <>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                Contactado
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Inscrito
+                              </>
+                            )
+                          ) : (
+                            <>
+                              Inscribirse
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
 
                     {/* Segunda fila: Acciones sociales (Like, Compartir, Denunciar) */}

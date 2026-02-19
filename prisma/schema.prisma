@@ -252,10 +252,19 @@ model Application {
   post      Post     @relation(fields: [postId], references: [id])
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  status    ApplicationStatus @default(PENDING)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([postId, userId]) // No puedes inscribirte 2 veces a la misma
+}
+
+enum ApplicationStatus {
+  PENDING     // Recién inscrito
+  ACCEPTED    // Empresa marca como interesante
+  REJECTED    // Empresa descarta al candidato
+  CONTACTED   // Empresa ya contactó al candidato
+  WITHDRAWN   // Candidato se retira
 }
 
 // === LIKES ===
