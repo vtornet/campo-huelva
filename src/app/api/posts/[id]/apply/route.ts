@@ -92,7 +92,7 @@ export async function POST(
     });
 
     // Crear notificación a la empresa
-    if (companyId && companyId !== post.companyId) {
+    if (companyId) {
       const applicantName = application.user.workerProfile?.fullName ||
                            application.user.foremanProfile?.fullName ||
                            "Un candidato";
