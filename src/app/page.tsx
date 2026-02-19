@@ -72,6 +72,8 @@ export default function Dashboard() {
                   router.push("/profile/company");
                 } else if (data.role === 'FOREMAN') {
                   router.push("/profile/foreman");
+                } else if (data.role === 'ENGINEER') {
+                  router.push("/profile/engineer");
                 } else {
                   router.push("/profile/worker");
                 }

@@ -126,6 +126,7 @@ export default function UserProfilePage() {
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg ${
                   role === 'FOREMAN' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
                   role === 'COMPANY' ? 'bg-gradient-to-br from-blue-400 to-blue-500' :
+                  role === 'ENGINEER' ? 'bg-gradient-to-br from-purple-400 to-purple-500' :
                   'bg-gradient-to-br from-emerald-400 to-emerald-500'
                 }`}>
                   {(profile?.fullName || profile?.companyName || user.email)?.[0]?.toUpperCase() || "?"}
@@ -136,6 +137,7 @@ export default function UserProfilePage() {
                 <p className="text-sm text-slate-500">
                   {role === 'FOREMAN' ? 'Manijero' :
                    role === 'COMPANY' ? 'Empresa' :
+                   role === 'ENGINEER' ? 'Ingeniero Técnico Agrícola' :
                    'Trabajador'}
                   {" · "}{user.email}
                 </p>
@@ -145,6 +147,7 @@ export default function UserProfilePage() {
               onClick={() => {
                 if (role === 'COMPANY') router.push("/profile/company");
                 else if (role === 'FOREMAN') router.push("/profile/foreman");
+                else if (role === 'ENGINEER') router.push("/profile/engineer");
                 else router.push("/profile/worker");
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
@@ -279,6 +282,61 @@ export default function UserProfilePage() {
                         <div className="flex flex-wrap gap-2">
                           {profile.specialties.map((tag: string) => (
                             <span key={tag} className="bg-orange-50 text-orange-800 text-sm px-3 py-1.5 rounded-full font-medium border border-orange-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Ingeniero */}
+                {role === 'ENGINEER' && (
+                  <div>
+                    <h3 className="font-semibold text-slate-800 mb-3">Credenciales Profesionales</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-purple-50/80 p-4 rounded-xl border border-purple-100/50 text-center">
+                        <span className="block text-2xl font-bold text-purple-800">{profile.yearsExperience || 0}</span>
+                        <span className="text-sm text-purple-600 font-medium">Años de experiencia</span>
+                      </div>
+                      {profile.collegiateNumber && (
+                        <div className="bg-purple-50/80 p-4 rounded-xl border border-purple-100/50 text-center">
+                          <span className="block text-lg font-bold text-purple-800">{profile.collegiateNumber}</span>
+                          <span className="text-sm text-purple-600 font-medium">Nº Colegiado</span>
+                        </div>
+                      )}
+                    </div>
+                    {profile.canTravel !== undefined && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {profile.canTravel && <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium border border-blue-100/50">Disponible para desplazamientos</span>}
+                        {profile.isAvailable && <span className="bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-100/50">Disponible para proyectos</span>}
+                      </div>
+                    )}
+                    {profile.cropExperience && profile.cropExperience.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-slate-600 mb-2">Experiencia en cultivos:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.cropExperience.map((tag: string) => (
+                            <span key={tag} className="bg-purple-50 text-purple-800 text-sm px-3 py-1.5 rounded-full font-medium border border-purple-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {profile.specialties && profile.specialties.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-slate-600 mb-2">Especialidades técnicas:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.specialties.map((tag: string) => (
+                            <span key={tag} className="bg-indigo-50 text-indigo-800 text-sm px-3 py-1.5 rounded-full font-medium border border-indigo-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {profile.servicesOffered && profile.servicesOffered.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-slate-600 mb-2">Servicios ofrecidos:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.servicesOffered.map((tag: string) => (
+                            <span key={tag} className="bg-slate-100 text-slate-700 text-sm px-3 py-1.5 rounded-full font-medium border border-slate-200">{tag}</span>
                           ))}
                         </div>
                       </div>
