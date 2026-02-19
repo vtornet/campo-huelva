@@ -101,44 +101,67 @@ export default function PostActions({
 
           const shareUrl = `${window.location.origin}/offer/${postId}`;
 
-          // Primero intentar con navigator.share (mejor en móvil)
-          if (navigator.share) {
-            await navigator.share({
-              title: shareTitle,
-              text: shareText,
-              url: shareUrl
-            });
-          } else if (navigator.clipboard && window.isSecureContext) {
-            // Fallback: copiar al portapapeles (solo en HTTPS)
-            await navigator.clipboard.writeText(shareUrl);
-            alert('¡Enlace copiado al portapapeles!');
-          } else {
-            // Último fallback: método antiguo con textarea
+          // Función para copiar al portapapeles
+          const copyToClipboard = async (): Promise<boolean> => {
+            if (navigator.clipboard && window.isSecureContext) {
+              try {
+                await navigator.clipboard.writeText(shareUrl);
+                return true;
+              } catch (err) {
+                console.error('Error con clipboard API:', err);
+              }
+            }
+            // Fallback con execCommand
             const textArea = document.createElement('textarea');
             textArea.value = shareUrl;
             textArea.style.position = 'fixed';
             textArea.style.left = '-999999px';
+            textArea.style.top = '0';
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
             try {
-              document.execCommand('copy');
-              alert('¡Enlace copiado al portapapeles!');
-            } catch (err) {
-              console.error('Error al copiar:', err);
-              alert('No se pudo copiar el enlace. Por favor, copia esta URL: ' + shareUrl);
-            } finally {
+              const successful = document.execCommand('copy');
               document.body.removeChild(textArea);
+              return successful;
+            } catch (err) {
+              document.body.removeChild(textArea);
+              console.error('Error al copiar:', err);
+              return false;
             }
+          };
+
+          // Intentar compartir con navigator.share
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl
+              });
+              // Si share funcionó, ya terminamos
+              return;
+            } catch (shareError: any) {
+              // Si el usuario canceló, no hacer nada más
+              if (shareError.name === 'AbortError') {
+                return;
+              }
+              // Si hay otro error, intentar copiar al portapapeles
+              console.log('navigator.share falló, intentando copiar al portapapeles:', shareError);
+            }
+          }
+
+          // Si no hay navigator.share o falló, copiar al portapapeles
+          const copied = await copyToClipboard();
+          if (copied) {
+            alert('¡Enlace copiado al portapapeles!');
+          } else {
+            alert('No se pudo copiar el enlace. Por favor, copia esta URL:\n' + shareUrl);
           }
         }
       }
     } catch (error) {
       console.error('Error al compartir:', error);
-      // Si el usuario canceló el compartir, no mostrar error
-      if ((error as Error).name !== 'AbortError') {
-        alert('Error al compartir. Por favor, inténtalo de nuevo.');
-      }
     } finally {
       setLoading(false);
     }
