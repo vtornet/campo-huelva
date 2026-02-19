@@ -23,6 +23,8 @@ Construir una red profesional y de empleo fiable, centrada exclusivamente en el 
 
 Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones anteriores, pero cualquier cambio importante debe discutirse previamente.
 
+**Despliegue**: Railway con dominio propio https://agroredjob.com
+
 ## Comandos de Desarrollo
 
 # Desarrollo
@@ -41,6 +43,9 @@ npm run lint
 npx prisma generate
 npx prisma db push
 
+# Forzar migración con pérdida de datos (cuando se eliminan columnas)
+npx prisma db push --accept-data-loss
+
 ## Arquitectura Técnica
 
 ### Sistema de Autenticación Dual
@@ -52,26 +57,35 @@ La aplicación utiliza **Firebase Auth** para la autenticación en el frontend y
 
 ### Roles de Usuario
 Definidos en `prisma/schema.prisma`:
-- **USER** (Trabajador): Busca empleo individualmente.
+- **USER** (Trabajador/Peón): Busca empleo individualmente.
 - **FOREMAN** (Manijero): Líder de cuadrilla, ofrece un equipo completo y formado.
+- **ENGINEER** (Ingeniero Técnico Agrícola): Asesoramiento, peritajes, gestión de cultivos.
 - **COMPANY** (Empresa): Contrata trabajadores o cuadrillas.
 
-Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, `CompanyProfile`.
+**Nuevos roles pendientes de implementar**:
+- **ENCARGADO** (Capataz/Encargado): Responsable de finca, gestión de day workers, organización de tareas.
+- **TRACTORISTA** (Tractorista): Especialista en conducción y mantenimiento de maquinaria agrícola.
+
+Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, `EngineerProfile`, `CompanyProfile`.
 
 ### Modelos de Datos Clave
 
-**Sistema de Publicaciones** (anteriormente "ofertas", renombrado para ser más genérico):
+**Sistema de Publicaciones**:
 - `PostType.OFFICIAL`: Ofertas verificadas publicadas por empresas (de pago).
-- `PostType.SHARED`: Ofertas externas compartidas por usuarios (actualmente en revisión su continuidad para evitar que empresas eludan el pago).
+- `PostType.SHARED`: Ofertas externas compartidas por usuarios (en revisión).
 - `PostType.DEMAND`: Demandas de empleo publicadas por trabajadores o jefes de cuadrilla.
 
 **Perfiles Detallados**:
 - **Trabajador**: Datos personales, vehículo, disponibilidad, carnets (fitosanitario, manipulador de alimentos), experiencia por cultivos y tareas, años de campaña.
-- **Jefe de cuadrilla**: Todo lo anterior + número de componentes de la cuadrilla, disponibilidad de furgoneta/herramientas. **No puede fijar precio**, ya que debe ajustarse al convenio colectivo de la provincia, lo que aporta transparencia y legalidad.
-- **Ingeniero**: Datos técnicos, especialidad, número ROPO, colegiatura.
+- **Jefe de cuadrilla**: Todo lo anterior + número de componentes de la cuadrilla, disponibilidad de furgoneta/herramientas.
+- **Ingeniero**: Datos técnicos, especialidad, número ROPO/colegiado, experiencia en cultivos, servicios ofrecidos.
 - **Empresa**: Datos fiscales, y tras verificación manual, acceso a publicación de ofertas y BBDD.
 
-**Lógica de Resolución de Perfil**: El endpoint `/api/user/me` implementa una lógica inteligente: si el rol de un usuario no coincide con su perfil existente, devuelve el perfil que realmente existe con el rol corregido. Esto evita errores de interfaz por desajustes.
+**Sistema de Inscripciones (Applications)**:
+- Los trabajadores se inscriben en ofertas.
+- Al inscribirse, **autorizan automáticamente** que la empresa vea sus datos de contacto (teléfono, email).
+- Las empresas pueden ver todos los datos de contacto de los inscritos.
+- Estados: PENDING, ACCEPTED, REJECTED, CONTACTED, WITHDRAWN.
 
 ## Estructura de la Aplicación (App Router)
 
@@ -79,25 +93,30 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - `page.tsx`: Dashboard principal con feed filtrable por provincia y tipo de publicación.
   - `login/`: Autenticación con Firebase.
   - `onboarding/`: Selección de rol para nuevos usuarios.
-  - `profile/worker/`, `profile/foreman/`, `profile/company/`: Formularios de edición de perfil.
+  - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`: Formularios de edición de perfil.
   - `publish/`: Creación de publicaciones con selección de tipo.
+  - `applications/`: Gestión de candidatos para empresas (ver perfiles completos, datos de contacto).
+  - `my-applications/`: Lista de inscripciones del trabajador.
 - `src/app/api/`
   - `register/`: Crea el usuario en Prisma a partir de la autenticación de Firebase.
   - `user/me/`: Devuelve los datos del usuario con resolución de perfil.
   - `posts/`: Obtiene el feed (GET) y crea publicaciones (POST).
+  - `posts/[id]/apply`: Inscribirse en una oferta (POST), ver inscritos (GET), retirarse (DELETE).
+  - `applications/[id]`: Actualizar estado de inscripción (PUT).
+  - `applications/`: Listar inscripciones del usuario (GET).
 - `src/context/AuthContext.tsx`: Provee el estado de autenticación mediante el hook `useAuth()`.
 - `src/lib/constants.ts`: Listas de provincias, tipos de cultivo, municipios de Huelva, etc.
 
 ### Patrones Importantes
 
-- **Comprobación de Perfil Completo**: En `page.tsx`, los usuarios son redirigidos a onboarding si su perfil carece de nombre (`fullName` o `companyName`). Esto se aplica antes de mostrar el dashboard.
-- **Asociación de Autor en Publicaciones**: Al crear una publicación, la API asocia automáticamente el publicador correcto:
+- **Comprobación de Perfil Completo**: En `page.tsx`, los usuarios son redirigidos a onboarding si su perfil carece de nombre (`fullName` o `companyName`).
+- **Asociación de Autor en Publicaciones**:
   - Empresas → `companyId` + tipo OFFICIAL.
   - Trabajadores/Jefes de cuadrilla → `publisherId` + tipo SHARED o DEMAND.
 - **Código de Colores por Rol**:
   - Trabajadores: Tema verde (`bg-green-*`, `text-green-*`)
   - Jefes de cuadrilla: Tema naranja (`bg-orange-*`, `text-orange-*`)
-  - Empresas: Tema azul (menos usado, predomina el verde)
+  - Empresas: Tema azul
 
 ### Variables de Entorno Requeridas
 
@@ -110,25 +129,118 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
 **Para la Base de Datos (privadas):**
-- `DATABASE_URL`: Cadena de conexión a PostgreSQL.
+- `DATABASE_URL`: Cadena de conexión a PostgreSQL (Railway).
 
-## Funcionalidades Clave (MVP y Visión)
+## Tareas Pendientes (Orden de Prioridad)
 
-### Actuales (en el código)
-- Feed con filtros por provincia y tarea (recolección, poda, manipulación...).
+### 1. PWA / Instalación (CRÍTICO para móvil)
+- [ ] Manifest.json completo con nombre, iconos, colores
+- [ ] Service Worker para modo offline
+- [ ] Iconos de la app en múltiples tamaños (72, 96, 128, 144, 152, 192, 384, 512)
+- [ ] Meta tags PWA (apple-touch-icon, theme-color, mobile-web-app-capable)
+- [ ] Estrategia de caché para contenido estático y API
+
+### 2. Nuevos Perfiles de Usuario
+- [ ] **Encargado/Capataz**: Nuevo rol con perfil específico
+  - Gestión de day workers
+  - Organización de tareas en finca
+  - Experiencia en cultivos específicos
+  - Disponibilidad de alojamiento en finca
+- [ ] **Tractorista**: Nuevo rol con perfil específico
+  - Tipos de maquinaria que maneja
+  - Carnets específicos (tractor, pulverizadora, cosechadora)
+  - Experiencia por tipo de equipo
+  - Disponibilidad para temporada completa
+
+### 3. Buscador de Candidatos por Categoría
+- [ ] Nueva página `/search` con selector inicial de perfil:
+  - Peón/Trabajador
+  - Tractorista
+  - Manijero
+  - Encargado
+  - Ingeniero
+- [ ] Según selección, mostrar filtros específicos de esa categoría
+- [ ] Resultados con cards de candidato y opción de contacto
+
+### 4. Gestión de Publicaciones para Todos los Usuarios
+- [ ] **IMPORTANTE**: Todos los usuarios deben poder ver y modificar sus publicaciones
+  - Actualmente solo las empresas tienen esta función
+  - Añadir página `/my-posts` accesible para todos los roles
+  - Permitir editar, pausar y eliminar publicaciones propias
+  - Mostrar estadísticas (vistas, inscritos, contactos)
+
+### 5. Filtros Avanzados en Gestión de Candidatos
+- [ ] Filtros en `/applications` para empresas:
+  - Por experiencia (años de campaña) - mayor a menor
+  - Por disponibilidad de vehículo propio
+  - Por carnet de manipulador de alimentos
+  - Por carnets fitosanitarios (nivel, aplicador)
+  - Por disponibilidad de alojamiento
+  - Por provincia/ciudad
+- [ ] Ordenamiento por múltiples criterios
+- [ ] Guardar filtros preferidos
+
+### 6. SEO y Meta Tags
+- [ ] Títulos dinámicos por página (`<title>`, `<meta name="description">`)
+- [ ] Open Graph para compartir en redes (og:title, og:description, og:image)
+- [ ] Twitter Cards
+- [ ] Favicon en múltiples formatos
+- [ ] Sitemap.xml
+- [ ] Robots.txt
+
+### 7. Optimizaciones de Producción
+- [ ] Compresión de imágenes (next/image con domains de Firebase Storage)
+- [ ] Optimización de bundles (dynamic imports para componentes pesados)
+- [ ] Configuración de imágenes Next.js (remotePatterns para Firebase Storage)
+- [ ] Variables de entorno de producción correctamente configuradas
+
+### 8. Validaciones y UX Final
+- [ ] Validar todos los formularios exhaustivamente
+- [ ] Mensajes de error más amigables y específicos
+- [ ] Estados de carga en todas las operaciones async
+- [ ] Pantallas de error (404, 500) con navegación de vuelta
+- [ ] Skeletons durante carga de contenido
+
+### 9. Seguridad
+- [ ] Verificar que todas las APIs están protegidas (validación de userId)
+- [ ] Rate limiting en endpoints sensibles (contacto, inscripciones)
+- [ ] Headers de seguridad (CORS, CSP, HSTS)
+- [ ] Sanitización de inputs para prevenir XSS
+
+### 10. Testing
+- [ ] Probar flujo completo de cada rol (registro, perfil, publicar, inscribirse)
+- [ ] Probar en dispositivos móviles reales (Android e iOS)
+- [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
+- [ ] Probar en modo offline (cuando se implemente PWA)
+
+### 11. Legal / Comunicación
+- [ ] Política de Privacidad (RGPD compliant)
+- [ ] Términos y Condiciones de uso
+- [ ] Política de Cookies
+- [ ] Aviso Legal
+- [ ] Contacto y soporte
+
+## Funcionalidades Ya Implementadas
+
+- Feed con filtros por provincia y tipo de publicación.
 - Publicación de ofertas (empresas) y demandas (trabajadores/jefes de cuadrilla).
-- Sistema de "Like", "Compartir", "Denunciar", "Inscribirse" en cada oferta.
+- Sistema de "Like", "Compartir", "Denunciar", "Inscribirse".
 - Verificación manual de empresas (etiqueta "Empresa Verificada").
-- Perfiles detallados por rol.
+- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa).
+- Sistema de inscripciones con notificaciones a empresas.
+- Las empresas ven datos de contacto de candidatos (autorizado al inscribirse).
+- Modal de perfil completo para empresas.
+- Chat/mensajería interna entre usuarios.
+- Sistema de notificaciones.
+- Reporte de contenido (denuncias).
 
-### En Revisión / Pendientes Estratégicos
-- **Ofertas externas (compartir enlaces)**: Se debate si mantener, eliminar o restringir esta función para evitar que empresas eludan el pago. La decisión final se tomará en base al comportamiento de los usuarios.
-- **Modelo de Monetización**: Empresas de pago por publicación de ofertas y acceso a BBDD. Posible publicidad segmentada. Perfiles demandantes, gratuitos.
-- **Sistema de Reputación/Valoraciones**: Valoraciones mutuas post-contratación para generar confianza (sin intervenir en pagos).
+## En Revisión / Pendientes Estratégicos
+
+- **Modelo de Monetización**: Empresas de pago por publicación de ofertas y acceso a BBDD.
+- **Sistema de Reputación/Valoraciones**: Valoraciones mutuas post-contratación.
 - **Matchmaking Inteligente**: Sugerir perfiles a empresas basándose en filtros y experiencia.
 - **Alertas Personalizadas**: Notificaciones push para nuevos empleos que coincidan con el perfil.
-- **Modo Offline**: Permitir consultar ofertas y enviar solicitudes sin conexión (crítico en zonas rurales).
-- **Internacionalización**: Soporte multiidioma (español, inglés, francés, árabe, rumano) para temporeros extranjeros.
+- **Internacionalización**: Soporte multiidioma para temporeros extranjeros.
 
 ## Reglas de Idioma
 
@@ -143,13 +255,11 @@ Para mantener la coherencia del producto y la calidad del código, se deben segu
 - **No modificar la lógica de autenticación (Firebase)** sin una confirmación explícita.
 - **No cambiar los roles de usuario ni la lógica de resolución de perfiles** sin discutirlo antes.
 - **No modificar el esquema de Prisma** sin explicar el impacto de la migración.
+- **REGLA DE ORO**: No tocar lo que ya funciona. Asegurarse de probar antes de modificar.
 - Preferir cambios pequeños e incrementales.
 - Explicar los cambios propuestos **antes** de aplicarlos.
 - Preguntar antes de introducir nuevas dependencias.
 - **Cualquier cambio que afecte a la visión de producto o al modelo de negocio debe ser validado con el fundador.**
-
-## Regla de oro
-No tocar lo que ya funciona y asegurarse de ello en cada modificación que se realice
 
 ---
 *Este documento es una guía viva. Se actualizará conforme el proyecto evolucione.*
