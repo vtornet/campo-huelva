@@ -1,6 +1,6 @@
 // API para inscribirse en una oferta
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ApplicationStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -22,11 +22,7 @@ export async function POST(
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: {
-        company: {
-          include: {
-            user: true
-          }
-        },
+        company: true,
         publisher: true
       }
     });
@@ -40,8 +36,16 @@ export async function POST(
       return NextResponse.json({ error: "No puedes inscribirte en una demanda" }, { status: 400 });
     }
 
-    // Obtener ID de la empresa
-    const companyId = post.company?.userId || post.companyId;
+    // Obtener ID de la empresa - primero intentar obtener el userId del company
+    let companyId = post.companyId || undefined;
+    if (post.company && post.companyId) {
+      // Buscar el userId del CompanyProfile
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { id: post.companyId },
+        select: { userId: true }
+      });
+      companyId = companyProfile?.userId || post.companyId;
+    }
 
     // No puedes inscribirte en tu propia oferta
     if (companyId === userId || post.publisherId === userId) {
@@ -60,10 +64,10 @@ export async function POST(
 
     if (existing) {
       // Si ya está inscrito y se retiró, reactivar
-      if (existing.status === "WITHDRAWN") {
+      if (existing.status === ApplicationStatus.WITHDRAWN) {
         await prisma.application.update({
           where: { id: existing.id },
-          data: { status: "PENDING" }
+          data: { status: ApplicationStatus.PENDING }
         });
         return NextResponse.json({ success: true, reactivated: true });
       }
@@ -74,7 +78,8 @@ export async function POST(
     const application = await prisma.application.create({
       data: {
         postId,
-        userId
+        userId,
+        status: ApplicationStatus.PENDING
       },
       include: {
         user: {
@@ -87,7 +92,7 @@ export async function POST(
     });
 
     // Crear notificación a la empresa
-    if (companyId) {
+    if (companyId && companyId !== post.companyId) {
       const applicantName = application.user.workerProfile?.fullName ||
                            application.user.foremanProfile?.fullName ||
                            "Un candidato";
@@ -129,13 +134,7 @@ export async function GET(
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: {
-        companyId: true,
-        company: {
-          select: {
-            userId: true
-          }
-        },
-        publisherId: true
+        companyId: true
       }
     });
 
@@ -143,7 +142,15 @@ export async function GET(
       return NextResponse.json({ error: "Publicación no encontrada" }, { status: 404 });
     }
 
-    const companyId = post.company?.userId || post.companyId;
+    // Obtener el userId del CompanyProfile
+    let companyId = post.companyId;
+    if (post.companyId) {
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { id: post.companyId },
+        select: { userId: true }
+      });
+      companyId = companyProfile?.userId || post.companyId;
+    }
 
     // Solo la empresa puede ver los inscritos
     if (companyId !== requesterId) {
@@ -234,7 +241,7 @@ export async function DELETE(
     // Marcar como retirada en lugar de borrar
     await prisma.application.update({
       where: { id: application.id },
-      data: { status: "WITHDRAWN" }
+      data: { status: ApplicationStatus.WITHDRAWN }
     });
 
     return NextResponse.json({ success: true });

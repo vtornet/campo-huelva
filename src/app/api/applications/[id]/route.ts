@@ -1,6 +1,6 @@
 // API para gestionar una inscripción específica
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ApplicationStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -23,12 +23,8 @@ export async function PUT(
       where: { id: applicationId },
       include: {
         post: {
-          include: {
-            company: {
-              include: {
-                user: true
-              }
-            }
+          select: {
+            companyId: true
           }
         }
       }
@@ -38,51 +34,76 @@ export async function PUT(
       return NextResponse.json({ error: "Inscripción no encontrada" }, { status: 404 });
     }
 
+    // Obtener el userId del CompanyProfile
+    let companyId = application.post.companyId;
+    if (application.post.companyId) {
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { id: application.post.companyId },
+        select: { userId: true }
+      });
+      companyId = companyProfile?.userId || application.post.companyId;
+    }
+
     // Verificar que el solicitante es la empresa que publicó la oferta
-    const companyId = application.post.company?.userId || application.post.companyId;
     if (companyId !== userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
-    // Validar el estado
-    const validStatuses = ["ACCEPTED", "REJECTED", "CONTACTED"];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
+    // Validar el estado y convertir a enum
+    let applicationStatus: ApplicationStatus;
+    switch (status) {
+      case "ACCEPTED":
+        applicationStatus = ApplicationStatus.ACCEPTED;
+        break;
+      case "REJECTED":
+        applicationStatus = ApplicationStatus.REJECTED;
+        break;
+      case "CONTACTED":
+        applicationStatus = ApplicationStatus.CONTACTED;
+        break;
+      default:
+        return NextResponse.json({ error: "Estado no válido" }, { status: 400 });
     }
 
     // Actualizar estado
     const updated = await prisma.application.update({
       where: { id: applicationId },
-      data: { status }
+      data: { status: applicationStatus }
     });
 
     // Crear notificación al candidato
     let notificationTitle = "";
     let notificationMessage = "";
 
-    switch (status) {
-      case "ACCEPTED":
+    switch (applicationStatus) {
+      case ApplicationStatus.ACCEPTED:
         notificationTitle = "¡Buenas noticias!";
-        notificationMessage = `Tu candidatura para "${application.post.title}" ha sido aceptada`;
+        notificationMessage = `Tu candidatura ha sido aceptada`;
         break;
-      case "REJECTED":
+      case ApplicationStatus.REJECTED:
         notificationTitle = "Candidatura no seleccionada";
-        notificationMessage = `Tu candidatura para "${application.post.title}" no ha sido seleccionada`;
+        notificationMessage = `Tu candidatura no ha sido seleccionada`;
         break;
-      case "CONTACTED":
+      case ApplicationStatus.CONTACTED:
         notificationTitle = "Te han contactado";
-        notificationMessage = `La empresa te ha contactado sobre "${application.post.title}"`;
+        notificationMessage = `La empresa te ha contactado`;
         break;
     }
 
     if (notificationTitle) {
+      // Obtener título del post
+      const post = await prisma.post.findUnique({
+        where: { id: application.postId },
+        select: { title: true }
+      });
+
       await prisma.notification.create({
         data: {
           userId: application.userId,
           type: "APPLICATION_ACCEPTED",
           title: notificationTitle,
-          message: notificationMessage,
-          link: `/applications`,
+          message: notificationMessage + (post ? ` para "${post.title}"` : ""),
+          link: `/my-applications`,
           relatedPostId: application.postId
         }
       });
@@ -113,7 +134,8 @@ export async function GET(
       where: { id: applicationId },
       include: {
         post: {
-          include: {
+          select: {
+            companyId: true,
             company: {
               select: {
                 userId: true,
@@ -131,8 +153,17 @@ export async function GET(
       return NextResponse.json({ error: "Inscripción no encontrada" }, { status: 404 });
     }
 
+    // Obtener el userId del CompanyProfile si no está ya cargado
+    let companyId = application.post.company?.userId || application.post.companyId;
+    if (application.post.companyId && !application.post.company?.userId) {
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { id: application.post.companyId },
+        select: { userId: true }
+      });
+      companyId = companyProfile?.userId || application.post.companyId;
+    }
+
     // Solo el candidato o la empresa pueden ver la inscripción
-    const companyId = application.post.company?.userId || application.post.companyId;
     if (application.userId !== requesterId && companyId !== requesterId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }

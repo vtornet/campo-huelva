@@ -1,6 +1,6 @@
 // API para obtener las inscripciones del usuario actual
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ApplicationStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       where: {
         userId,
         status: {
-          not: "WITHDRAWN" // No mostrar retiradas por defecto
+          not: ApplicationStatus.WITHDRAWN // No mostrar retiradas por defecto
         }
       },
       include: {
