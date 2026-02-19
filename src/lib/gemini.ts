@@ -3,11 +3,22 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Verificar que la API key esté configurada
+const API_KEY = process.env.GEMINI_API_KEY || '';
+if (!API_KEY) {
+  console.warn('⚠️ GEMINI_API_KEY no está configurada. Las funciones de IA no estarán disponibles.');
+}
+
 // Inicializar el cliente de Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 // Modelo principal a utilizar
 const MODEL_NAME = 'gemini-2.0-flash';
+
+// Verificar si la IA está disponible
+export function isAIAvailable(): boolean {
+  return genAI !== null;
+}
 
 /**
  * Genera una descripción de perfil profesional mejorada
@@ -23,6 +34,11 @@ export async function generarDescripcionPerfil(datos: {
   phytosanitaryLevel?: string;
   foodHandler?: boolean;
 }): Promise<string> {
+  // Verificar si la IA está disponible
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -64,6 +80,10 @@ export async function generarDescripcionManijero(datos: {
   ownTools?: boolean;
   workArea?: string[];
 }): Promise<string> {
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -103,6 +123,10 @@ export async function generarDescripcionIngeniero(datos: {
   specialties?: string[];
   servicesOffered?: string[];
 }): Promise<string> {
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -138,6 +162,11 @@ export async function recomendarOfertas(
   perfilTrabajador: any,
   ofertasDisponibles: any[]
 ): Promise<string[]> {
+  if (!genAI) {
+    console.warn('IA no disponible para recomendar ofertas');
+    return [];
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -194,6 +223,11 @@ export async function recomendarTrabajadores(
   oferta: any,
   trabajadoresDisponibles: any[]
 ): Promise<string[]> {
+  if (!genAI) {
+    console.warn('IA no disponible para recomendar trabajadores');
+    return [];
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -261,6 +295,10 @@ export async function mejorarDescripcionOferta(datos: {
   provincia?: string;
   tipo?: string; // "OFFER", "DEMAND", "SHARED"
 }): Promise<string> {
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 

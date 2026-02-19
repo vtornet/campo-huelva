@@ -39,8 +39,18 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ descripcion });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en /api/ai/profile-description:', error);
+
+    // Mejorar mensaje de error para IA no disponible
+    const errorMessage = error.message || '';
+    if (errorMessage.includes('IA no disponible') || errorMessage.includes('GEMINI_API_KEY')) {
+      return NextResponse.json(
+        { error: 'IA no disponible. Configura GEMINI_API_KEY en el servidor.' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Error al generar la descripción' },
       { status: 500 }

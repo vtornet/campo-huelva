@@ -26,9 +26,11 @@ export default function AIBioGenerator({
   className = "",
 }: AIBioGeneratorProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const generarConIA = async () => {
     setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/ai/profile-description', {
@@ -47,9 +49,17 @@ export default function AIBioGenerator({
 
       const data = await response.json();
       onChange(data.descripcion);
-    } catch (error) {
-      console.error('Error generando descripción:', error);
-      alert('Error al generar la descripción. Por favor, inténtalo de nuevo.');
+    } catch (err: any) {
+      console.error('Error generando descripción:', err);
+      const errorMsg = err.message || 'Error al generar la descripción';
+      setError(errorMsg);
+
+      // Mostrar mensaje amigable si es por falta de API key
+      if (errorMsg.includes('IA no disponible') || errorMsg.includes('GEMINI_API_KEY')) {
+        setError('La función de IA no está disponible. Contacta con el administrador.');
+      } else {
+        setError('Error al generar la descripción. Por favor, inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +77,10 @@ export default function AIBioGenerator({
       <div className="relative">
         <textarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setError(null);
+          }}
           placeholder={placeholder}
           rows={4}
           className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200 resize-none"
@@ -84,7 +97,13 @@ export default function AIBioGenerator({
         />
       </div>
 
-      {value && (
+      {error && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <p className="text-amber-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {value && !error && (
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
           <p className="text-emerald-700 text-sm whitespace-pre-wrap">{value}</p>
         </div>
