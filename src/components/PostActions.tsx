@@ -99,22 +99,46 @@ export default function PostActions({
             ? 'Red Agro - Candidato buscando empleo'
             : 'Red Agro - Oferta de empleo';
 
-          // Copiar enlace al portapapeles
+          const shareUrl = `${window.location.origin}/offer/${postId}`;
+
+          // Primero intentar con navigator.share (mejor en móvil)
           if (navigator.share) {
             await navigator.share({
               title: shareTitle,
               text: shareText,
-              url: `${window.location.origin}/offer/${postId}`
+              url: shareUrl
             });
-          } else {
-            // Fallback: copiar al portapapeles
-            await navigator.clipboard.writeText(`${window.location.origin}/offer/${postId}`);
+          } else if (navigator.clipboard && window.isSecureContext) {
+            // Fallback: copiar al portapapeles (solo en HTTPS)
+            await navigator.clipboard.writeText(shareUrl);
             alert('¡Enlace copiado al portapapeles!');
+          } else {
+            // Último fallback: método antiguo con textarea
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+              document.execCommand('copy');
+              alert('¡Enlace copiado al portapapeles!');
+            } catch (err) {
+              console.error('Error al copiar:', err);
+              alert('No se pudo copiar el enlace. Por favor, copia esta URL: ' + shareUrl);
+            } finally {
+              document.body.removeChild(textArea);
+            }
           }
         }
       }
     } catch (error) {
       console.error('Error al compartir:', error);
+      // Si el usuario canceló el compartir, no mostrar error
+      if ((error as Error).name !== 'AbortError') {
+        alert('Error al compartir. Por favor, inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
