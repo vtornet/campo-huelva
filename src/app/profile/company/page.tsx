@@ -11,6 +11,9 @@ export default function CompanyProfilePage() {
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isUpdate, setIsUpdate] = useState(false);
+  const [dataConfirmed, setDataConfirmed] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -50,6 +53,7 @@ export default function CompanyProfilePage() {
               description: data.description || "",
             });
             setIsUpdate(true);
+            setProfileLoaded(true);
           }
         })
         .catch(() => {
@@ -59,9 +63,35 @@ export default function CompanyProfilePage() {
     }
   }, [user]);
 
+  // Calcular porcentaje de completitud del perfil
+  const calculateCompleteness = () => {
+    let filled = 0;
+    let total = 8; // Campos principales a considerar
+
+    if (formData.companyName) filled++;
+    if (formData.cif) filled++;
+    if (formData.phone) filled++;
+    if (formData.province) filled++;
+    if (formData.city) filled++;
+    if (formData.contactPerson) filled++;
+    if (formData.address) filled++;
+    if (formData.description) filled++;
+
+    return Math.round((filled / total) * 100);
+  };
+
+  const completeness = calculateCompleteness();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Verificar casilla de confirmación
+    if (!dataConfirmed) {
+      setShowConfirmation(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -119,6 +149,27 @@ export default function CompanyProfilePage() {
             Completa el perfil de tu empresa para publicar ofertas verificadas.
           </p>
         </div>
+
+        {/* Barra de progreso */}
+        {profileLoaded && (
+          <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-indigo-800">Perfil completado</span>
+              <span className="text-sm font-bold text-indigo-600">{completeness}%</span>
+            </div>
+            <div className="w-full bg-indigo-200 rounded-full h-2">
+              <div
+                className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${completeness}%`}}
+              ></div>
+            </div>
+            {completeness < 100 && (
+              <p className="text-xs text-indigo-600 mt-2">
+                💡 Completa más datos para aumentar tu visibilidad
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Información sobre privacidad de datos */}
         <div className="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
@@ -294,6 +345,29 @@ export default function CompanyProfilePage() {
               />
             </div>
           </div>
+
+          {/* Confirmación de datos */}
+          <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <input
+              type="checkbox"
+              id="dataConfirmation"
+              className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0 mt-0.5"
+              checked={dataConfirmed}
+              onChange={(e) => {
+                setDataConfirmed(e.target.checked);
+                setShowConfirmation(false);
+              }}
+              required
+            />
+            <label htmlFor="dataConfirmation" className="text-sm text-amber-800 cursor-pointer">
+              <strong>Confirmo que los datos aportados son reales</strong>. Esta información será visible públicamente y declaro bajo mi responsabilidad la veracidad de los mismos.
+            </label>
+          </div>
+          {showConfirmation && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-sm text-red-700">Debes confirmar que los datos son reales antes de guardar.</p>
+            </div>
+          )}
 
           <button
             type="submit"

@@ -19,6 +19,10 @@ export default function ForemanProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [nameLastModified, setNameLastModified] = useState<string | null>(null);
+  const [dataConfirmed, setDataConfirmed] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Proteger la página: si no hay usuario, ir a login
   useEffect(() => {
@@ -34,6 +38,7 @@ export default function ForemanProfilePage() {
         .then(res => res.json())
         .then(data => {
           if (data && data.id) {
+            setProfileLoaded(true);
             setFormData({
               fullName: data.fullName || "",
               phone: data.phone || "",
@@ -49,6 +54,13 @@ export default function ForemanProfilePage() {
               specialties: data.specialties || [],
               profileImage: data.profileImage || "",
             });
+
+            // Cargar fecha de última modificación del nombre si existe
+            if (data.nameLastModified) {
+              const lastModified = new Date(data.nameLastModified);
+              const daysSince = Math.floor((Date.now() - lastModified.getTime()) / (1000 * 60 * 60 * 24));
+              setNameLastModified(daysSince.toString());
+            }
           }
         })
         .catch(err => console.error("Error cargando perfil:", err));
@@ -78,6 +90,27 @@ export default function ForemanProfilePage() {
     profileImage: ""
   });
 
+  // Calcular porcentaje de completitud del perfil
+  const calculateCompleteness = () => {
+    let filled = 0;
+    let total = 10; // Campos principales a considerar
+
+    if (formData.fullName) filled++;
+    if (formData.phone) filled++;
+    if (formData.province) filled++;
+    if (formData.city) filled++;
+    if (formData.crewSize) filled++;
+    if (formData.yearsExperience) filled++;
+    if (formData.workArea.length > 0) filled++;
+    if (formData.specialties.length > 0) filled++;
+    if (formData.hasVan !== undefined || formData.ownTools !== undefined) filled++;
+    if (formData.bio) filled++;
+
+    return Math.round((filled / total) * 100);
+  };
+
+  const completeness = calculateCompleteness();
+
   const toggleItem = (list: string[], item: string, field: "workArea" | "specialties") => {
     if (list.includes(item)) {
       setFormData({ ...formData, [field]: list.filter(i => i !== item) });
@@ -86,9 +119,26 @@ export default function ForemanProfilePage() {
     }
   };
 
+  // Calcular días restantes para cambiar nombre
+  const getDaysRemaining = () => {
+    if (!nameLastModified) return null;
+    const days = parseInt(nameLastModified);
+    return Math.max(0, 60 - days);
+  };
+
+  const daysRemaining = getDaysRemaining();
+  const canEditName = daysRemaining === null || daysRemaining === 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Verificar casilla de confirmación
+    if (!dataConfirmed) {
+      setShowConfirmation(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -124,6 +174,27 @@ export default function ForemanProfilePage() {
           <p className="text-slate-500">Ofrece los servicios de tu cuadrilla a las empresas.</p>
         </div>
 
+        {/* Barra de progreso */}
+        {profileLoaded && (
+          <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-100">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-orange-800">Perfil completado</span>
+              <span className="text-sm font-bold text-orange-600">{completeness}%</span>
+            </div>
+            <div className="w-full bg-orange-200 rounded-full h-2">
+              <div
+                className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${completeness}%`}}
+              ></div>
+            </div>
+            {completeness < 100 && (
+              <p className="text-xs text-orange-600 mt-2">
+                💡 Completa más datos para aumentar tu visibilidad
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Foto de perfil */}
         <div className="flex justify-center mb-8">
           <ProfileImageUpload
@@ -143,14 +214,35 @@ export default function ForemanProfilePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Nombre completo *</label>
-                <input type="text" required placeholder="Tu nombre" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Nombre completo *
+                  {!canEditName && daysRemaining !== null && (
+                    <span className="ml-2 text-xs text-orange-600 font-normal">
+                      ({daysRemaining} días restantes)
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Tu nombre"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
+                  value={formData.fullName}
+                  onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  disabled={!canEditName}
+                  {...(!canEditName && { title: `Solo puedes cambiar tu nombre una vez cada 60 días (${daysRemaining} días restantes)` })}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono *</label>
-                <input type="tel" required placeholder="600 123 456" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                <input
+                  type="tel"
+                  required
+                  placeholder="600 123 456"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all duration-200"
+                  value={formData.phone}
+                  onChange={e => setFormData({...formData, phone: e.target.value})}
+                />
               </div>
             </div>
           </div>
@@ -297,6 +389,29 @@ export default function ForemanProfilePage() {
               label="Sobre tu cuadrilla (descripción profesional)"
             />
           </div>
+
+          {/* Confirmación de datos */}
+          <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <input
+              type="checkbox"
+              id="dataConfirmation"
+              className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0 mt-0.5"
+              checked={dataConfirmed}
+              onChange={(e) => {
+                setDataConfirmed(e.target.checked);
+                setShowConfirmation(false);
+              }}
+              required
+            />
+            <label htmlFor="dataConfirmation" className="text-sm text-amber-800 cursor-pointer">
+              <strong>Confirmo que los datos aportados son reales</strong>. Esta información será visible públicamente y declaro bajo mi responsabilidad la veracidad de los mismos.
+            </label>
+          </div>
+          {showConfirmation && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-sm text-red-700">Debes confirmar que los datos son reales antes de guardar.</p>
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white font-semibold py-4 rounded-2xl hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-lg shadow-orange-500/25 disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none text-lg flex items-center justify-center gap-2">
             {loading ? (
