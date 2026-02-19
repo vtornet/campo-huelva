@@ -34,11 +34,20 @@ export default function PostActions({
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [sharesCount, setSharesCount] = useState(initialSharesCount);
   const [loading, setLoading] = useState(false);
+  const [animatingLike, setAnimatingLike] = useState(false);
 
   const handleLike = async () => {
     if (!user) {
       router.push('/login');
       return;
+    }
+
+    if (isOwner) return;
+
+    // Animación de like
+    if (!liked) {
+      setAnimatingLike(true);
+      setTimeout(() => setAnimatingLike(false), 300);
     }
 
     setLoading(true);
@@ -144,53 +153,54 @@ export default function PostActions({
     }
   };
 
-  // Tamaños de iconos
-  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-  const textSize = size === 'sm' ? 'text-xs' : 'text-sm';
-  const padding = size === 'sm' ? 'px-2 py-1' : 'px-3 py-1.5';
+  // Diseño responsive: más grande en móvil
+  const buttonClass = "flex-1 flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-xl transition-all duration-200 font-medium";
+  const iconClass = "w-6 h-6";
+  const textClass = "text-xs";
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 w-full">
       {/* Like */}
       <button
         onClick={handleLike}
         disabled={loading || isOwner}
-        className={`flex items-center gap-1.5 ${textSize} font-medium rounded-lg transition-all duration-200 ${
+        className={`${buttonClass} ${
           liked
-            ? 'text-red-600 bg-red-50 hover:bg-red-100'
-            : 'text-slate-500 hover:text-red-600 hover:bg-red-50'
-        } ${isOwner ? 'opacity-50 cursor-not-allowed' : ''}`}
+            ? 'text-red-600 bg-red-50 hover:bg-red-100 shadow-sm shadow-red-100'
+            : 'text-slate-600 hover:text-red-600 hover:bg-red-50 bg-slate-50'
+        } ${isOwner ? 'opacity-40 cursor-not-allowed' : ''} ${animatingLike ? 'scale-110' : ''}`}
       >
-        <svg className={iconSize} fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={iconClass} fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
-        <span>{likesCount}</span>
+        <span className={textClass}>{likesCount} Me gusta</span>
       </button>
 
       {/* Compartir */}
       <button
         onClick={handleShare}
         disabled={loading}
-        className={`flex items-center gap-1.5 ${textSize} font-medium rounded-lg transition-all duration-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50`}
+        className={`${buttonClass} text-slate-600 hover:text-blue-600 hover:bg-blue-50 bg-slate-50`}
       >
-        <svg className={iconSize} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 01-5.367 2.684m0 9.316a3 3 0 105.368 2.684 3 3 0 01-5.367-2.684" />
         </svg>
-        <span>{sharesCount}</span>
+        <span className={textClass}>{sharesCount} Compartir</span>
       </button>
 
       {/* Denunciar */}
       <button
         onClick={handleReport}
         disabled={loading || isOwner}
-        className={`flex items-center gap-1.5 ${textSize} font-medium rounded-lg transition-all duration-200 text-slate-500 hover:text-amber-600 hover:bg-amber-50 ${
-          isOwner ? 'opacity-50 cursor-not-allowed' : ''
+        className={`${buttonClass} text-slate-600 hover:text-amber-600 hover:bg-amber-50 bg-slate-50 ${
+          isOwner ? 'opacity-40 cursor-not-allowed' : ''
         }`}
         title="Denunciar publicación"
       >
-        <svg className={iconSize} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3h13.856c1.54 0 2.502-1.667 1.732-3z" />
         </svg>
+        <span className={textClass}>Denunciar</span>
       </button>
     </div>
   );

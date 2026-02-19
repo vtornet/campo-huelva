@@ -539,43 +539,30 @@ export default function Dashboard() {
                   </div>
 
                   {/* Footer - Avatar y Acciones (NO clickeable) */}
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        {/* Avatar con foto o inicial */}
-                        {post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage ? (
-                          <img
-                            src={post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage}
-                            alt="Avatar"
-                            className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-200"
-                          />
-                        ) : (
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${
-                              post.type === 'DEMAND' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
-                              post.type === 'OFFICIAL' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
-                              'bg-gradient-to-br from-slate-400 to-slate-500'
-                          }`}>
-                              {post.company?.companyName?.[0] || post.publisher?.workerProfile?.fullName?.[0] || post.publisher?.foremanProfile?.fullName?.[0] || "?"}
-                          </div>
-                        )}
-                        <span className="text-sm text-slate-700 font-medium">
-                            {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
-                        </span>
-                    </div>
-
-                    {/* Botón de contacto y acciones sociales */}
-                    <div className="flex items-center gap-3">
-                      {/* Acciones sociales */}
-                      <PostActions
-                        postId={post.id}
-                        initialLiked={post.liked || false}
-                        initialLikesCount={post.likesCount || 0}
-                        initialSharesCount={post.sharesCount || 0}
-                        isOwner={
-                          (post.companyId && userData?.profile?.id === post.companyId) ||
-                          (post.publisherId && user.uid === post.publisherId)
-                        }
-                        type={post.type}
-                      />
+                  <div className="mt-4 space-y-3">
+                    {/* Primera fila: Avatar + Nombre + Botón Contactar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                          {/* Avatar con foto o inicial */}
+                          {post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage ? (
+                            <img
+                              src={post.company?.profileImage || post.publisher?.workerProfile?.profileImage || post.publisher?.foremanProfile?.profileImage}
+                              alt="Avatar"
+                              className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-200"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${
+                                post.type === 'DEMAND' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
+                                post.type === 'OFFICIAL' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
+                                'bg-gradient-to-br from-slate-400 to-slate-500'
+                            }`}>
+                                {post.company?.companyName?.[0] || post.publisher?.workerProfile?.fullName?.[0] || post.publisher?.foremanProfile?.fullName?.[0] || "?"}
+                            </div>
+                          )}
+                          <span className="text-sm text-slate-700 font-medium">
+                              {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
+                          </span>
+                      </div>
 
                       {/* Botón de contacto */}
                       <button
@@ -591,6 +578,19 @@ export default function Dashboard() {
                         </svg>
                       </button>
                     </div>
+
+                    {/* Segunda fila: Acciones sociales (Like, Compartir, Denunciar) */}
+                    <PostActions
+                      postId={post.id}
+                      initialLiked={post.liked || false}
+                      initialLikesCount={post.likesCount || 0}
+                      initialSharesCount={post.sharesCount || 0}
+                      isOwner={
+                        (post.companyId && userData?.profile?.id === post.companyId) ||
+                        (post.publisherId && user.uid === post.publisherId)
+                      }
+                      type={post.type}
+                    />
                   </div>
                 </div>
               ))
