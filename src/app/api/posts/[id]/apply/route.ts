@@ -176,7 +176,10 @@ export async function GET(
                 hasVehicle: true,
                 canRelocate: true,
                 yearsExperience: true,
-                profileImage: true
+                profileImage: true,
+                bio: true,
+                machineryExperience: true,
+                licenseTypes: true
               }
             },
             foremanProfile: {
@@ -189,7 +192,8 @@ export async function GET(
                 workArea: true,
                 hasVan: true,
                 yearsExperience: true,
-                profileImage: true
+                profileImage: true,
+                bio: true
               }
             }
           }

@@ -247,14 +247,15 @@ enum PostStatus {
 
 // === INSCRIPCIONES ===
 model Application {
-  id        String   @id @default(uuid())
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  status    ApplicationStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  postId            String
+  post              Post     @relation(fields: [postId], references: [id])
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  status            ApplicationStatus @default(PENDING)
+  contactPermission Boolean? @default(false) // Empresa puede ver datos de contacto
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@unique([postId, userId]) // No puedes inscribirte 2 veces a la misma
 }
