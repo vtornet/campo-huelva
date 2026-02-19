@@ -133,12 +133,13 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 
 ## Tareas Pendientes (Orden de Prioridad)
 
-### 1. PWA / Instalación (CRÍTICO para móvil)
-- [ ] Manifest.json completo con nombre, iconos, colores
-- [ ] Service Worker para modo offline
-- [ ] Iconos de la app en múltiples tamaños (72, 96, 128, 144, 152, 192, 384, 512)
-- [ ] Meta tags PWA (apple-touch-icon, theme-color, mobile-web-app-capable)
-- [ ] Estrategia de caché para contenido estático y API
+### ✅ 1. PWA / Instalación (COMPLETADO)
+- [x] Manifest.json completo con nombre, iconos, colores
+- [x] Service Worker para modo offline
+- [x] Iconos de la app en múltiples tamaños (72, 96, 128, 144, 152, 192, 384, 512)
+- [x] Meta tags PWA (apple-touch-icon, theme-color, mobile-web-app-capable)
+- [x] Estrategia de caché para contenido estático y API
+- [x] Probado en escritorio y móvil - instalación funcional
 
 ### 2. Nuevos Perfiles de Usuario
 - [ ] **Encargado/Capataz**: Nuevo rol con perfil específico
