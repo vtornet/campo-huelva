@@ -47,3 +47,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Error al obtener inscripciones" }, { status: 500 });
   }
 }
+// Thu, Feb 19, 2026  8:44:37 PM
