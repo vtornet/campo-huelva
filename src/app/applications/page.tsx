@@ -8,7 +8,6 @@ interface Application {
   id: string;
   status: string;
   createdAt: string;
-  contactPermission?: boolean | null;
   user: {
     id: string;
     email: string;
@@ -47,13 +46,13 @@ interface Application {
   };
 }
 
-interface UserProfileModal {
+interface UserProfileModalProps {
   user: Application['user'];
   onClose: () => void;
 }
 
 // Componente modal para ver perfil completo
-function UserProfileModal({ user, onClose }: UserProfileModal) {
+function UserProfileModal({ user, onClose }: UserProfileModalProps) {
   const profile = user.workerProfile || user.foremanProfile;
   const isWorker = !!user.workerProfile;
   const isForeman = !!user.foremanProfile;
@@ -95,7 +94,7 @@ function UserProfileModal({ user, onClose }: UserProfileModal) {
           </button>
         </div>
 
-        {/* Información de contacto visible solo con permiso */}
+        {/* Información de contacto */}
         <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
           <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +183,7 @@ function UserProfileModal({ user, onClose }: UserProfileModal) {
               <>
                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                   <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span className="text-sm text-slate-700">
                     Cuadrilla de {(profile as any)?.crewSize || 0} personas
@@ -251,7 +250,6 @@ export default function ApplicationsPage() {
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [modalUser, setModalUser] = useState<Application['user'] | null>(null);
-  const [requestingContact, setRequestingContact] = useState<Record<string, boolean>>({});
 
   // Cargar posts de la empresa
   useEffect(() => {
@@ -291,45 +289,6 @@ export default function ApplicationsPage() {
         .finally(() => setLoadingApps(false));
     }
   }, [selectedPost, user]);
-
-  // Solicitar permiso de contacto
-  const handleRequestContact = async (applicationId: string) => {
-    if (!user) return;
-
-    if (!confirm("¿Enviar solicitud al candidato para compartir sus datos de contacto?")) {
-      return;
-    }
-
-    setRequestingContact(prev => ({ ...prev, [applicationId]: true }));
-    try {
-      const res = await fetch(`/api/applications/${applicationId}/contact-permission`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyId: user.uid
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        // Actualizar estado local
-        setApplications(prev =>
-          prev.map(app =>
-            app.id === applicationId ? { ...app, contactPermission: data.requested } : app
-          )
-        );
-        alert("Solicitud enviada al candidato. Te notificaremos cuando acepte.");
-      } else {
-        const data = await res.json();
-        alert(data.error || "Error al enviar solicitud");
-      }
-    } catch (error) {
-      console.error("Error requesting contact:", error);
-      alert("Error al enviar solicitud");
-    } finally {
-      setRequestingContact(prev => ({ ...prev, [applicationId]: false }));
-    }
-  };
 
   const handleUpdateStatus = async (applicationId: string, newStatus: string) => {
     if (!user) return;
@@ -392,10 +351,6 @@ export default function ApplicationsPage() {
     }
   };
 
-  const hasContactPermission = (app: Application) => {
-    return app.status === "ACCEPTED" || app.status === "CONTACTED" || app.contactPermission === true;
-  };
-
   return (
     <main className="min-h-screen bg-slate-50">
       {/* Navbar */}
@@ -437,18 +392,6 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-        {/* Información sobre permisos de contacto */}
-        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <div className="text-sm text-blue-800">
-              <strong>Protección de datos:</strong> Los datos de contacto solo se muestran cuando el candidato ha sido aceptado o ha dado su permiso explícito.
-            </div>
-          </div>
-        </div>
-
         {/* Lista de candidatos */}
         {loadingApps ? (
           <div className="flex justify-center py-12">
@@ -472,7 +415,6 @@ export default function ApplicationsPage() {
               const profile = app.user.workerProfile || app.user.foremanProfile;
               const isWorker = !!app.user.workerProfile;
               const isForeman = !!app.user.foremanProfile;
-              const canShowContact = hasContactPermission(app);
 
               return (
                 <div key={app.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60">
@@ -520,34 +462,16 @@ export default function ApplicationsPage() {
                       </div>
                     </div>
 
-                    {/* Datos de contacto - con o sin permiso */}
-                    <div className={`p-3 rounded-xl border ${canShowContact ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          {canShowContact ? (
-                            <div>
-                              <span className="text-sm font-medium text-green-800">Datos disponibles</span>
-                              <p className="text-sm text-green-700">{profile?.phone || user.email}</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <span className="text-sm font-medium text-slate-600">Datos protegidos</span>
-                              <p className="text-xs text-slate-500">Solicita permiso al candidato</p>
-                            </div>
-                          )}
+                    {/* Datos de contacto - siempre visibles para la empresa */}
+                    <div className="p-3 bg-green-50 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3,14.284 3,6V5z" />
+                        </svg>
+                        <div>
+                          <span className="text-sm font-medium text-green-800">Datos de contacto</span>
+                          <p className="text-sm text-green-700">{profile?.phone || app.user.email}</p>
                         </div>
-                        {!canShowContact && (
-                          <button
-                            onClick={() => handleRequestContact(app.id)}
-                            disabled={requestingContact[app.id]}
-                            className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium disabled:opacity-50"
-                          >
-                            {requestingContact[app.id] ? "Enviando..." : "Solicitar datos"}
-                          </button>
-                        )}
                       </div>
                     </div>
 

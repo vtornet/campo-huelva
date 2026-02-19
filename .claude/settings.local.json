@@ -4,7 +4,18 @@
       "Bash(if exist .nextdevlock del .nextdevlock)",
       "Bash(taskkill:*)",
       "WebSearch",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(git ls-tree:*)",
+      "Bash(dir:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(1:*)",
+      "Bash(echo:*)",
+      "Bash(/e/campo-huelva/nixpacks.toml:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -313,6 +313,13 @@ export default function Dashboard() {
       return;
     }
 
+    // Confirmar inscripción con aviso de compartir datos
+    const confirmApply = confirm(
+      "¿Deseas inscribirte en esta oferta?\n\n" +
+      "Al inscribirte, autorizas a la empresa a ver tus datos de contacto (teléfono y email) para poder ponerse en contacto contigo."
+    );
+    if (!confirmApply) return;
+
     setApplying(prev => ({ ...prev, [post.id]: true }));
     try {
       const res = await fetch(`/api/posts/${post.id}/apply`, {
@@ -324,7 +331,7 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setApplications(prev => ({ ...prev, [post.id]: "PENDING" }));
-        alert("¡Te has inscrito correctamente en la oferta! La empresa será notificada.");
+        alert("¡Te has inscrito correctamente en la oferta! La empresa será notificada y podrá ver tus datos de contacto.");
       } else {
         const data = await res.json();
         alert(data.error || "Error al inscribirse");
