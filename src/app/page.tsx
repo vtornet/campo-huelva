@@ -696,19 +696,24 @@ export default function Dashboard() {
 
                       {/* Botón de acción según tipo y rol */}
                       {role === 'COMPANY' ? (
-                        // Para empresas: botón de contacto (para demandas)
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleContact(post);
-                          }}
-                          className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                        >
-                          Contactar
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        </button>
+                        // Para empresas: solo mostrar botón en demandas, no en ofertas de otras empresas
+                        post.type === 'DEMAND' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleContact(post);
+                            }}
+                            className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
+                          >
+                            Contactar
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                          </button>
+                        ) : (
+                          // En ofertas de otras empresas, no mostrar botón principal
+                          <div className="w-24"></div>
+                        )
                       ) : post.type === 'DEMAND' ? (
                         // Para demandas: botón de contacto
                         <button

@@ -1,6 +1,6 @@
-// API para obtener las inscripciones del usuario actual
+// API para listar inscripciones del usuario actual
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, ApplicationStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -14,19 +14,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 });
     }
 
+    // Obtener inscripciones del usuario
     const applications = await prisma.application.findMany({
-      where: {
-        userId,
-        status: {
-          not: ApplicationStatus.WITHDRAWN // No mostrar retiradas por defecto
-        }
-      },
+      where: { userId },
       include: {
         post: {
-          include: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            status: true,
+            location: true,
+            province: true,
+            companyId: true,
             company: {
               select: {
                 id: true,
+                userId: true,
                 companyName: true,
                 profileImage: true
               }
