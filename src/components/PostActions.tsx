@@ -89,11 +89,21 @@ export default function PostActions({
         const data = await res.json();
         if (data.shared) {
           setSharesCount(data.sharesCount);
+
+          // Texto según el tipo de publicación
+          const shareText = type === 'DEMAND'
+            ? 'Mira este candidato buscando empleo en Red Agro'
+            : 'Mira esta oferta de empleo en Red Agro';
+
+          const shareTitle = type === 'DEMAND'
+            ? 'Red Agro - Candidato buscando empleo'
+            : 'Red Agro - Oferta de empleo';
+
           // Copiar enlace al portapapeles
           if (navigator.share) {
             await navigator.share({
-              title: 'Red Agro - Oferta de empleo',
-              text: 'Mira esta oferta de empleo en Red Agro',
+              title: shareTitle,
+              text: shareText,
               url: `${window.location.origin}/offer/${postId}`
             });
           } else {
