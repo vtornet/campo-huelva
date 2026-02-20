@@ -101,7 +101,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4">
           <Image
             src="/logo.png"
             alt="Agro Red"
@@ -110,6 +110,7 @@ export default function LoginPage() {
             priority
           />
         </div>
+        <p className="text-center text-emerald-600 font-semibold text-lg mb-6">Empleo Agrícola</p>
 
         {/* Pestañas */}
         <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">

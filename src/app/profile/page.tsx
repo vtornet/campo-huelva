@@ -127,6 +127,8 @@ export default function UserProfilePage() {
                   role === 'FOREMAN' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
                   role === 'COMPANY' ? 'bg-gradient-to-br from-blue-400 to-blue-500' :
                   role === 'ENGINEER' ? 'bg-gradient-to-br from-purple-400 to-purple-500' :
+                  role === 'ENCARGADO' ? 'bg-gradient-to-br from-teal-400 to-teal-500' :
+                  role === 'TRACTORISTA' ? 'bg-gradient-to-br from-amber-400 to-amber-500' :
                   'bg-gradient-to-br from-emerald-400 to-emerald-500'
                 }`}>
                   {(profile?.fullName || profile?.companyName || user.email)?.[0]?.toUpperCase() || "?"}
@@ -138,6 +140,8 @@ export default function UserProfilePage() {
                   {role === 'FOREMAN' ? 'Manijero' :
                    role === 'COMPANY' ? 'Empresa' :
                    role === 'ENGINEER' ? 'Ingeniero Técnico Agrícola' :
+                   role === 'ENCARGADO' ? 'Encargado/Capataz' :
+                   role === 'TRACTORISTA' ? 'Tractorista' :
                    'Trabajador'}
                   {" · "}{user.email}
                 </p>
@@ -148,6 +152,8 @@ export default function UserProfilePage() {
                 if (role === 'COMPANY') router.push("/profile/company");
                 else if (role === 'FOREMAN') router.push("/profile/foreman");
                 else if (role === 'ENGINEER') router.push("/profile/engineer");
+                else if (role === 'ENCARGADO') router.push("/profile/encargado");
+                else if (role === 'TRACTORISTA') router.push("/profile/tractorista");
                 else router.push("/profile/worker");
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
@@ -337,6 +343,104 @@ export default function UserProfilePage() {
                         <div className="flex flex-wrap gap-2">
                           {profile.servicesOffered.map((tag: string) => (
                             <span key={tag} className="bg-slate-100 text-slate-700 text-sm px-3 py-1.5 rounded-full font-medium border border-slate-200">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Encargado/Capataz */}
+                {role === 'ENCARGADO' && (
+                  <div>
+                    <h3 className="font-semibold text-slate-800 mb-3">Datos de Encargado</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-teal-50/80 p-4 rounded-xl border border-teal-100/50 text-center">
+                        <span className="block text-2xl font-bold text-teal-800">{profile.yearsExperience || 0}</span>
+                        <span className="text-sm text-teal-600 font-medium">Años de experiencia</span>
+                      </div>
+                      {profile.canDriveTractor && (
+                        <div className="bg-teal-50/80 p-4 rounded-xl border border-teal-100/50 text-center">
+                          <span className="text-2xl">🚜</span>
+                          <span className="text-sm text-teal-600 font-medium block">Maneja tractor</span>
+                        </div>
+                      )}
+                    </div>
+                    {profile.needsAccommodation && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-sm font-medium border border-amber-100/50">Necesita alojamiento</span>
+                      </div>
+                    )}
+                    {profile.cropExperience && profile.cropExperience.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-slate-600 mb-2">Experiencia en cultivos:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.cropExperience.map((tag: string) => (
+                            <span key={tag} className="bg-teal-50 text-teal-800 text-sm px-3 py-1.5 rounded-full font-medium border border-teal-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {profile.workArea && profile.workArea.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-medium text-slate-600 mb-2">Área de trabajo:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.workArea.map((tag: string) => (
+                            <span key={tag} className="bg-slate-100 text-slate-700 text-sm px-3 py-1.5 rounded-full font-medium border border-slate-200">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tractorista */}
+                {role === 'TRACTORISTA' && (
+                  <div>
+                    <h3 className="font-semibold text-slate-800 mb-3">Datos de Tractorista</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-amber-50/80 p-4 rounded-xl border border-amber-100/50 text-center">
+                        <span className="block text-2xl font-bold text-amber-800">{profile.yearsExperience || 0}</span>
+                        <span className="text-sm text-amber-600 font-medium">Años de experiencia</span>
+                      </div>
+                      <div className="bg-amber-50/80 p-4 rounded-xl border border-amber-100/50 text-center">
+                        <span className="block text-2xl font-bold text-amber-800">{profile.machineryTypes?.length || 0}</span>
+                        <span className="text-sm text-amber-600 font-medium">Tipos de maquinaria</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {profile.hasTractorLicense && <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium border border-blue-100/50">Carnet tractor</span>}
+                      {profile.hasSprayerLicense && <span className="bg-teal-50 text-teal-700 px-3 py-1.5 rounded-full text-sm font-medium border border-teal-100/50">Carnet pulverizadora</span>}
+                      {profile.hasHarvesterLicense && <span className="bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-100/50">Carnet cosechadora</span>}
+                      {profile.isAvailableSeason && <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-sm font-medium border border-purple-100/50">Temporada completa</span>}
+                      {profile.canTravel && <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium border border-indigo-100/50">Puede viajar</span>}
+                    </div>
+                    {profile.machineryTypes && profile.machineryTypes.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-slate-600 mb-2">Maquinaria:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.machineryTypes.map((tag: string) => (
+                            <span key={tag} className="bg-amber-50 text-amber-800 text-sm px-3 py-1.5 rounded-full font-medium border border-amber-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {profile.toolTypes && profile.toolTypes.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-slate-600 mb-2">Aperos:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.toolTypes.map((tag: string) => (
+                            <span key={tag} className="bg-orange-50 text-orange-800 text-sm px-3 py-1.5 rounded-full font-medium border border-orange-100/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {profile.cropExperience && profile.cropExperience.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-slate-600 mb-2">Experiencia en cultivos:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.cropExperience.map((tag: string) => (
+                            <span key={tag} className="bg-amber-50 text-amber-800 text-sm px-3 py-1.5 rounded-full font-medium border border-amber-100/50">{tag}</span>
                           ))}
                         </div>
                       </div>
