@@ -61,12 +61,10 @@ Definidos en `prisma/schema.prisma`:
 - **FOREMAN** (Manijero): Líder de cuadrilla, ofrece un equipo completo y formado.
 - **ENGINEER** (Ingeniero Técnico Agrícola): Asesoramiento, peritajes, gestión de cultivos.
 - **COMPANY** (Empresa): Contrata trabajadores o cuadrillas.
+- **ENCARGADO** (Capataz/Encargado): Responsable de finca, experiencia en cultivos y manejo de tractor.
+- **TRACTORISTA** (Tractorista): Especialista en maquinaria agrícola y aperos.
 
-**Nuevos roles pendientes de implementar**:
-- **ENCARGADO** (Capataz/Encargado): Responsable de finca, gestión de day workers, organización de tareas.
-- **TRACTORISTA** (Tractorista): Especialista en conducción y mantenimiento de maquinaria agrícola.
-
-Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, `EngineerProfile`, `CompanyProfile`.
+Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, `EngineerProfile`, `CompanyProfile`, `EncargadoProfile`, `TractoristProfile`.
 
 ### Modelos de Datos Clave
 
@@ -93,7 +91,7 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - `page.tsx`: Dashboard principal con feed filtrable por provincia y tipo de publicación.
   - `login/`: Autenticación con Firebase.
   - `onboarding/`: Selección de rol para nuevos usuarios.
-  - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`: Formularios de edición de perfil.
+  - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`, `profile/encargado/`, `profile/tractorista/`: Formularios de edición de perfil.
   - `publish/`: Creación de publicaciones con selección de tipo.
   - `applications/`: Gestión de candidatos para empresas (ver perfiles completos, datos de contacto).
   - `my-applications/`: Lista de inscripciones del trabajador.
@@ -141,17 +139,18 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Estrategia de caché para contenido estático y API
 - [x] Probado en escritorio y móvil - instalación funcional
 
-### 2. Nuevos Perfiles de Usuario
-- [ ] **Encargado/Capataz**: Nuevo rol con perfil específico
-  - Gestión de day workers
-  - Organización de tareas en finca
+### ✅ 2. Nuevos Perfiles de Usuario (COMPLETADO)
+- [x] **Encargado/Capataz**: Nuevo rol con perfil específico
   - Experiencia en cultivos específicos
-  - Disponibilidad de alojamiento en finca
-- [ ] **Tractorista**: Nuevo rol con perfil específico
+  - Capacidad de manejo de tractor
+  - Zona de trabajo preferente
+  - Carnets fitosanitarios y manipulador de alimentos
+- [x] **Tractorista**: Nuevo rol con perfil específico
   - Tipos de maquinaria que maneja
+  - Tipos de aperos que utiliza
   - Carnets específicos (tractor, pulverizadora, cosechadora)
-  - Experiencia por tipo de equipo
-  - Disponibilidad para temporada completa
+  - Experiencia por cultivo
+  - Disponibilidad para temporada completa y viajes
 
 ### 3. Buscador de Candidatos por Categoría
 - [ ] Nueva página `/search` con selector inicial de perfil:
