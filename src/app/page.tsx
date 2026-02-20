@@ -494,7 +494,7 @@ export default function Dashboard() {
                   Publicar oferta oficial
                </button>
                {/* Botón de búsqueda de candidatos - para empresas */}
-               <button onClick={() => router.push("/profile/company/search")} className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-5 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-sm shadow-blue-500/25 flex items-center gap-2">
+               <button onClick={() => router.push("/search")} className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-5 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-sm shadow-blue-500/25 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
