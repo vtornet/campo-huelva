@@ -163,8 +163,14 @@ export const TIPOS_JORNADA = [
 
 // Tipos de maquinaria para tractoristas
 export const TIPOS_MAQUINARIA = [
-  "Tractor agrícola", "Pulverizadora", "Cosechadora", "Arado", "Grada",
-  "Sembradora", "Cultivador", "Rotovator", "Remolque", "Otros"
+  "Tractor agrícola", "Tractor de orugas", "Pulverizadora", "Cosechadora", "Otros"
+];
+
+// Tipos de aperos para tractoristas
+export const TIPOS_APEROS = [
+  "Arado", "Grada", "Sembradora", "Cultivador", "Rotovator",
+  "Remolque", "Cubierta", "Vibrocultor", "Escardillo", "Fresadora",
+  "Rastra", "Rulo", "Otro"
 ];
 
 // Tipos de experiencia para encargados

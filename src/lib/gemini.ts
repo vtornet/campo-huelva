@@ -161,10 +161,9 @@ IMPORTANTE:
 export async function generarDescripcionEncargado(datos: {
   fullName?: string;
   yearsExperience?: number;
-  canManageDayWorkers?: boolean;
-  dayWorkersCapacity?: number;
+  canDriveTractor?: boolean;
   cropExperience?: string[];
-  providesAccommodation?: boolean;
+  needsAccommodation?: boolean;
   workArea?: string[];
 }): Promise<string> {
   if (!genAI) {
@@ -182,9 +181,9 @@ ${JSON.stringify(datos, null, 2)}
 
 Genera una descripción de 2-3 frases en español que:
 1. Destaque su experiencia liderando equipos en campo
-2. Mencione su capacidad para gestionar day workers
+2. Mencione si tiene experiencia manejando tractor
 3. Resalte los cultivos en los que tiene experiencia
-4. Si aplica, mencione la capacidad de gestionar alojamiento
+4. Si aplica, mencione que necesita alojamiento en la finca
 5. Sea atractiva para empresas que necesitan responsables de finca
 
 IMPORTANTE:
@@ -207,6 +206,7 @@ export async function generarDescripcionTractorista(datos: {
   fullName?: string;
   yearsExperience?: number;
   machineryTypes?: string[];
+  toolTypes?: string[];
   cropExperience?: string[];
   hasTractorLicense?: boolean;
   hasSprayerLicense?: boolean;
@@ -229,15 +229,16 @@ ${JSON.stringify(datos, null, 2)}
 
 Genera una descripción de 2-3 frases en español que:
 1. Destaque su experiencia conduciendo maquinaria agrícola
-2. Mencione los tipos de maquinaria que domina (tractor, pulverizadora, cosechadora, etc.)
-3. Resalte los cultivos en los que tiene experiencia
-4. Mencione sus carnets específicos si los tiene
-5. Sea atractiva para empresas que necesitan maquinistas expertos
+2. Mencione los tipos de maquinaria que domina (tractores, cosechadoras, etc.)
+3. Mencione los tipos de aperos que maneja (arado, grada, sembradora, etc.)
+4. Resalte los cultivos en los que tiene experiencia
+5. Mencione sus carnets específicos si los tiene
+6. Sea atractiva para empresas que necesitan maquinistas expertos
 
 IMPORTANTE:
 - Devuelve SOLO la descripción, sin marcas de formato ni explicaciones
 - Usa un tono que destaque la especialización técnica
-- Enfatiza la seguridad y profesionalidad en el manejo de maquinaria`;
+- Enfatiza la seguridad y profesionalidad en el manejo de maquinaria y aperos`;
 
     const result = await model.generateContent(prompt);
     return result.response.text().trim();

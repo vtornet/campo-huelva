@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, TIPOS_MAQUINARIA, NIVELES_FITOSANITARIO } from "@/lib/constants";
+import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, TIPOS_MAQUINARIA, TIPOS_APEROS, NIVELES_FITOSANITARIO } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
 
@@ -15,6 +15,7 @@ export default function TractoristaProfilePage() {
   const [nameLastModified, setNameLastModified] = useState<string | null>(null);
   const [dataConfirmed, setDataConfirmed] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [nameChangeError, setNameChangeError] = useState<string | null>(null);
 
   // Proteger la página: si no hay usuario, ir a login
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function TractoristaProfilePage() {
               bio: data.bio || "",
               yearsExperience: data.yearsExperience?.toString() || "",
               machineryTypes: data.machineryTypes || [],
+              toolTypes: data.toolTypes || [],
               cropExperience: data.cropExperience || [],
               hasTractorLicense: data.hasTractorLicense || false,
               hasSprayerLicense: data.hasSprayerLicense || false,
@@ -83,6 +85,7 @@ export default function TractoristaProfilePage() {
     bio: "",
     yearsExperience: "",
     machineryTypes: [] as string[],
+    toolTypes: [] as string[],
     cropExperience: [] as string[],
     hasTractorLicense: false,
     hasSprayerLicense: false,
@@ -105,10 +108,10 @@ export default function TractoristaProfilePage() {
     if (formData.city) filled++;
     if (formData.yearsExperience) filled++;
     if (formData.machineryTypes.length > 0) filled++;
+    if (formData.toolTypes.length > 0) filled++;
     if (formData.cropExperience.length > 0) filled++;
     if (formData.hasTractorLicense !== undefined) filled++;
     if (formData.phytosanitaryLevel) filled++;
-    if (formData.foodHandler !== undefined) filled++;
     if (formData.bio) filled++;
 
     return Math.round((filled / total) * 100);
@@ -134,6 +137,17 @@ export default function TractoristaProfilePage() {
         return { ...prev, machineryTypes: prev.machineryTypes.filter(m => m !== machinery) };
       } else {
         return { ...prev, machineryTypes: [...prev.machineryTypes, machinery] };
+      }
+    });
+  };
+
+  const toggleTool = (tool: string) => {
+    setFormData(prev => {
+      const exists = prev.toolTypes.includes(tool);
+      if (exists) {
+        return { ...prev, toolTypes: prev.toolTypes.filter(t => t !== tool) };
+      } else {
+        return { ...prev, toolTypes: [...prev.toolTypes, tool] };
       }
     });
   };
@@ -169,6 +183,7 @@ export default function TractoristaProfilePage() {
     }
 
     setLoading(true);
+    setNameChangeError(null);
 
     const dataToSend = {
       ...formData,
@@ -192,7 +207,11 @@ export default function TractoristaProfilePage() {
         router.push("/");
       } else {
         console.error("Error del servidor:", responseData);
-        alert(responseData.error || "Error al guardar perfil.");
+        if (responseData.error?.includes("60 días")) {
+          setNameChangeError(responseData.error);
+        } else {
+          alert(responseData.error || "Error al guardar perfil.");
+        }
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -211,13 +230,20 @@ export default function TractoristaProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v2a1 1 0 001 1h1" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 16v6a1 1 0 001 1h4v-5a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 8l-3-3-3 3" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v6" />
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Perfil de Tractorista</h1>
-          <p className="text-slate-500">Especialista en maquinaria agrícola. Tractores, pulverizadoras, cosechadoras.</p>
+          <p className="text-slate-500">Especialista en maquinaria agrícola. Tractores, aperos y equipos.</p>
         </div>
+
+        {/* Recomendación inicial */}
+        {!profileLoaded && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Consejo:</strong> Rellena el máximo de datos posible para aumentar tu visibilidad y ser más atractivo para las empresas.
+            </p>
+          </div>
+        )}
 
         {/* Barra de progreso */}
         {profileLoaded && (
@@ -278,6 +304,9 @@ export default function TractoristaProfilePage() {
                   {...(!canEditName && { title: `Solo puedes cambiar tu nombre una vez cada 60 días (${daysRemaining} días restantes)` })}
                   placeholder="Tu nombre completo"
                 />
+                {nameChangeError && (
+                  <p className="text-xs text-red-600 mt-1">{nameChangeError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono *</label>
@@ -337,7 +366,7 @@ export default function TractoristaProfilePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v2a1 1 0 001 1h1" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 16v6a1 1 0 001 1h4v-5a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
               </svg>
-              Maquinaria y Experiencia
+              Experiencia
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               <div>
@@ -348,7 +377,7 @@ export default function TractoristaProfilePage() {
             </div>
 
             {/* Tipos de maquinaria */}
-            <div>
+            <div className="mb-5">
               <label className="text-sm font-semibold text-slate-700 mb-3 block">Tipos de maquinaria que manejas</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {TIPOS_MAQUINARIA.map(m => (
@@ -360,6 +389,24 @@ export default function TractoristaProfilePage() {
                     <input type="checkbox" className="mr-2 w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
                       checked={formData.machineryTypes.includes(m)} onChange={() => toggleMachinery(m)} />
                     <span className="text-sm font-medium">{m}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Tipos de aperos */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-3 block">Tipos de aperos que manejas</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {TIPOS_APEROS.map(t => (
+                  <label key={t} className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
+                    formData.toolTypes.includes(t)
+                      ? "bg-amber-100 border-amber-400"
+                      : "border-slate-200 hover:bg-slate-50"
+                  }`}>
+                    <input type="checkbox" className="mr-2 w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                      checked={formData.toolTypes.includes(t)} onChange={() => toggleTool(t)} />
+                    <span className="text-sm font-medium">{t}</span>
                   </label>
                 ))}
               </div>
@@ -483,10 +530,11 @@ export default function TractoristaProfilePage() {
                 fullName: formData.fullName,
                 yearsExperience: formData.yearsExperience ? parseInt(formData.yearsExperience) : undefined,
                 machineryTypes: formData.machineryTypes,
+                toolTypes: formData.toolTypes,
                 cropExperience: formData.cropExperience,
                 hasTractorLicense: formData.hasTractorLicense,
               }}
-              placeholder="Describe tu experiencia con maquinaria agrícola, tipos de equipos que manejas..."
+              placeholder="Describe tu experiencia con maquinaria agrícola, tipos de equipos y aperos que manejas..."
               label="Sobre ti (descripción profesional)"
             />
           </div>

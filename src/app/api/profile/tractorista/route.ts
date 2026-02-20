@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 }
 
-// PUT: Guardar perfil (Con Auto-Reparación de Usuario)
+// PUT: Guardar perfil (Con Auto-Reparación de Usuario y control de nombre)
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -35,6 +35,7 @@ export async function PUT(request: Request) {
       bio,
       yearsExperience,
       machineryTypes = [],
+      toolTypes = [],
       cropExperience = [],
       hasTractorLicense,
       hasSprayerLicense,
@@ -62,17 +63,47 @@ export async function PUT(request: Request) {
       }
     });
 
-    // 2. Guardamos el perfil
+    // 2. Verificar si el perfil ya existe para controlar la modificación del nombre
+    const existingProfile = await prisma.tractoristProfile.findUnique({
+      where: { userId: uid }
+    });
+
+    // Control de modificación de nombre (60 días)
+    if (existingProfile && existingProfile.fullName && existingProfile.fullName !== fullName) {
+      if (existingProfile.nameLastModified) {
+        const daysSinceLastChange = Math.floor(
+          (Date.now() - new Date(existingProfile.nameLastModified).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysSinceLastChange < 60) {
+          return NextResponse.json({
+            error: `Solo puedes cambiar tu nombre una vez cada 60 días. Días restantes: ${60 - daysSinceLastChange}`
+          }, { status: 400 });
+        }
+      }
+      // Actualizamos la fecha de modificación del nombre
+      await prisma.tractoristProfile.update({
+        where: { userId: uid },
+        data: { nameLastModified: new Date() }
+      });
+    } else if (!existingProfile && fullName) {
+      // Nuevo perfil - establecer fecha de modificación
+      await prisma.tractoristProfile.update({
+        where: { userId: uid },
+        data: { nameLastModified: new Date() }
+      });
+    }
+
+    // 3. Guardamos el perfil
     const updatedProfile = await prisma.tractoristProfile.upsert({
       where: { userId: uid },
       update: {
-        fullName,
         city,
         province,
         phone,
         bio,
         yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
         machineryTypes: machineryTypes || [],
+        toolTypes: toolTypes || [],
         cropExperience: cropExperience || [],
         hasTractorLicense,
         hasSprayerLicense,
@@ -92,6 +123,7 @@ export async function PUT(request: Request) {
         bio,
         yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
         machineryTypes: machineryTypes || [],
+        toolTypes: toolTypes || [],
         cropExperience: cropExperience || [],
         hasTractorLicense,
         hasSprayerLicense,
@@ -101,6 +133,7 @@ export async function PUT(request: Request) {
         phytosanitaryLevel,
         foodHandler,
         profileImage,
+        nameLastModified: fullName ? new Date() : null,
       }
     });
 

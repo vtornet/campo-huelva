@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, NIVELES_FITOSANITARIO, EXPERIENCIAS_ENCARGADO } from "@/lib/constants";
+import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, NIVELES_FITOSANITARIO } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
 
@@ -15,6 +15,7 @@ export default function EncargadoProfilePage() {
   const [nameLastModified, setNameLastModified] = useState<string | null>(null);
   const [dataConfirmed, setDataConfirmed] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [nameChangeError, setNameChangeError] = useState<string | null>(null);
 
   // Proteger la página: si no hay usuario, ir a login
   useEffect(() => {
@@ -38,12 +39,9 @@ export default function EncargadoProfilePage() {
               city: data.city || "",
               bio: data.bio || "",
               yearsExperience: data.yearsExperience?.toString() || "",
-              canManageDayWorkers: data.canManageDayWorkers || false,
-              dayWorkersCapacity: data.dayWorkersCapacity?.toString() || "",
+              canDriveTractor: data.canDriveTractor || false,
               cropExperience: data.cropExperience || [],
-              canManageAccommodation: data.canManageAccommodation || false,
-              providesAccommodation: data.providesAccommodation || false,
-              accommodationCapacity: data.accommodationCapacity?.toString() || "",
+              needsAccommodation: data.needsAccommodation || false,
               workArea: data.workArea || [],
               phytosanitaryLevel: data.phytosanitaryLevel || "",
               foodHandler: data.foodHandler || false,
@@ -82,12 +80,9 @@ export default function EncargadoProfilePage() {
     city: "",
     bio: "",
     yearsExperience: "",
-    canManageDayWorkers: false,
-    dayWorkersCapacity: "",
+    canDriveTractor: false,
     cropExperience: [] as string[],
-    canManageAccommodation: false,
-    providesAccommodation: false,
-    accommodationCapacity: "",
+    needsAccommodation: false,
     workArea: [] as string[],
     phytosanitaryLevel: "",
     foodHandler: false,
@@ -97,7 +92,7 @@ export default function EncargadoProfilePage() {
   // Calcular porcentaje de completitud del perfil
   const calculateCompleteness = () => {
     let filled = 0;
-    let total = 11;
+    let total = 10;
 
     if (formData.fullName) filled++;
     if (formData.phone) filled++;
@@ -106,7 +101,6 @@ export default function EncargadoProfilePage() {
     if (formData.yearsExperience) filled++;
     if (formData.cropExperience.length > 0) filled++;
     if (formData.workArea.length > 0) filled++;
-    if (formData.canManageDayWorkers !== undefined) filled++;
     if (formData.phytosanitaryLevel) filled++;
     if (formData.foodHandler !== undefined) filled++;
     if (formData.bio) filled++;
@@ -169,6 +163,7 @@ export default function EncargadoProfilePage() {
     }
 
     setLoading(true);
+    setNameChangeError(null);
 
     const dataToSend = {
       ...formData,
@@ -192,7 +187,11 @@ export default function EncargadoProfilePage() {
         router.push("/");
       } else {
         console.error("Error del servidor:", responseData);
-        alert(responseData.error || "Error al guardar perfil.");
+        if (responseData.error?.includes("60 días")) {
+          setNameChangeError(responseData.error);
+        } else {
+          alert(responseData.error || "Error al guardar perfil.");
+        }
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -212,8 +211,17 @@ export default function EncargadoProfilePage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Perfil de Encargado/Capataz</h1>
-          <p className="text-slate-500">Gestiona day workers, organiza tareas y coordina operaciones en finca.</p>
+          <p className="text-slate-500">Organiza tareas, coordina operaciones y gestiona equipos en finca.</p>
         </div>
+
+        {/* Recomendación inicial */}
+        {!profileLoaded && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Consejo:</strong> Rellena el máximo de datos posible para aumentar tu visibilidad y ser más atractivo para las empresas.
+            </p>
+          </div>
+        )}
 
         {/* Barra de progreso */}
         {profileLoaded && (
@@ -274,6 +282,9 @@ export default function EncargadoProfilePage() {
                   {...(!canEditName && { title: `Solo puedes cambiar tu nombre una vez cada 60 días (${daysRemaining} días restantes)` })}
                   placeholder="Tu nombre completo"
                 />
+                {nameChangeError && (
+                  <p className="text-xs text-red-600 mt-1">{nameChangeError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono *</label>
@@ -325,67 +336,57 @@ export default function EncargadoProfilePage() {
             </div>
           </div>
 
-          {/* GESTIÓN DE DAY WORKERS */}
+          {/* EXPERIENCIA */}
           <div className="bg-teal-50/80 p-5 rounded-2xl border border-teal-100">
             <h2 className="text-lg font-semibold text-teal-800 mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
-              Gestión de Day Workers
+              Experiencia
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Años de experiencia como encargado</label>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Años de experiencia como encargado</label>
                 <input type="number" placeholder="Ej: 8" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
                   value={formData.yearsExperience} onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Capacidad de day workers (Nº)</label>
-                <input type="number" placeholder="Ej: 30" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.dayWorkersCapacity} onChange={(e) => setFormData({ ...formData, dayWorkersCapacity: e.target.value })} />
               </div>
             </div>
             <div className="mt-4">
               <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-all duration-200 shadow-sm">
                 <input type="checkbox" className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500 focus:ring-offset-0"
-                  checked={formData.canManageDayWorkers} onChange={(e) => setFormData({ ...formData, canManageDayWorkers: e.target.checked })} />
+                  checked={formData.canDriveTractor} onChange={(e) => setFormData({ ...formData, canDriveTractor: e.target.checked })} />
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v2a1 1 0 001 1h1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 16v6a1 1 0 001 1h4v-5a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
                   </svg>
-                  <span className="text-slate-700 font-medium">Puedo gestionar day workers (organizar, asignar tareas, controlar)</span>
+                  <span className="text-slate-700 font-medium">Tengo experiencia manejando tractor</span>
                 </div>
               </label>
             </div>
           </div>
 
-          {/* ALOJAMIENTO EN FINCA */}
+          {/* ALOJAMIENTO */}
           <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-100">
             <h2 className="text-lg font-semibold text-amber-800 mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
               </svg>
               Alojamiento
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-all duration-200 shadow-sm">
                 <input type="checkbox" className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0"
-                  checked={formData.canManageAccommodation} onChange={(e) => setFormData({ ...formData, canManageAccommodation: e.target.checked })} />
-                <span className="text-slate-700 font-medium">Puedo gestionar alojamiento</span>
-              </label>
-              <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-all duration-200 shadow-sm">
-                <input type="checkbox" className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0"
-                  checked={formData.providesAccommodation} onChange={(e) => setFormData({ ...formData, providesAccommodation: e.target.checked })} />
-                <span className="text-slate-700 font-medium">Ofrezco alojamiento en finca</span>
+                  checked={formData.needsAccommodation} onChange={(e) => setFormData({ ...formData, needsAccommodation: e.target.checked })} />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
+                  </svg>
+                  <span className="text-slate-700 font-medium">Necesito alojamiento en la finca de la empresa</span>
+                </div>
               </label>
             </div>
-            {formData.providesAccommodation && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Capacidad de alojamiento (plazas)</label>
-                <input type="number" placeholder="Ej: 20" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.accommodationCapacity} onChange={(e) => setFormData({ ...formData, accommodationCapacity: e.target.value })} />
-              </div>
-            )}
           </div>
 
           {/* ÁREA DE TRABAJO */}
@@ -477,9 +478,9 @@ export default function EncargadoProfilePage() {
               profileData={{
                 fullName: formData.fullName,
                 yearsExperience: formData.yearsExperience ? parseInt(formData.yearsExperience) : undefined,
-                canManageDayWorkers: formData.canManageDayWorkers,
+                canDriveTractor: formData.canDriveTractor,
                 cropExperience: formData.cropExperience,
-                providesAccommodation: formData.providesAccommodation,
+                needsAccommodation: formData.needsAccommodation,
               }}
               placeholder="Describe tu experiencia gestionando equipos, organizando tareas en finca..."
               label="Sobre ti (descripción profesional)"

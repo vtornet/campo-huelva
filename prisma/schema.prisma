@@ -202,17 +202,14 @@ model EncargadoProfile {
   // Experiencia laboral
   yearsExperience   Int?     // Años de experiencia como encargado
 
-  // Gestión de day workers
-  canManageDayWorkers Boolean @default(false) // ¿Puede gestionar day workers?
-  dayWorkersCapacity  Int?    // Número de day workers que puede gestionar
+  // Experiencia en maquinaria
+  canDriveTractor   Boolean  @default(false) // ¿Puede manejar tractor?
 
   // Experiencia por cultivos
   cropExperience    String[] // Tipos de cultivo en los que tiene experiencia
 
-  // Disponibilidad
-  canManageAccommodation Boolean @default(false) // ¿Puede gestionar alojamiento?
-  providesAccommodation  Boolean @default(false) // ¿Ofrece alojamiento en finca?
-  accommodationCapacity  Int?    // Capacidad de alojamiento (plazas)
+  // Disponibilidad de alojamiento
+  needsAccommodation Boolean @default(false) // ¿Necesita alojamiento en finca?
 
   // Disponibilidad geográfica
   workArea          String[] // Provincias donde puede trabajar
@@ -246,8 +243,11 @@ model TractoristProfile {
   // Experiencia profesional
   yearsExperience   Int?     // Años de experiencia como tractorista
 
-  // Tipos de maquinaria que maneja
-  machineryTypes    String[] // Tractor, Pulverizadora, Cosechadora, etc.
+  // Tipos de maquinaria que maneja (tractores, cosechadoras, etc.)
+  machineryTypes    String[]
+
+  // Tipos de aperos que maneja (arado, grada, sembradora, etc.)
+  toolTypes         String[]
 
   // Experiencia por cultivos
   cropExperience    String[] // Tipos de cultivo en los que tiene experiencia
