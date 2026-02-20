@@ -10,6 +10,8 @@ export async function GET() {
       workers, // USER role
       foremen, // FOREMAN role
       engineers, // ENGINEER role
+      encargados, // ENCARGADO role
+      tractoristas, // TRACTORISTA role
       totalCompanies,
       totalPosts,
       pendingReports,
@@ -22,6 +24,8 @@ export async function GET() {
       prisma.user.count({ where: { role: "USER" } }),
       prisma.user.count({ where: { role: "FOREMAN" } }),
       prisma.user.count({ where: { role: "ENGINEER" } }),
+      prisma.user.count({ where: { role: "ENCARGADO" } }),
+      prisma.user.count({ where: { role: "TRACTORISTA" } }),
       prisma.companyProfile.count(),
       prisma.post.count(),
       prisma.report.count({ where: { status: "PENDING" } }),
@@ -37,6 +41,8 @@ export async function GET() {
       workers,
       foremen,
       engineers,
+      encargados,
+      tractoristas,
       totalCompanies,
       totalPosts,
       pendingReports,

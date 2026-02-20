@@ -32,6 +32,9 @@ export async function GET(request: Request) {
             role: true,
             workerProfile: { select: { fullName: true } },
             foremanProfile: { select: { fullName: true } },
+            engineerProfile: { select: { fullName: true } },
+            encargadoProfile: { select: { fullName: true } },
+            tractoristProfile: { select: { fullName: true } },
             companyProfile: { select: { companyName: true } },
           }
         },
@@ -45,6 +48,9 @@ export async function GET(request: Request) {
             isSilenced: true,
             workerProfile: { select: { fullName: true, city: true, province: true } },
             foremanProfile: { select: { fullName: true, city: true, province: true } },
+            engineerProfile: { select: { fullName: true, city: true, province: true } },
+            encargadoProfile: { select: { fullName: true, city: true, province: true } },
+            tractoristProfile: { select: { fullName: true, city: true, province: true } },
             companyProfile: { select: { companyName: true, city: true, province: true, isApproved: true, isVerified: true } },
           }
         },
@@ -71,6 +77,9 @@ export async function GET(request: Request) {
                 id: true,
                 workerProfile: { select: { fullName: true } },
                 foremanProfile: { select: { fullName: true } },
+                engineerProfile: { select: { fullName: true } },
+                encargadoProfile: { select: { fullName: true } },
+                tractoristProfile: { select: { fullName: true } },
               }
             }
           }

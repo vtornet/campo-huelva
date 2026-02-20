@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs";
-type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "banned" | "silenced";
+type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA" | "banned" | "silenced";
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -20,6 +20,8 @@ export default function AdminPage() {
     totalWorkers: 0,
     totalForemen: 0,
     totalEngineers: 0,
+    totalEncargados: 0,
+    totalTractoristas: 0,
     totalCompanies: 0,
     totalPosts: 0,
     pendingReports: 0,
@@ -62,6 +64,8 @@ export default function AdminPage() {
         totalWorkers: data.workers || 0,
         totalForemen: data.foremen || 0,
         totalEngineers: data.engineers || 0,
+        totalEncargados: data.encargados || 0,
+        totalTractoristas: data.tractoristas || 0,
         totalCompanies: data.totalCompanies || 0,
         totalPosts: data.totalPosts || 0,
         pendingReports: data.pendingReports || 0,
@@ -204,16 +208,18 @@ function AdminOverview({ stats }: { stats: any }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Resumen del Sistema</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <StatCard title="Trabajadores" value={stats.totalWorkers} icon="👨‍🌾" color="bg-blue-600" />
         <StatCard title="Manijeros" value={stats.totalForemen} icon="📋" color="bg-orange-600" />
+        <StatCard title="Encargados" value={stats.totalEncargados} icon="👷" color="bg-teal-600" />
+        <StatCard title="Tractoristas" value={stats.totalTractoristas} icon="🚜" color="bg-amber-600" />
         <StatCard title="Ingenieros" value={stats.totalEngineers} icon="🎓" color="bg-purple-600" />
         <StatCard title="Empresas" value={stats.totalCompanies} icon="🏢" color="bg-emerald-600" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Publicaciones" value={stats.totalPosts} icon="📝" color="bg-teal-600" />
+        <StatCard title="Publicaciones" value={stats.totalPosts} icon="📝" color="bg-cyan-600" />
         <StatCard title="Denuncias Pendientes" value={stats.pendingReports} icon="🚨" color="bg-red-600" />
-        <StatCard title="Por Aprobar" value={stats.pendingApprovals} icon="⏳" color="bg-amber-600" />
+        <StatCard title="Por Aprobar" value={stats.pendingApprovals} icon="⏳" color="bg-yellow-600" />
         <StatCard title="Sancionados" value={stats.bannedUsers + stats.silencedUsers} icon="🔒" color="bg-slate-600" />
       </div>
     </div>
@@ -354,6 +360,8 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
     if (u.workerProfile?.fullName) return u.workerProfile.fullName;
     if (u.foremanProfile?.fullName) return u.foremanProfile.fullName;
     if (u.engineerProfile?.fullName) return u.engineerProfile.fullName;
+    if (u.encargadoProfile?.fullName) return u.encargadoProfile.fullName;
+    if (u.tractoristProfile?.fullName) return u.tractoristProfile.fullName;
     if (u.companyProfile?.companyName) return u.companyProfile.companyName;
     return u.email;
   };
@@ -365,6 +373,8 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
       FOREMAN: "bg-orange-600",
       ENGINEER: "bg-purple-600",
       USER: "bg-blue-600",
+      ENCARGADO: "bg-teal-600",
+      TRACTORISTA: "bg-amber-600",
     };
     const labels: Record<string, string> = {
       ADMIN: "Admin",
@@ -372,6 +382,8 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
       FOREMAN: "Manijero",
       ENGINEER: "Ingeniero",
       USER: "Trabajador",
+      ENCARGADO: "Encargado",
+      TRACTORISTA: "Tractorista",
     };
     return { color: colors[role] || "bg-slate-600", label: labels[role] || role };
   };
@@ -386,6 +398,8 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
           <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todos</FilterButton>
           <FilterButton active={filter === "USER"} onClick={() => setFilter("USER")}>Trabajadores</FilterButton>
           <FilterButton active={filter === "FOREMAN"} onClick={() => setFilter("FOREMAN")}>Manijeros</FilterButton>
+          <FilterButton active={filter === "ENCARGADO"} onClick={() => setFilter("ENCARGADO")}>Encargados</FilterButton>
+          <FilterButton active={filter === "TRACTORISTA"} onClick={() => setFilter("TRACTORISTA")}>Tractoristas</FilterButton>
           <FilterButton active={filter === "ENGINEER"} onClick={() => setFilter("ENGINEER")}>Ingenieros</FilterButton>
           <FilterButton active={filter === "COMPANY"} onClick={() => setFilter("COMPANY")}>Empresas</FilterButton>
           <FilterButton active={filter === "banned"} onClick={() => setFilter("banned")}>Baneados</FilterButton>
@@ -437,6 +451,8 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
                         >
                           <option value="USER">Trabajador</option>
                           <option value="FOREMAN">Manijero</option>
+                          <option value="ENCARGADO">Encargado</option>
+                          <option value="TRACTORISTA">Tractorista</option>
                           <option value="ENGINEER">Ingeniero</option>
                           <option value="COMPANY">Empresa</option>
                           <option value="ADMIN">Admin</option>
@@ -782,7 +798,7 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
                     <p className="text-slate-400 text-sm mt-1">📍 {post.location} {post.province && `(${post.province})`}</p>
                     <p className="text-slate-300 mt-2 line-clamp-2 text-sm">"{post.description}"</p>
                     <p className="text-slate-500 text-xs mt-2">
-                      Por: {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
+                      Por: {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || post.publisher?.engineerProfile?.fullName || post.publisher?.encargadoProfile?.fullName || post.publisher?.tractoristProfile?.fullName || "Usuario"}
                     </p>
                     <p className="text-slate-600 text-xs mt-1">
                       {new Date(post.createdAt).toLocaleDateString("es-ES", { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -871,6 +887,9 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   const getReporterName = (report: any) => {
     if (report.reporter?.workerProfile?.fullName) return report.reporter.workerProfile.fullName;
     if (report.reporter?.foremanProfile?.fullName) return report.reporter.foremanProfile.fullName;
+    if (report.reporter?.engineerProfile?.fullName) return report.reporter.engineerProfile.fullName;
+    if (report.reporter?.encargadoProfile?.fullName) return report.reporter.encargadoProfile.fullName;
+    if (report.reporter?.tractoristProfile?.fullName) return report.reporter.tractoristProfile.fullName;
     if (report.reporter?.companyProfile?.companyName) return report.reporter.companyProfile.companyName;
     return report.reporter?.email || "Desconocido";
   };
@@ -879,6 +898,9 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   const getReportedUserName = (report: any) => {
     if (report.reportedUser?.workerProfile?.fullName) return report.reportedUser.workerProfile.fullName;
     if (report.reportedUser?.foremanProfile?.fullName) return report.reportedUser.foremanProfile.fullName;
+    if (report.reportedUser?.engineerProfile?.fullName) return report.reportedUser.engineerProfile.fullName;
+    if (report.reportedUser?.encargadoProfile?.fullName) return report.reportedUser.encargadoProfile.fullName;
+    if (report.reportedUser?.tractoristProfile?.fullName) return report.reportedUser.tractoristProfile.fullName;
     if (report.reportedUser?.companyProfile?.companyName) return report.reportedUser.companyProfile.companyName;
     return report.reportedUser?.email || "Desconocido";
   };
@@ -891,6 +913,8 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
       FOREMAN: "Manijero",
       ENGINEER: "Ingeniero",
       USER: "Trabajador",
+      ENCARGADO: "Encargado",
+      TRACTORISTA: "Tractorista",
     };
     return labels[role] || role;
   };
@@ -997,11 +1021,11 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
                                 </span>
                                 <span>{report.reportedUser?.email}</span>
                               </div>
-                              {(report.reportedUser?.workerProfile?.city || report.reportedUser?.foremanProfile?.city || report.reportedUser?.companyProfile?.city) && (
+                              {(report.reportedUser?.workerProfile?.city || report.reportedUser?.foremanProfile?.city || report.reportedUser?.engineerProfile?.city || report.reportedUser?.encargadoProfile?.city || report.reportedUser?.tractoristProfile?.city || report.reportedUser?.companyProfile?.city) && (
                                 <p className="text-xs text-slate-500 mt-1">
-                                  📍 {report.reportedUser?.workerProfile?.city || report.reportedUser?.foremanProfile?.city || report.reportedUser?.companyProfile?.city}
-                                  {(report.reportedUser?.workerProfile?.province || report.reportedUser?.foremanProfile?.province || report.reportedUser?.companyProfile?.province) &&
-                                    `, ${report.reportedUser?.workerProfile?.province || report.reportedUser?.foremanProfile?.province || report.reportedUser?.companyProfile?.province}`}
+                                  📍 {report.reportedUser?.workerProfile?.city || report.reportedUser?.foremanProfile?.city || report.reportedUser?.engineerProfile?.city || report.reportedUser?.encargadoProfile?.city || report.reportedUser?.tractoristProfile?.city || report.reportedUser?.companyProfile?.city}
+                                  {(report.reportedUser?.workerProfile?.province || report.reportedUser?.foremanProfile?.province || report.reportedUser?.engineerProfile?.province || report.reportedUser?.encargadoProfile?.province || report.reportedUser?.tractoristProfile?.province || report.reportedUser?.companyProfile?.province) &&
+                                    `, ${report.reportedUser?.workerProfile?.province || report.reportedUser?.foremanProfile?.province || report.reportedUser?.engineerProfile?.province || report.reportedUser?.encargadoProfile?.province || report.reportedUser?.tractoristProfile?.province || report.reportedUser?.companyProfile?.province}`}
                                 </p>
                               )}
                               <div className="flex gap-2 mt-2">
@@ -1034,7 +1058,7 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
                               {report.reportedPost.province && `, ${report.reportedPost.province}`}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
-                              Por: {report.reportedPost.company?.companyName || report.reportedPost.publisher?.workerProfile?.fullName || report.reportedPost.publisher?.foremanProfile?.fullName || "Usuario"}
+                              Por: {report.reportedPost.company?.companyName || report.reportedPost.publisher?.workerProfile?.fullName || report.reportedPost.publisher?.foremanProfile?.fullName || report.reportedPost.publisher?.engineerProfile?.fullName || report.reportedPost.publisher?.encargadoProfile?.fullName || report.reportedPost.publisher?.tractoristProfile?.fullName || "Usuario"}
                             </p>
                           </div>
                         )

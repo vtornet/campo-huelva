@@ -28,6 +28,9 @@ export async function GET(request: Request) {
           include: {
             workerProfile: { select: { fullName: true } },
             foremanProfile: { select: { fullName: true } },
+            engineerProfile: { select: { fullName: true } },
+            encargadoProfile: { select: { fullName: true } },
+            tractoristProfile: { select: { fullName: true } },
           },
         },
         company: { select: { companyName: true, isVerified: true } },

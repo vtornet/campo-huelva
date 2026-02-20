@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // Validar que el filtro de rol es valido
 const isValidRoleFilter = (filter: string | null): boolean => {
   if (!filter || filter === "all") return true;
-  return ["user", "foreman", "engineer", "company", "admin", "banned", "silenced"].includes(filter);
+  return ["user", "foreman", "engineer", "encargado", "tractorista", "company", "admin", "banned", "silenced"].includes(filter);
 };
 
 export async function GET(request: Request) {
@@ -45,6 +45,8 @@ export async function GET(request: Request) {
         { workerProfile: { fullName: { contains: search, mode: "insensitive" } } },
         { foremanProfile: { fullName: { contains: search, mode: "insensitive" } } },
         { engineerProfile: { fullName: { contains: search, mode: "insensitive" } } },
+        { encargadoProfile: { fullName: { contains: search, mode: "insensitive" } } },
+        { tractoristProfile: { fullName: { contains: search, mode: "insensitive" } } },
         { companyProfile: { companyName: { contains: search, mode: "insensitive" } } },
       ];
     }
@@ -77,6 +79,20 @@ export async function GET(request: Request) {
             city: true,
             province: true,
             collegiateNumber: true,
+          },
+        },
+        encargadoProfile: {
+          select: {
+            fullName: true,
+            city: true,
+            province: true,
+          },
+        },
+        tractoristProfile: {
+          select: {
+            fullName: true,
+            city: true,
+            province: true,
           },
         },
         companyProfile: {
