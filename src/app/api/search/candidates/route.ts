@@ -76,6 +76,14 @@ export async function GET(request: Request) {
     switch (category) {
       case "worker":
         const workerWhere: any = { ...where };
+        // Para trabajadores, experience es el nombre del campo
+        if (cropExperienceStr) {
+          delete workerWhere.cropExperience;
+          const crops = cropExperienceStr.split(",");
+          workerWhere.experience = {
+            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
+          };
+        }
         if (hasVehicle === "true") workerWhere.hasVehicle = true;
         if (canRelocate === "true") workerWhere.canRelocate = true;
         if (phytosanitaryLevel) workerWhere.phytosanitaryLevel = phytosanitaryLevel;
@@ -89,7 +97,7 @@ export async function GET(request: Request) {
             province: true,
             city: true,
             bio: true,
-            cropExperience: true,
+            experience: true,
             yearsExperience: true,
             hasVehicle: true,
             canRelocate: true,

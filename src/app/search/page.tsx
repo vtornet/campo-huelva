@@ -597,7 +597,7 @@ function CandidateCard({ candidate, category, onViewProfile }: {
         return {
           name: candidate.fullName,
           location: candidate.city ? `${candidate.city}, ${candidate.province}` : candidate.province,
-          experience: candidate.cropExperience || [],
+          experience: candidate.experience || [],
           years: candidate.yearsExperience,
           vehicle: candidate.hasVehicle,
           relocate: candidate.canRelocate,
