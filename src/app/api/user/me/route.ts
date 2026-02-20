@@ -21,6 +21,8 @@ export async function GET(request: Request) {
         companyProfile: true,
         foremanProfile: true,
         engineerProfile: true,
+        encargadoProfile: true,
+        tractoristProfile: true,
       },
     });
 
@@ -35,29 +37,37 @@ export async function GET(request: Request) {
     else if (user.role === 'FOREMAN') selectedProfile = user.foremanProfile;
     else if (user.role === 'COMPANY') selectedProfile = user.companyProfile;
     else if (user.role === 'ENGINEER') selectedProfile = user.engineerProfile;
+    else if (user.role === 'ENCARGADO') selectedProfile = user.encargadoProfile;
+    else if (user.role === 'TRACTORISTA') selectedProfile = user.tractoristProfile;
 
     // 2. FALLBACK INTELIGENTE (Si falló lo anterior, buscamos qué perfil existe realmente)
     if (!selectedProfile) {
-      if (user.foremanProfile) {
-        selectedProfile = user.foremanProfile;
-        effectiveRole = 'FOREMAN'; // Corregimos el rol para el Frontend
-      } else if (user.companyProfile) {
+      if (user.companyProfile) {
         selectedProfile = user.companyProfile;
         effectiveRole = 'COMPANY';
+      } else if (user.foremanProfile) {
+        selectedProfile = user.foremanProfile;
+        effectiveRole = 'FOREMAN';
       } else if (user.engineerProfile) {
         selectedProfile = user.engineerProfile;
         effectiveRole = 'ENGINEER';
+      } else if (user.encargadoProfile) {
+        selectedProfile = user.encargadoProfile;
+        effectiveRole = 'ENCARGADO';
+      } else if (user.tractoristProfile) {
+        selectedProfile = user.tractoristProfile;
+        effectiveRole = 'TRACTORISTA';
       } else if (user.workerProfile) {
         selectedProfile = user.workerProfile;
         effectiveRole = 'USER';
       }
     }
 
-    return NextResponse.json({ 
-        exists: true, 
-        ...user, 
+    return NextResponse.json({
+        exists: true,
+        ...user,
         role: effectiveRole, // Enviamos el rol CORREGIDO para que la UI cargue la ficha correcta
-        profile: selectedProfile 
+        profile: selectedProfile
     });
 
   } catch (error) {

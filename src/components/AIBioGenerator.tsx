@@ -9,7 +9,7 @@ import AIButton, { AIBadge } from './AIButton';
 interface AIBioGeneratorProps {
   value: string;
   onChange: (value: string) => void;
-  rol: 'USER' | 'WORKER' | 'FOREMAN' | 'ENGINEER';
+  rol: 'USER' | 'WORKER' | 'FOREMAN' | 'ENGINEER' | 'ENCARGADO' | 'TRACTORISTA';
   profileData?: Record<string, any>;
   placeholder?: string;
   label?: string;

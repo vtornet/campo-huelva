@@ -195,26 +195,45 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Configuración de imágenes Next.js (remotePatterns para Firebase Storage)
 - [ ] Variables de entorno de producción correctamente configuradas
 
-### 8. Validaciones y UX Final
+### 8. Internacionalización (i18n)
+- [ ] **Soporte multiidioma para temporeros extranjeros**
+  - Español (idioma principal/predeterminado)
+  - Francés (temporeros de origen magrebí)
+  - Rumano (temporeros rumanos, muy comunes en la fresa)
+  - Inglés (idioma universal)
+- [ ] Sistema de traducción:
+  - Integrar `next-intl` o similar
+  - Archivos de traducción por idioma (JSON)
+  - Selector de idioma en la app con persistencia en preferencias de usuario
+- [ ] Traducción de:
+  - Interfaz de usuario (labels, botones, mensajes)
+  - Textos de onboarding por rol
+  - Errores y notificaciones
+  - Emails (si aplica)
+  - Política de privacidad y términos legales
+- [ ] Detección automática de idioma del navegador
+- [ ] URLs localizadas (/es, /fr, /ro, /en) o subdominios
+
+### 9. Validaciones y UX Final
 - [ ] Validar todos los formularios exhaustivamente
 - [ ] Mensajes de error más amigables y específicos
 - [ ] Estados de carga en todas las operaciones async
 - [ ] Pantallas de error (404, 500) con navegación de vuelta
 - [ ] Skeletons durante carga de contenido
 
-### 9. Seguridad
+### 10. Seguridad
 - [ ] Verificar que todas las APIs están protegidas (validación de userId)
 - [ ] Rate limiting en endpoints sensibles (contacto, inscripciones)
 - [ ] Headers de seguridad (CORS, CSP, HSTS)
 - [ ] Sanitización de inputs para prevenir XSS
 
-### 10. Testing
+### 11. Testing
 - [ ] Probar flujo completo de cada rol (registro, perfil, publicar, inscribirse)
 - [ ] Probar en dispositivos móviles reales (Android e iOS)
 - [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
 - [ ] Probar en modo offline (cuando se implemente PWA)
 
-### 11. Legal / Comunicación
+### 12. Legal / Comunicación
 - [ ] Política de Privacidad (RGPD compliant)
 - [ ] Términos y Condiciones de uso
 - [ ] Política de Cookies
@@ -241,7 +260,6 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - **Sistema de Reputación/Valoraciones**: Valoraciones mutuas post-contratación.
 - **Matchmaking Inteligente**: Sugerir perfiles a empresas basándose en filtros y experiencia.
 - **Alertas Personalizadas**: Notificaciones push para nuevos empleos que coincidan con el perfil.
-- **Internacionalización**: Soporte multiidioma para temporeros extranjeros.
 
 ## Reglas de Idioma
 

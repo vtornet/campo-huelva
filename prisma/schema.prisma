@@ -22,10 +22,12 @@ model User {
   silencedUntil DateTime? // null = silencio permanente, fecha = temporal
 
   // Perfiles
-  workerProfile   WorkerProfile?
-  companyProfile  CompanyProfile?
-  foremanProfile  ForemanProfile?
-  engineerProfile EngineerProfile?
+  workerProfile    WorkerProfile?
+  companyProfile   CompanyProfile?
+  foremanProfile   ForemanProfile?
+  engineerProfile  EngineerProfile?
+  encargadoProfile  EncargadoProfile?
+  tractoristProfile TractoristProfile?
 
   // Actividad
   posts           Post[]           @relation("UserPosts")
@@ -54,11 +56,13 @@ model User {
 }
 
 enum Role {
-  USER      // Trabajador
+  USER       // Trabajador
   ADMIN
-  COMPANY   // Empresa
-  FOREMAN   // Manijero
-  ENGINEER  // Ingeniero Técnico Agrícola
+  COMPANY    // Empresa
+  FOREMAN    // Manijero
+  ENGINEER   // Ingeniero Técnico Agrícola
+  ENCARGADO  // Capataz/Encargado de finca
+  TRACTORISTA// Tractorista
 }
 
 // === PERFILES ===
@@ -177,6 +181,94 @@ model EngineerProfile {
   canTravel          Boolean  @default(false) // ¿Puede desplazarse a otras provincias?
 
   // Foto de perfil (URL de Firebase Storage)
+  profileImage      String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model EncargadoProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+
+  // Información básica
+  fullName          String?
+  phone             String?
+  province          String?
+  city              String?
+  bio               String?
+
+  // Experiencia laboral
+  yearsExperience   Int?     // Años de experiencia como encargado
+
+  // Gestión de day workers
+  canManageDayWorkers Boolean @default(false) // ¿Puede gestionar day workers?
+  dayWorkersCapacity  Int?    // Número de day workers que puede gestionar
+
+  // Experiencia por cultivos
+  cropExperience    String[] // Tipos de cultivo en los que tiene experiencia
+
+  // Disponibilidad
+  canManageAccommodation Boolean @default(false) // ¿Puede gestionar alojamiento?
+  providesAccommodation  Boolean @default(false) // ¿Ofrece alojamiento en finca?
+  accommodationCapacity  Int?    // Capacidad de alojamiento (plazas)
+
+  // Disponibilidad geográfica
+  workArea          String[] // Provincias donde puede trabajar
+
+  // Carnets y certificaciones
+  phytosanitaryLevel String? // Nivel fitosanitario
+  foodHandler       Boolean  @default(false)
+
+  // Control de modificación de nombre (60 días)
+  nameLastModified DateTime?
+
+  // Foto de perfil
+  profileImage      String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model TractoristProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+
+  // Información básica
+  fullName          String?
+  phone             String?
+  province          String?
+  city              String?
+  bio               String?
+
+  // Experiencia profesional
+  yearsExperience   Int?     // Años de experiencia como tractorista
+
+  // Tipos de maquinaria que maneja
+  machineryTypes    String[] // Tractor, Pulverizadora, Cosechadora, etc.
+
+  // Experiencia por cultivos
+  cropExperience    String[] // Tipos de cultivo en los que tiene experiencia
+
+  // Carnets específicos
+  hasTractorLicense    Boolean @default(false) // Carnet de tractor
+  hasSprayerLicense    Boolean @default(false) // Carnet de pulverizadora
+  hasHarvesterLicense  Boolean @default(false) // Carnet de cosechadora
+
+  // Disponibilidad
+  isAvailableSeason   Boolean @default(true) // ¿Disponible para temporada completa?
+  canTravel           Boolean @default(false) // ¿Puede desplazarse?
+
+  // Carnets generales
+  phytosanitaryLevel  String? // Nivel fitosanitario
+  foodHandler         Boolean @default(false)
+
+  // Control de modificación de nombre (60 días)
+  nameLastModified DateTime?
+
+  // Foto de perfil
   profileImage      String?
 
   createdAt         DateTime  @default(now())

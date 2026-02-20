@@ -2,7 +2,13 @@
 // API para generar descripciones de perfil con IA + Caché
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generarDescripcionPerfil, generarDescripcionManijero, generarDescripcionIngeniero } from '@/lib/gemini';
+import {
+  generarDescripcionPerfil,
+  generarDescripcionManijero,
+  generarDescripcionIngeniero,
+  generarDescripcionEncargado,
+  generarDescripcionTractorista
+} from '@/lib/gemini';
 import { withAICache } from '@/lib/ai-cache';
 
 export async function POST(request: NextRequest) {
@@ -12,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (!rol) {
       return NextResponse.json(
-        { error: 'Falta especificar el rol (USER, FOREMAN, ENGINEER)' },
+        { error: 'Falta especificar el rol (USER, FOREMAN, ENGINEER, ENCARGADO, TRACTORISTA)' },
         { status: 400 }
       );
     }
@@ -31,6 +37,12 @@ export async function POST(request: NextRequest) {
 
           case 'ENGINEER':
             return await generarDescripcionIngeniero(datos);
+
+          case 'ENCARGADO':
+            return await generarDescripcionEncargado(datos);
+
+          case 'TRACTORISTA':
+            return await generarDescripcionTractorista(datos);
 
           default:
             throw new Error('Rol no soportado');

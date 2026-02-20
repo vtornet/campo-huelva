@@ -78,6 +78,10 @@ export default function Dashboard() {
                   router.push("/profile/foreman");
                 } else if (data.role === 'ENGINEER') {
                   router.push("/profile/engineer");
+                } else if (data.role === 'ENCARGADO') {
+                  router.push("/profile/encargado");
+                } else if (data.role === 'TRACTORISTA') {
+                  router.push("/profile/tractorista");
                 } else {
                   router.push("/profile/worker");
                 }

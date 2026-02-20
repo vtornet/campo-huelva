@@ -36,8 +36,8 @@ export default function Onboarding() {
     );
   }
 
-  // Aceptamos ahora FOREMAN y ENGINEER también
-  const handleSelectRole = async (role: "WORKER" | "COMPANY" | "FOREMAN" | "ENGINEER") => {
+  // Aceptamos todos los roles incluyendo ENCARGADO y TRACTORISTA
+  const handleSelectRole = async (role: "WORKER" | "COMPANY" | "FOREMAN" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA") => {
     if (!user) return;
     setActionLoading(true);
 
@@ -57,6 +57,8 @@ export default function Onboarding() {
         else if (role === "FOREMAN") router.push("/profile/foreman");
         else if (role === "COMPANY") router.push("/profile/company");
         else if (role === "ENGINEER") router.push("/profile/engineer");
+        else if (role === "ENCARGADO") router.push("/profile/encargado");
+        else if (role === "TRACTORISTA") router.push("/profile/tractorista");
         else router.push("/");
       } else {
         alert("Error al guardar perfil.");
@@ -97,7 +99,7 @@ export default function Onboarding() {
         </h1>
         <p className="text-xl text-gray-600 mb-10">Elige tu perfil para continuar:</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
           {/* TRABAJADOR */}
           <button onClick={() => handleSelectRole("WORKER")} disabled={actionLoading}
@@ -107,7 +109,7 @@ export default function Onboarding() {
             <p className="text-gray-500 text-sm">Soy trabajador (temporero, maquinista, almacén) y busco empleo.</p>
           </button>
 
-          {/* MANIJERO (NUEVO) */}
+          {/* MANIJERO */}
           <button onClick={() => handleSelectRole("FOREMAN")} disabled={actionLoading}
             className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-orange-500 transition text-left h-full">
             <div className="text-4xl mb-4">📋</div>
@@ -123,12 +125,28 @@ export default function Onboarding() {
             <p className="text-gray-500 text-sm">Busco personal o cuadrillas para mi finca o cooperativa.</p>
           </button>
 
-          {/* INGENIERO (NUEVO) */}
+          {/* INGENIERO */}
           <button onClick={() => handleSelectRole("ENGINEER")} disabled={actionLoading}
             className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-purple-500 transition text-left h-full">
             <div className="text-4xl mb-4">👷‍♂️</div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Ingeniero</h3>
             <p className="text-gray-500 text-sm">Ingeniero Técnico Agrícola. Ofrezco servicios técnicos y asesoramiento.</p>
+          </button>
+
+          {/* ENCARGADO/CAPATAZ (NUEVO) */}
+          <button onClick={() => handleSelectRole("ENCARGADO")} disabled={actionLoading}
+            className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-teal-500 transition text-left h-full">
+            <div className="text-4xl mb-4">👔</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Encargado/Capataz</h3>
+            <p className="text-gray-500 text-sm">Responsable de finca. Organizo day workers y gestiono tareas en campo.</p>
+          </button>
+
+          {/* TRACTORISTA (NUEVO) */}
+          <button onClick={() => handleSelectRole("TRACTORISTA")} disabled={actionLoading}
+            className="group bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-amber-500 transition text-left h-full">
+            <div className="text-4xl mb-4">🚜</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Soy Tractorista</h3>
+            <p className="text-gray-500 text-sm">Especialista en maquinaria agrícola. Tractor, pulverizadora, cosechadora.</p>
           </button>
 
         </div>

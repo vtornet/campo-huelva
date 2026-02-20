@@ -156,6 +156,98 @@ IMPORTANTE:
 }
 
 /**
+ * Genera una descripción de perfil para encargado/capataz
+ */
+export async function generarDescripcionEncargado(datos: {
+  fullName?: string;
+  yearsExperience?: number;
+  canManageDayWorkers?: boolean;
+  dayWorkersCapacity?: number;
+  cropExperience?: string[];
+  providesAccommodation?: boolean;
+  workArea?: string[];
+}): Promise<string> {
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    const prompt = `Eres un experto en recursos humanos del sector agrícola español.
+Tu tarea es generar una descripción profesional para un ENCARGADO/CAPATAZ de finca.
+
+Datos del encargado:
+${JSON.stringify(datos, null, 2)}
+
+Genera una descripción de 2-3 frases en español que:
+1. Destaque su experiencia liderando equipos en campo
+2. Mencione su capacidad para gestionar day workers
+3. Resalte los cultivos en los que tiene experiencia
+4. Si aplica, mencione la capacidad de gestionar alojamiento
+5. Sea atractiva para empresas que necesitan responsables de finca
+
+IMPORTANTE:
+- Devuelve SOLO la descripción, sin marcas de formato ni explicaciones
+- Usa un tono que transmita liderazgo y organización
+- Enfatiza la capacidad de gestión y responsabilidad`;
+
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (error) {
+    console.error('Error generando descripción de encargado:', error);
+    throw new Error('Error al generar la descripción con IA');
+  }
+}
+
+/**
+ * Genera una descripción de perfil para tractorista
+ */
+export async function generarDescripcionTractorista(datos: {
+  fullName?: string;
+  yearsExperience?: number;
+  machineryTypes?: string[];
+  cropExperience?: string[];
+  hasTractorLicense?: boolean;
+  hasSprayerLicense?: boolean;
+  hasHarvesterLicense?: boolean;
+  isAvailableSeason?: boolean;
+  canTravel?: boolean;
+}): Promise<string> {
+  if (!genAI) {
+    throw new Error('IA no disponible. Configura GEMINI_API_KEY');
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    const prompt = `Eres un experto en recursos humanos del sector agrícola español.
+Tu tarea es generar una descripción profesional para un TRACTORISTA.
+
+Datos del tractorista:
+${JSON.stringify(datos, null, 2)}
+
+Genera una descripción de 2-3 frases en español que:
+1. Destaque su experiencia conduciendo maquinaria agrícola
+2. Mencione los tipos de maquinaria que domina (tractor, pulverizadora, cosechadora, etc.)
+3. Resalte los cultivos en los que tiene experiencia
+4. Mencione sus carnets específicos si los tiene
+5. Sea atractiva para empresas que necesitan maquinistas expertos
+
+IMPORTANTE:
+- Devuelve SOLO la descripción, sin marcas de formato ni explicaciones
+- Usa un tono que destaque la especialización técnica
+- Enfatiza la seguridad y profesionalidad en el manejo de maquinaria`;
+
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (error) {
+    console.error('Error generando descripción de tractorista:', error);
+    throw new Error('Error al generar la descripción con IA');
+  }
+}
+
+/**
  * Recomienda ofertas a un trabajador basándose en su perfil
  */
 export async function recomendarOfertas(

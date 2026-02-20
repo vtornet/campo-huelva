@@ -160,3 +160,17 @@ export const TIPOS_JORNADA = [
   { value: "PART_TIME", label: "Part-time", horas: 15 },
   { value: "POR_HORAS", label: "Por horas", horas: null }
 ];
+
+// Tipos de maquinaria para tractoristas
+export const TIPOS_MAQUINARIA = [
+  "Tractor agrícola", "Pulverizadora", "Cosechadora", "Arado", "Grada",
+  "Sembradora", "Cultivador", "Rotovator", "Remolque", "Otros"
+];
+
+// Tipos de experiencia para encargados
+export const EXPERIENCIAS_ENCARGADO = [
+  "Gestión de personal", "Organización de day workers", "Control de calidad",
+  "Gestión de almacén", "Coordinación de cuadrillas", "Control de tiempos",
+  "Gestión de alojamiento", "Riego y fertilización", "Fitosanitarios",
+  "Recolección", "Poda", "Plantación", "Preparación de suelo"
+];
