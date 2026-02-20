@@ -12,45 +12,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Filtros comunes de ubicación
-    const province = searchParams.get("province");
-    const city = searchParams.get("city");
-    const minYears = searchParams.get("minYears");
-    const maxYears = searchParams.get("maxYears");
-
-    // Filtros de experiencia en cultivos (común para varios roles)
-    const cropExperienceStr = searchParams.get("cropExperience");
-
-    // Filtros para trabajadores
-    const hasVehicle = searchParams.get("hasVehicle");
-    const canRelocate = searchParams.get("canRelocate");
-    const phytosanitaryLevel = searchParams.get("phytosanitaryLevel");
-    const foodHandler = searchParams.get("foodHandler");
-
-    // Filtros para manijeros
-    const minCrew = searchParams.get("minCrew");
-    const maxCrew = searchParams.get("maxCrew");
-    const hasVan = searchParams.get("hasVan");
-    const ownTools = searchParams.get("ownTools");
-
-    // Filtros para encargados
-    const canDriveTractor = searchParams.get("canDriveTractor");
-    const needsAccommodation = searchParams.get("needsAccommodation");
-    const workAreaStr = searchParams.get("workArea");
-
-    // Filtros para tractoristas
-    const machineryTypesStr = searchParams.get("machineryTypes");
-    const toolTypesStr = searchParams.get("toolTypes");
-    const hasTractorLicense = searchParams.get("hasTractorLicense");
-    const hasSprayerLicense = searchParams.get("hasSprayerLicense");
-    const hasHarvesterLicense = searchParams.get("hasHarvesterLicense");
-    const isAvailableSeason = searchParams.get("isAvailableSeason");
-    const canTravel = searchParams.get("canTravel");
-
-    // Filtros para ingenieros
-    const specialtiesStr = searchParams.get("specialties");
-    const servicesOfferedStr = searchParams.get("servicesOffered");
-
     let candidates: any[] = [];
 
     switch (category) {
@@ -58,23 +19,25 @@ export async function GET(request: Request) {
         const workerWhere: any = {};
 
         // Ubicación
-        if (province) {
-          if (city) {
-            workerWhere.city = { equals: city, mode: "insensitive" };
-          } else {
-            workerWhere.province = { equals: province, mode: "insensitive" };
-          }
+        const province = searchParams.get("province");
+        const city = searchParams.get("city");
+        if (city) {
+          workerWhere.city = { equals: city, mode: "insensitive" };
+        } else if (province) {
+          workerWhere.province = { equals: province, mode: "insensitive" };
         }
 
         // Experiencia en cultivos (se llama 'experience' en WorkerProfile)
+        const cropExperienceStr = searchParams.get("cropExperience");
         if (cropExperienceStr) {
           const crops = cropExperienceStr.split(",");
-          workerWhere.experience = {
-            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
-          };
+          // Usar 'hasSome' con valores exactos (no contains)
+          workerWhere.experience = { hasSome: crops };
         }
 
         // Años de experiencia
+        const minYears = searchParams.get("minYears");
+        const maxYears = searchParams.get("maxYears");
         if (minYears || maxYears) {
           workerWhere.yearsExperience = {};
           if (minYears) workerWhere.yearsExperience.gte = parseInt(minYears);
@@ -82,6 +45,11 @@ export async function GET(request: Request) {
         }
 
         // Filtros específicos
+        const hasVehicle = searchParams.get("hasVehicle");
+        const canRelocate = searchParams.get("canRelocate");
+        const phytosanitaryLevel = searchParams.get("phytosanitaryLevel");
+        const foodHandler = searchParams.get("foodHandler");
+
         if (hasVehicle === "true") workerWhere.hasVehicle = true;
         if (canRelocate === "true") workerWhere.canRelocate = true;
         if (phytosanitaryLevel) workerWhere.phytosanitaryLevel = phytosanitaryLevel;
@@ -113,23 +81,24 @@ export async function GET(request: Request) {
         const foremanWhere: any = {};
 
         // Ubicación
-        if (province) {
-          if (city) {
-            foremanWhere.city = { equals: city, mode: "insensitive" };
-          } else {
-            foremanWhere.province = { equals: province, mode: "insensitive" };
-          }
+        const province = searchParams.get("province");
+        const city = searchParams.get("city");
+        if (city) {
+          foremanWhere.city = { equals: city, mode: "insensitive" };
+        } else if (province) {
+          foremanWhere.province = { equals: province, mode: "insensitive" };
         }
 
         // Experiencia en cultivos (se llama 'specialties' en ForemanProfile)
+        const cropExperienceStr = searchParams.get("cropExperience");
         if (cropExperienceStr) {
           const crops = cropExperienceStr.split(",");
-          foremanWhere.specialties = {
-            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
-          };
+          foremanWhere.specialties = { hasSome: crops };
         }
 
         // Años de experiencia
+        const minYears = searchParams.get("minYears");
+        const maxYears = searchParams.get("maxYears");
         if (minYears || maxYears) {
           foremanWhere.yearsExperience = {};
           if (minYears) foremanWhere.yearsExperience.gte = parseInt(minYears);
@@ -137,6 +106,8 @@ export async function GET(request: Request) {
         }
 
         // Tamaño de cuadrilla
+        const minCrew = searchParams.get("minCrew");
+        const maxCrew = searchParams.get("maxCrew");
         if (minCrew || maxCrew) {
           foremanWhere.crewSize = {};
           if (minCrew) foremanWhere.crewSize.gte = parseInt(minCrew);
@@ -144,6 +115,8 @@ export async function GET(request: Request) {
         }
 
         // Filtros específicos
+        const hasVan = searchParams.get("hasVan");
+        const ownTools = searchParams.get("ownTools");
         if (hasVan === "true") foremanWhere.hasVan = true;
         if (ownTools === "true") foremanWhere.ownTools = true;
 
@@ -172,23 +145,24 @@ export async function GET(request: Request) {
         const encargadoWhere: any = {};
 
         // Ubicación
-        if (province) {
-          if (city) {
-            encargadoWhere.city = { equals: city, mode: "insensitive" };
-          } else {
-            encargadoWhere.province = { equals: province, mode: "insensitive" };
-          }
+        const province = searchParams.get("province");
+        const city = searchParams.get("city");
+        if (city) {
+          encargadoWhere.city = { equals: city, mode: "insensitive" };
+        } else if (province) {
+          encargadoWhere.province = { equals: province, mode: "insensitive" };
         }
 
-        // Experiencia en cultivos (se llama 'cropExperience' en EncargadoProfile)
+        // Experiencia en cultivos
+        const cropExperienceStr = searchParams.get("cropExperience");
         if (cropExperienceStr) {
           const crops = cropExperienceStr.split(",");
-          encargadoWhere.cropExperience = {
-            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
-          };
+          encargadoWhere.cropExperience = { hasSome: crops };
         }
 
         // Años de experiencia
+        const minYears = searchParams.get("minYears");
+        const maxYears = searchParams.get("maxYears");
         if (minYears || maxYears) {
           encargadoWhere.yearsExperience = {};
           if (minYears) encargadoWhere.yearsExperience.gte = parseInt(minYears);
@@ -196,15 +170,16 @@ export async function GET(request: Request) {
         }
 
         // Filtros específicos
+        const canDriveTractor = searchParams.get("canDriveTractor");
+        const needsAccommodation = searchParams.get("needsAccommodation");
+        const workAreaStr = searchParams.get("workArea");
+
         if (canDriveTractor === "true") encargadoWhere.canDriveTractor = true;
         if (needsAccommodation === "true") encargadoWhere.needsAccommodation = true;
 
-        // Zona de trabajo
         if (workAreaStr) {
           const areas = workAreaStr.split(",");
-          encargadoWhere.workArea = {
-            hasSome: areas.map(a => ({ contains: a, mode: "insensitive" }))
-          };
+          encargadoWhere.workArea = { hasSome: areas };
         }
 
         candidates = await prisma.encargadoProfile.findMany({
@@ -232,23 +207,24 @@ export async function GET(request: Request) {
         const tractoristaWhere: any = {};
 
         // Ubicación
-        if (province) {
-          if (city) {
-            tractoristaWhere.city = { equals: city, mode: "insensitive" };
-          } else {
-            tractoristaWhere.province = { equals: province, mode: "insensitive" };
-          }
+        const province = searchParams.get("province");
+        const city = searchParams.get("city");
+        if (city) {
+          tractoristaWhere.city = { equals: city, mode: "insensitive" };
+        } else if (province) {
+          tractoristaWhere.province = { equals: province, mode: "insensitive" };
         }
 
         // Experiencia en cultivos
+        const cropExperienceStr = searchParams.get("cropExperience");
         if (cropExperienceStr) {
           const crops = cropExperienceStr.split(",");
-          tractoristaWhere.cropExperience = {
-            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
-          };
+          tractoristaWhere.cropExperience = { hasSome: crops };
         }
 
         // Años de experiencia
+        const minYears = searchParams.get("minYears");
+        const maxYears = searchParams.get("maxYears");
         if (minYears || maxYears) {
           tractoristaWhere.yearsExperience = {};
           if (minYears) tractoristaWhere.yearsExperience.gte = parseInt(minYears);
@@ -256,27 +232,29 @@ export async function GET(request: Request) {
         }
 
         // Tipos de maquinaria
+        const machineryTypesStr = searchParams.get("machineryTypes");
         if (machineryTypesStr) {
           const machines = machineryTypesStr.split(",");
-          tractoristaWhere.machineryTypes = {
-            hasSome: machines.map(m => ({ contains: m, mode: "insensitive" }))
-          };
+          tractoristaWhere.machineryTypes = { hasSome: machines };
         }
 
         // Tipos de aperos
+        const toolTypesStr = searchParams.get("toolTypes");
         if (toolTypesStr) {
           const tools = toolTypesStr.split(",");
-          tractoristaWhere.toolTypes = {
-            hasSome: tools.map(t => ({ contains: t, mode: "insensitive" }))
-          };
+          tractoristaWhere.toolTypes = { hasSome: tools };
         }
 
         // Carnets
+        const hasTractorLicense = searchParams.get("hasTractorLicense");
+        const hasSprayerLicense = searchParams.get("hasSprayerLicense");
+        const hasHarvesterLicense = searchParams.get("hasHarvesterLicense");
+        const isAvailableSeason = searchParams.get("isAvailableSeason");
+        const canTravel = searchParams.get("canTravel");
+
         if (hasTractorLicense === "true") tractoristaWhere.hasTractorLicense = true;
         if (hasSprayerLicense === "true") tractoristaWhere.hasSprayerLicense = true;
         if (hasHarvesterLicense === "true") tractoristaWhere.hasHarvesterLicense = true;
-
-        // Disponibilidad
         if (isAvailableSeason === "true") tractoristaWhere.isAvailableSeason = true;
         if (canTravel === "true") tractoristaWhere.canTravel = true;
 
@@ -309,39 +287,38 @@ export async function GET(request: Request) {
         const engineerWhere: any = {};
 
         // Ubicación
-        if (province) {
-          if (city) {
-            engineerWhere.city = { equals: city, mode: "insensitive" };
-          } else {
-            engineerWhere.province = { equals: province, mode: "insensitive" };
-          }
+        const province = searchParams.get("province");
+        const city = searchParams.get("city");
+        if (city) {
+          engineerWhere.city = { equals: city, mode: "insensitive" };
+        } else if (province) {
+          engineerWhere.province = { equals: province, mode: "insensitive" };
         }
 
         // Experiencia en cultivos
+        const cropExperienceStr = searchParams.get("cropExperience");
         if (cropExperienceStr) {
           const crops = cropExperienceStr.split(",");
-          engineerWhere.cropExperience = {
-            hasSome: crops.map(c => ({ contains: c, mode: "insensitive" }))
-          };
+          engineerWhere.cropExperience = { hasSome: crops };
         }
 
         // Especialidades técnicas
+        const specialtiesStr = searchParams.get("specialties");
         if (specialtiesStr) {
           const specs = specialtiesStr.split(",");
-          engineerWhere.specialties = {
-            hasSome: specs.map(s => ({ contains: s, mode: "insensitive" }))
-          };
+          engineerWhere.specialties = { hasSome: specs };
         }
 
         // Servicios ofrecidos
+        const servicesOfferedStr = searchParams.get("servicesOffered");
         if (servicesOfferedStr) {
           const services = servicesOfferedStr.split(",");
-          engineerWhere.servicesOffered = {
-            hasSome: services.map(s => ({ contains: s, mode: "insensitive" }))
-          };
+          engineerWhere.servicesOffered = { hasSome: services };
         }
 
         // Años de experiencia
+        const minYears = searchParams.get("minYears");
+        const maxYears = searchParams.get("maxYears");
         if (minYears || maxYears) {
           engineerWhere.yearsExperience = {};
           if (minYears) engineerWhere.yearsExperience.gte = parseInt(minYears);
