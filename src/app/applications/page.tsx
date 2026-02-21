@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -50,6 +50,19 @@ interface UserProfileModalProps {
   user: Application['user'];
   onClose: () => void;
 }
+
+// Tipos para los filtros
+interface CandidateFilters {
+  minYearsExperience: number | null;  // Experiencia mínima
+  hasVehicle: boolean | null;          // Tiene vehículo (null = todos)
+  hasFoodHandlerLicense: boolean | null;  // Carnet manipulador
+  hasPhytosanitary: boolean | null;    // Fitosanitario
+  canRelocate: boolean | null;         // Puede relocarse
+  province: string;                    // Provincia
+  sortBy: 'experience' | 'date' | 'name';  // Ordenamiento
+}
+
+const FILTERS_STORAGE_KEY = 'agro-candidates-filters';
 
 // Componente modal para ver perfil completo
 function UserProfileModal({ user, onClose }: UserProfileModalProps) {
@@ -251,6 +264,153 @@ export default function ApplicationsPage() {
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [modalUser, setModalUser] = useState<Application['user'] | null>(null);
 
+  // Estados para filtros (NO modifican la lógica existente)
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<CandidateFilters>({
+    minYearsExperience: null,
+    hasVehicle: null,
+    hasFoodHandlerLicense: null,
+    hasPhytosanitary: null,
+    canRelocate: null,
+    province: '',
+    sortBy: 'date',
+  });
+
+  // Cargar filtros guardados al montar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (saved) {
+        setFilters(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Error loading filters:", e);
+    }
+  }, []);
+
+  // Guardar filtros al cambiar
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+    } catch (e) {
+      console.error("Error saving filters:", e);
+    }
+  }, [filters]);
+
+  // Aplicar filtros usando useMemo (no modifica el estado original)
+  const filteredApplications = useMemo(() => {
+    let result = [...applications];
+
+    // Filtrar por experiencia mínima
+    if (filters.minYearsExperience !== null) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile || app.user.foremanProfile;
+        return profile && (profile.yearsExperience || 0) >= filters.minYearsExperience!;
+      });
+    }
+
+    // Filtrar por vehículo
+    if (filters.hasVehicle !== null) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile;
+        return profile && profile.hasVehicle === filters.hasVehicle;
+      });
+    }
+
+    // Filtrar por carnét manipulador
+    if (filters.hasFoodHandlerLicense !== null) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile;
+        // Verificar si tiene el carnet en licenseTypes
+        return profile && profile.licenseTypes?.some(
+          l => l.toLowerCase().includes('manipulador') || l.toLowerCase().includes('alimentos')
+        ) === filters.hasFoodHandlerLicense;
+      });
+    }
+
+    // Filtrar por fitosanitario
+    if (filters.hasPhytosanitary !== null) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile;
+        return profile && profile.licenseTypes?.some(
+          l => l.toLowerCase().includes('fitosanitario') || l.toLowerCase().includes('fito')
+        ) === filters.hasPhytosanitary;
+      });
+    }
+
+    // Filtrar por reubicación
+    if (filters.canRelocate !== null) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile;
+        return profile && profile.canRelocate === filters.canRelocate;
+      });
+    }
+
+    // Filtrar por provincia
+    if (filters.province) {
+      result = result.filter(app => {
+        const profile = app.user.workerProfile || app.user.foremanProfile;
+        return profile && profile.province === filters.province;
+      });
+    }
+
+    // Ordenar según criterio seleccionado
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'experience':
+          const expA = (a.user.workerProfile || a.user.foremanProfile)?.yearsExperience || 0;
+          const expB = (b.user.workerProfile || b.user.foremanProfile)?.yearsExperience || 0;
+          return expB - expA; // Mayor a menor
+        case 'name':
+          const nameA = (a.user.workerProfile || a.user.foremanProfile)?.fullName || '';
+          const nameB = (b.user.workerProfile || b.user.foremanProfile)?.fullName || '';
+          return nameA.localeCompare(nameB);
+        case 'date':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
+    return result;
+  }, [applications, filters]);
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.minYearsExperience !== null) count++;
+    if (filters.hasVehicle !== null) count++;
+    if (filters.hasFoodHandlerLicense !== null) count++;
+    if (filters.hasPhytosanitary !== null) count++;
+    if (filters.canRelocate !== null) count++;
+    if (filters.province) count++;
+    return count;
+  }, [filters]);
+
+  // Resetear filtros
+  const resetFilters = () => {
+    setFilters({
+      minYearsExperience: null,
+      hasVehicle: null,
+      hasFoodHandlerLicense: null,
+      hasPhytosanitary: null,
+      canRelocate: null,
+      province: '',
+      sortBy: 'date',
+    });
+  };
+
+  // Obtener lista de provincias únicas de los candidatos actuales
+  const availableProvinces = useMemo(() => {
+    const provinces = new Set<string>();
+    applications.forEach(app => {
+      const profile = app.user.workerProfile || app.user.foremanProfile;
+      if (profile?.province) {
+        provinces.add(profile.province);
+      }
+    });
+    return Array.from(provinces).sort();
+  }, [applications]);
+
   // Cargar posts de la empresa
   useEffect(() => {
     if (user) {
@@ -392,6 +552,185 @@ export default function ApplicationsPage() {
           </div>
         )}
 
+        {/* Panel de Filtros */}
+        {applications.length > 0 && (
+          <div className="mb-6">
+            {/* Botón para mostrar/ocultar filtros */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-slate-200 hover:border-emerald-300 transition-all mb-3"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span className="font-semibold text-slate-800">Filtros</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <span className="text-sm text-slate-500">
+                    {filteredApplications.length} de {applications.length} candidatos
+                  </span>
+                )}
+                <svg
+                  className={`w-5 h-5 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+
+            {/* Panel desplegable de filtros */}
+            {showFilters && (
+              <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-5">
+                {/* Fila 1: Experiencia y Ordenar */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Experiencia mínima */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Experiencia mínima: {filters.minYearsExperience !== null ? `${filters.minYearsExperience}+ años` : 'Todas'}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="20"
+                      value={filters.minYearsExperience ?? 0}
+                      onChange={(e) => setFilters(f => ({ ...f, minYearsExperience: parseInt(e.target.value) || null }))}
+                      className="w-full accent-emerald-600"
+                    />
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <span>0</span>
+                      <span>5</span>
+                      <span>10</span>
+                      <span>15</span>
+                      <span>20+</span>
+                    </div>
+                  </div>
+
+                  {/* Ordenar por */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Ordenar por
+                    </label>
+                    <select
+                      value={filters.sortBy}
+                      onChange={(e) => setFilters(f => ({ ...f, sortBy: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm"
+                    >
+                      <option value="date">Fecha de inscripción</option>
+                      <option value="experience">Experiencia (más primero)</option>
+                      <option value="name">Nombre (A-Z)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Fila 2: Filtros booleanos */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Características
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setFilters(f => ({ ...f, hasVehicle: f.hasVehicle === null ? true : f.hasVehicle === true ? null : true }))}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        filters.hasVehicle === true
+                          ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                          : filters.hasVehicle === false
+                          ? 'bg-slate-100 text-slate-400 line-through'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      🚗 Tiene vehículo
+                    </button>
+                    <button
+                      onClick={() => setFilters(f => ({ ...f, canRelocate: f.canRelocate === null ? true : f.canRelocate === true ? null : true }))}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        filters.canRelocate === true
+                          ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
+                          : filters.canRelocate === false
+                          ? 'bg-slate-100 text-slate-400 line-through'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      ✈️ Puede relocarse
+                    </button>
+                    <button
+                      onClick={() => setFilters(f => ({ ...f, hasFoodHandlerLicense: f.hasFoodHandlerLicense === null ? true : f.hasFoodHandlerLicense === true ? null : true }))}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        filters.hasFoodHandlerLicense === true
+                          ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
+                          : filters.hasFoodHandlerLicense === false
+                          ? 'bg-slate-100 text-slate-400 line-through'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      🍎 Manipulador alimentos
+                    </button>
+                    <button
+                      onClick={() => setFilters(f => ({ ...f, hasPhytosanitary: f.hasPhytosanitary === null ? true : f.hasPhytosanitary === true ? null : true }))}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        filters.hasPhytosanitary === true
+                          ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                          : filters.hasPhytosanitary === false
+                          ? 'bg-slate-100 text-slate-400 line-through'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      🌿 Fitosanitario
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Clic para activar • Volver a clic para desactivar
+                  </p>
+                </div>
+
+                {/* Fila 3: Provincia */}
+                {availableProvinces.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Provincia
+                    </label>
+                    <select
+                      value={filters.province}
+                      onChange={(e) => setFilters(f => ({ ...f, province: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm"
+                    >
+                      <option value="">Todas las provincias</option>
+                      {availableProvinces.map(prov => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="flex gap-3 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={resetFilters}
+                    className="flex-1 px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all font-medium text-sm"
+                  >
+                    Limpiar filtros
+                  </button>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="flex-1 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all font-medium text-sm"
+                  >
+                    Aplicar ({filteredApplications.length} resultados)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Lista de candidatos */}
         {loadingApps ? (
           <div className="flex justify-center py-12">
@@ -409,9 +748,27 @@ export default function ApplicationsPage() {
               Aún no hay inscritos en esta oferta.
             </p>
           </div>
+        ) : filteredApplications.length === 0 && activeFiltersCount > 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Sin resultados</h3>
+            <p className="text-slate-500 text-sm mb-4">
+              Ningún candidato coincide con los filtros aplicados.
+            </p>
+            <button
+              onClick={resetFilters}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-medium text-sm"
+            >
+              Limpiar filtros
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
-            {applications.map(app => {
+            {filteredApplications.map(app => {
               const profile = app.user.workerProfile || app.user.foremanProfile;
               const isWorker = !!app.user.workerProfile;
               const isForeman = !!app.user.foremanProfile;

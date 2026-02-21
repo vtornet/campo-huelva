@@ -177,15 +177,18 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] **Redirecciones actualizadas** de `/publish` a `/profile` tras guardar/editar
 
 ### 5. Filtros Avanzados en Gestión de Candidatos
-- [ ] Filtros en `/applications` para empresas:
-  - Por experiencia (años de campaña) - mayor a menor
+### ✅ 5. Filtros Avanzados en Gestión de Candidatos (COMPLETADO)
+- [x] Filtros en `/applications` para empresas:
+  - Por experiencia (años de campaña) - slider de 0 a 20+ años
   - Por disponibilidad de vehículo propio
   - Por carnet de manipulador de alimentos
-  - Por carnets fitosanitarios (nivel, aplicador)
-  - Por disponibilidad de alojamiento
-  - Por provincia/ciudad
-- [ ] Ordenamiento por múltiples criterios
-- [ ] Guardar filtros preferidos
+  - Por carnets fitosanitarios
+  - Por disponibilidad de reubicación
+  - Por provincia (se genera dinámicamente según candidatos)
+- [x] Ordenamiento por múltiples criterios (fecha, experiencia, nombre)
+- [x] Guardar filtros preferidos (localStorage)
+- [x] Panel de filtros colapsable con contador de filtros activos
+- [x] Mensaje de "sin resultados" cuando los filtros no coinciden
 
 ### ✅ 6. SEO y Meta Tags (COMPLETADO)
 - [x] Títulos dinámicos por página (`<title>`, `<meta name="description">`) - configurado en layout.tsx con template
