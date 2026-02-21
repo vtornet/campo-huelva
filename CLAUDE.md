@@ -226,18 +226,23 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Detección automática de idioma del navegador
 - [ ] URLs localizadas (/es, /fr, /ro, /en) o subdominios
 
-### 9. Validaciones y UX Final
-- [ ] Validar todos los formularios exhaustivamente
-- [ ] Mensajes de error más amigables y específicos
-- [ ] Estados de carga en todas las operaciones async
-- [ ] Pantallas de error (404, 500) con navegación de vuelta
-- [ ] Skeletons durante carga de contenido
+### ✅ 9. Validaciones y UX Final (COMPLETADO)
+- [x] Validaciones básicas en formularios (required, minLength, etc.)
+- [x] Mensajes de error más amigables (reemplazados alerts en publish/page.tsx)
+- [x] Estados de carga en todas las operaciones async (loading states)
+- [x] Pantallas de error personalizadas (404 not-found.tsx, 500 error.tsx)
+- [x] Componentes de Skeleton reutilizables (Skeleton.tsx con PostCardSkeleton, ProfileSkeleton, etc.)
+- [ ] Validaciones avanzadas (formato de teléfono, email, etc.) - pendiente de implementar en cada formulario
 
 ### 10. Seguridad
-- [ ] Verificar que todas las APIs están protegidas (validación de userId)
+- [x] Headers de seguridad (CSP, X-Frame-Options, HSTS implementados en next.config.ts)
+- [x] CORS configurado (next.config.ts permite oríenes externos limitados)
+- [x] Sanitización básica de inputs (Next.js sanitiza por defecto en JSX)
+- [ ] Verificación de tokens de Firebase en servidor (requiere Firebase Admin SDK)
 - [ ] Rate limiting en endpoints sensibles (contacto, inscripciones)
-- [ ] Headers de seguridad (CORS, CSP, HSTS)
-- [ ] Sanitización de inputs para prevenir XSS
+- [ ] Implementar middleware de autenticación centralizado
+
+**Nota**: Actualmente la autenticación se maneja en el cliente con Firebase. Las APIs validan userId pero no verifican el token de Firebase. Para mayor seguridad, considerar implementar Firebase Admin SDK en el servidor.
 
 ### 11. Testing
 - [ ] Probar flujo completo de cada rol (registro, perfil, publicar, inscribirse)

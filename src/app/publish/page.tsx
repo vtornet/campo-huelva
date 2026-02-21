@@ -32,6 +32,8 @@ function PublishForm() {
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
   const [postType, setPostType] = useState<'DEMAND' | 'OFFER' | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
@@ -119,6 +121,10 @@ function PublishForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Limpiar mensajes anteriores
+    setErrorMessage(null);
+    setSuccessMessage(null);
     setLoading(true);
 
     try {
@@ -144,20 +150,23 @@ function PublishForm() {
             ...formData,
             providesAccommodation: formData.providesAccommodation,
             uid: user.uid,
-            type: isDemand ? "DEMAND" : "SHARED" // Enviamos el tipo correcto (coincide con lo que espera la API)
+            type: isDemand ? "DEMAND" : "SHARED"
           }),
         });
       }
 
       if (res.ok) {
-        router.push("/profile");
+        setSuccessMessage(isEditMode ? "¡Publicación actualizada correctamente!" : "¡Publicación creada correctamente!");
+        setTimeout(() => {
+          router.push("/profile");
+        }, 1500);
       } else {
         const data = await res.json();
-        alert(data.error || "Error al guardar la publicación.");
+        setErrorMessage(data.error || "Error al guardar la publicación. Por favor, intenta de nuevo.");
       }
     } catch (error) {
       console.error(error);
-      alert("Error al guardar la publicación.");
+      setErrorMessage("Error de conexión. Verifica tu internet e intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -202,6 +211,39 @@ function PublishForm() {
             : "Completa todos los detalles de la oferta para atraer a los mejores candidatos."}
         </p>
       </div>
+
+      {/* Mensajes de error y éxito */}
+      {errorMessage && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+          <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Error</p>
+            <p className="text-sm text-red-700">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-red-400 hover:text-red-600"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+          <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-green-800">¡Éxito!</p>
+            <p className="text-sm text-green-700">{successMessage}</p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* TÍTULO */}
