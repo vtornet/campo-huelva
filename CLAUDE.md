@@ -152,15 +152,17 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Experiencia por cultivo
   - Disponibilidad para temporada completa y viajes
 
-### 3. Buscador de Candidatos por Categoría
-- [ ] Nueva página `/search` con selector inicial de perfil:
+### ✅ 3. Buscador de Candidatos por Categoría (COMPLETADO)
+- [x] Nueva página `/search` con selector inicial de perfil:
   - Peón/Trabajador
   - Tractorista
   - Manijero
   - Encargado
   - Ingeniero
-- [ ] Según selección, mostrar filtros específicos de esa categoría
-- [ ] Resultados con cards de candidato y opción de contacto
+- [x] Según selección, mostrar filtros específicos de esa categoría
+- [x] Resultados con cards de candidato y opción de contacto
+- [x] Modal de perfil completo con todos los datos del candidato
+- [x] Filtros corregidos (fitosanitario case-insensitive, especialidades de manijero)
 
 ### 4. Gestión de Publicaciones para Todos los Usuarios
 - [ ] **IMPORTANTE**: Todos los usuarios deben poder ver y modificar sus publicaciones
