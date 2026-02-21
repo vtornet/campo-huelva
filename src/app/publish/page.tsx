@@ -79,7 +79,7 @@ function PublishForm() {
           // Verificar que la publicación pertenece al usuario
           if (data.publisherId !== user.uid && data.companyId !== user.uid) {
             alert("No tienes permiso para editar esta publicación");
-            router.push("/my-posts");
+            router.push("/profile");
             return;
           }
 
@@ -106,7 +106,7 @@ function PublishForm() {
         .catch(err => {
           console.error("Error loading post:", err);
           alert("Error al cargar la publicación");
-          router.push("/my-posts");
+          router.push("/profile");
         })
         .finally(() => setLoadingPost(false));
     } else if (!editId && userRole !== null) {
@@ -150,7 +150,7 @@ function PublishForm() {
       }
 
       if (res.ok) {
-        router.push("/my-posts");
+        router.push("/profile");
       } else {
         const data = await res.json();
         alert(data.error || "Error al guardar la publicación.");

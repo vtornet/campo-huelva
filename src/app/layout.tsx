@@ -7,9 +7,12 @@ import PWAInstaller from "@/components/PWAInstaller";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// URL base de la aplicación (actualizada al dominio de producción)
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://agroredjob.com"
+
 // Metadata para SEO y PWA
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://redagro.es"),
+  metadataBase: new URL(APP_URL),
   title: {
     default: "Red Agro - Empleo Agrícola",
     template: "%s | Red Agro",
@@ -28,7 +31,7 @@ export const metadata: Metadata = {
     "recolección",
     "empresas agrícolas",
   ],
-  authors: [{ name: "Red Agro", url: "https://redagro.es" }],
+  authors: [{ name: "Red Agro", url: APP_URL }],
   creator: "Red Agro",
   publisher: "Red Agro",
   robots: {
@@ -45,13 +48,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_ES",
-    url: "https://redagro.es",
+    url: APP_URL,
     title: "Red Agro - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
     siteName: "Red Agro",
+    // La imagen OG se genera dinámicamente con Next.js
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Red Agro - Empleo Agrícola",
@@ -62,7 +66,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Red Agro - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
-    images: ["/og-image.png"],
+    // La imagen de Twitter se genera dinámicamente con Next.js
+    images: ["/twitter-image"],
   },
   icons: {
     icon: [

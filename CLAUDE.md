@@ -165,18 +165,16 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Filtros corregidos (fitosanitario case-insensitive, especialidades de manijero)
 
 ### ✅ 4. Gestión de Publicaciones para Todos los Usuarios (COMPLETADO)
-- [x] **Página `/my-posts` accesible para todos los roles**
+- [x] **Pestaña "Mis Publicaciones" integrada en `/profile`**
   - Ver todas las publicaciones propias
-  - Filtrar por activas y archivadas
   - Editar publicaciones (redirige a `/publish?edit=id`)
-  - Archivar publicaciones (cambiar status a HIDDEN)
-  - Reactivar publicaciones archivadas
   - Eliminar publicaciones permanentemente
-  - Mostrar estadísticas básicas (likes, inscritos)
+  - Botones de acción directa desde la lista
 - [x] **API actualizada**
   - PUT en `/api/posts/[id]` para editar
   - DELETE en `/api/posts/[id]` para eliminar/archivar
   - Incluir conteo de aplicaciones en respuesta
+- [x] **Redirecciones actualizadas** de `/publish` a `/profile` tras guardar/editar
 
 ### 5. Filtros Avanzados en Gestión de Candidatos
 - [ ] Filtros en `/applications` para empresas:
@@ -189,13 +187,13 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Ordenamiento por múltiples criterios
 - [ ] Guardar filtros preferidos
 
-### 6. SEO y Meta Tags
-- [ ] Títulos dinámicos por página (`<title>`, `<meta name="description">`)
-- [ ] Open Graph para compartir en redes (og:title, og:description, og:image)
-- [ ] Twitter Cards
-- [ ] Favicon en múltiples formatos
-- [ ] Sitemap.xml
-- [ ] Robots.txt
+### ✅ 6. SEO y Meta Tags (COMPLETADO)
+- [x] Títulos dinámicos por página (`<title>`, `<meta name="description">`) - configurado en layout.tsx con template
+- [x] Open Graph para compartir en redes (og:title, og:description, og:image) - imagen generada dinámicamente
+- [x] Twitter Cards - imagen generada dinámicamente
+- [x] Favicon en múltiples formatos - iconos en 72, 96, 128, 144, 152, 192, 384, 512px
+- [x] Sitemap.xml - sitemap.ts con rutas estáticas y preparado para dinámicas
+- [x] Robots.txt - robots.ts con reglas para crawlers
 
 ### 7. Optimizaciones de Producción
 - [ ] Compresión de imágenes (next/image con domains de Firebase Storage)
