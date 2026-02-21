@@ -17,7 +17,25 @@ export async function GET(
 
     const post = await prisma.post.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: true,
+        province: true,
+        type: true,
+        status: true,
+        taskType: true,
+        contractType: true,
+        salaryAmount: true,
+        salaryPeriod: true,
+        hoursPerWeek: true,
+        providesAccommodation: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        publisherId: true, // Importante para verificar permisos
+        companyId: true, // Importante para verificar permisos
         company: {
           select: {
             id: true,
