@@ -164,12 +164,19 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Modal de perfil completo con todos los datos del candidato
 - [x] Filtros corregidos (fitosanitario case-insensitive, especialidades de manijero)
 
-### 4. Gestión de Publicaciones para Todos los Usuarios
-- [ ] **IMPORTANTE**: Todos los usuarios deben poder ver y modificar sus publicaciones
-  - Actualmente solo las empresas tienen esta función
-  - Añadir página `/my-posts` accesible para todos los roles
-  - Permitir editar, pausar y eliminar publicaciones propias
-  - Mostrar estadísticas (vistas, inscritos, contactos)
+### ✅ 4. Gestión de Publicaciones para Todos los Usuarios (COMPLETADO)
+- [x] **Página `/my-posts` accesible para todos los roles**
+  - Ver todas las publicaciones propias
+  - Filtrar por activas y archivadas
+  - Editar publicaciones (redirige a `/publish?edit=id`)
+  - Archivar publicaciones (cambiar status a HIDDEN)
+  - Reactivar publicaciones archivadas
+  - Eliminar publicaciones permanentemente
+  - Mostrar estadísticas básicas (likes, inscritos)
+- [x] **API actualizada**
+  - PUT en `/api/posts/[id]` para editar
+  - DELETE en `/api/posts/[id]` para eliminar/archivar
+  - Incluir conteo de aplicaciones en respuesta
 
 ### 5. Filtros Avanzados en Gestión de Candidatos
 - [ ] Filtros en `/applications` para empresas:
