@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA, TIPOS_CONTRATO, PERIODOS_SALARIALES, TIPOS_JORNADA } from "@/lib/constants";
@@ -12,11 +12,13 @@ function PublishForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "OFFER" o "DEMAND"
+  const editId = searchParams.get("edit"); // ID de la publicación a editar
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
   const isDemand = typeParam === "DEMAND";
   const isOffer = !isDemand;
+  const isEditMode = !!editId;
 
   // Proteger la página: si no hay usuario, ir a login
   if (authLoading) {
@@ -33,6 +35,7 @@ function PublishForm() {
   }
 
   const [loading, setLoading] = useState(false);
+  const [loadingPost, setLoadingPost] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     province: "",
@@ -49,36 +52,99 @@ function PublishForm() {
     endDate: "",
   });
 
+  // Cargar datos de la publicación si estamos en modo edición
+  useEffect(() => {
+    if (editId && user) {
+      setLoadingPost(true);
+      fetch(`/api/posts/${editId}`)
+        .then(res => res.json())
+        .then(data => {
+          // Verificar que la publicación pertenece al usuario
+          if (data.publisherId !== user.uid && data.companyId !== user.uid) {
+            alert("No tienes permiso para editar esta publicación");
+            router.push("/my-posts");
+            return;
+          }
+
+          // Cargar los datos en el formulario
+          setFormData({
+            title: data.title || "",
+            province: data.province || "",
+            location: data.location || "",
+            description: data.description || "",
+            taskType: data.taskType || "",
+            contractType: data.contractType || "",
+            providesAccommodation: data.providesAccommodation || false,
+            salaryAmount: data.salaryAmount || "",
+            salaryPeriod: data.salaryPeriod || "",
+            hoursPerWeek: data.hoursPerWeek || "",
+            startDate: data.startDate || "",
+            endDate: data.endDate || "",
+          });
+        })
+        .catch(err => {
+          console.error("Error loading post:", err);
+          alert("Error al cargar la publicación");
+          router.push("/my-posts");
+        })
+        .finally(() => setLoadingPost(false));
+    }
+  }, [editId, user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setLoading(true);
 
     try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          providesAccommodation: formData.providesAccommodation,
-          uid: user.uid,
-          type: isDemand ? "DEMAND" : "SHARED" // Enviamos el tipo correcto (coincide con lo que espera la API)
-        }),
-      });
+      let res;
+
+      if (isEditMode && editId) {
+        // Modo edición: usar PUT
+        res = await fetch(`/api/posts/${editId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            providesAccommodation: formData.providesAccommodation,
+            userId: user.uid,
+          }),
+        });
+      } else {
+        // Modo creación: usar POST
+        res = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            providesAccommodation: formData.providesAccommodation,
+            uid: user.uid,
+            type: isDemand ? "DEMAND" : "SHARED" // Enviamos el tipo correcto (coincide con lo que espera la API)
+          }),
+        });
+      }
 
       if (res.ok) {
-        router.push("/");
+        router.push("/my-posts");
       } else {
         const data = await res.json();
-        alert(data.error || "Error al publicar.");
+        alert(data.error || "Error al guardar la publicación.");
       }
     } catch (error) {
       console.error(error);
-      alert("Error al publicar.");
+      alert("Error al guardar la publicación.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (loadingPost) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-6 md:p-8 shadow-black/5">
@@ -93,7 +159,7 @@ function PublishForm() {
           </svg>
         </div>
         <h1 className={`text-2xl font-bold mb-2 tracking-tight ${isDemand ? "text-orange-800" : "text-emerald-800"}`}>
-          {isDemand ? "Publicar demanda de empleo" : "Publicar oferta de empleo"}
+          {isEditMode ? "Editar publicación" : (isDemand ? "Publicar demanda de empleo" : "Publicar oferta de empleo")}
         </h1>
 
         <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -309,14 +375,14 @@ function PublishForm() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Publicando...
+                {isEditMode ? "Guardando..." : "Publicando..."}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                {isDemand ? "Publicar demanda" : "Publicar oferta"}
+                {isEditMode ? "Guardar cambios" : (isDemand ? "Publicar demanda" : "Publicar oferta")}
               </>
             )}
           </button>
