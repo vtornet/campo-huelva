@@ -60,8 +60,27 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       take: limit,
       skip: skip,
-      // Incluimos los datos del autor para mostrar nombre/avatar en la tarjeta
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: true,
+        province: true,
+        type: true,
+        status: true,
+        taskType: true,
+        contractType: true,
+        providesAccommodation: true,
+        salaryAmount: true,
+        salaryPeriod: true,
+        hoursPerWeek: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        publisherId: true,
+        companyId: true,
+        likesCount: true,
+        sharesCount: true,
         _count: {
           select: {
             applications: true
@@ -105,6 +124,22 @@ export async function GET(request: Request) {
               }
             },
             engineerProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                profileImage: true
+              }
+            },
+            encargadoProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                profileImage: true
+              }
+            },
+            tractoristProfile: {
               select: {
                 fullName: true,
                 city: true,
