@@ -55,7 +55,9 @@ export default function MyPostsPage() {
       const res = await fetch(`/api/posts?userId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
-        setPosts(Array.isArray(data) ? data : []);
+        const postsArray = Array.isArray(data) ? data : [];
+        console.log("Posts loaded:", postsArray.map(p => ({ id: p.id, title: p.title, status: p.status })));
+        setPosts(postsArray);
       }
     } catch (err) {
       console.error("Error loading posts:", err);
@@ -335,33 +337,23 @@ export default function MyPostsPage() {
 
                     <div className="flex gap-2">
                       {post.status === 'ACTIVE' ? (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleArchive(post.id);
-                            }}
-                            disabled={archiving[post.id]}
-                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                            title="Archivar"
-                          >
-                            {archiving[post.id] ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
-                            ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                              </svg>
-                            )}
-                          </button>
-                        </>
+                        <button
+                          onClick={() => handleArchive(post.id)}
+                          disabled={archiving[post.id]}
+                          className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                          title="Archivar"
+                        >
+                          {archiving[post.id] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                            </svg>
+                          )}
+                        </button>
                       ) : (
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleUnarchive(post.id);
-                          }}
+                          onClick={() => handleUnarchive(post.id)}
                           className="px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition text-sm font-medium"
                           title="Reactivar"
                         >
@@ -369,11 +361,7 @@ export default function MyPostsPage() {
                         </button>
                       )}
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(`/publish?edit=${post.id}`);
-                        }}
+                        onClick={() => router.push(`/publish?edit=${post.id}`)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                         title="Editar"
                       >
@@ -382,11 +370,7 @@ export default function MyPostsPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDelete(post.id);
-                        }}
+                        onClick={() => handleDelete(post.id)}
                         disabled={deleting[post.id]}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                         title="Eliminar"
