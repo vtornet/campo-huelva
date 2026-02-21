@@ -31,10 +31,20 @@ export default function MyPostsPage() {
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [archiving, setArchiving] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchPosts();
+      // Obtener el rol del usuario desde la API
+      fetch(`/api/user/me?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.role) {
+            setUserRole(data.role);
+          }
+        })
+        .catch(err => console.error("Error fetching user role:", err));
     }
   }, [user]);
 
@@ -193,7 +203,7 @@ export default function MyPostsPage() {
           <button
             onClick={() => {
               // Si es empresa, va a oferta; si no, va a demanda (trabajadores, etc.)
-              const publishType = user?.role === 'COMPANY' ? 'OFFER' : 'DEMAND';
+              const publishType = userRole === 'COMPANY' ? 'OFFER' : 'DEMAND';
               router.push(`/publish?type=${publishType}`);
             }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 text-sm font-medium"
@@ -261,7 +271,7 @@ export default function MyPostsPage() {
             <button
               onClick={() => {
                 // Si es empresa, va a oferta; si no, va a demanda (trabajadores, etc.)
-                const publishType = user?.role === 'COMPANY' ? 'OFFER' : 'DEMAND';
+                const publishType = userRole === 'COMPANY' ? 'OFFER' : 'DEMAND';
                 router.push(`/publish?type=${publishType}`);
               }}
               className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
