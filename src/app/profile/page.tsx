@@ -491,7 +491,7 @@ export default function UserProfilePage() {
                       }`}>
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                 post.type === "OFFICIAL" ? "bg-emerald-100 text-emerald-700" :
                                 post.type === "DEMAND" ? "bg-orange-100 text-orange-700" :
@@ -507,6 +507,35 @@ export default function UserProfilePage() {
                               {post.title}
                             </h4>
                             <p className="text-sm text-slate-600 mt-1">{post.location}{post.province && `, ${post.province}`}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => router.push(`/publish?edit=${post.id}`)}
+                              className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-medium"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!confirm("¿Eliminar esta publicación?")) return;
+                                fetch(`/api/posts/${post.id}?userId=${user.uid}&action=delete`, { method: "DELETE" })
+                                  .then(res => {
+                                    if (res.ok) {
+                                      setUserPosts(prev => prev.filter(p => p.id !== post.id));
+                                      alert("Publicación eliminada");
+                                    }
+                                  });
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition text-sm font-medium"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Eliminar
+                            </button>
                           </div>
                         </div>
                       </div>
