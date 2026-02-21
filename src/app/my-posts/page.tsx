@@ -191,7 +191,11 @@ export default function MyPostsPage() {
             <h1 className="text-xl font-bold text-slate-800">Mis Publicaciones</h1>
           </div>
           <button
-            onClick={() => router.push("/publish")}
+            onClick={() => {
+              // Si es empresa, va a oferta; si no, va a demanda (trabajadores, etc.)
+              const publishType = user?.role === 'COMPANY' ? 'OFFER' : 'DEMAND';
+              router.push(`/publish?type=${publishType}`);
+            }}
             className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 text-sm font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +259,11 @@ export default function MyPostsPage() {
                 : "Aún no has creado ninguna publicación."}
             </p>
             <button
-              onClick={() => router.push("/publish")}
+              onClick={() => {
+                // Si es empresa, va a oferta; si no, va a demanda (trabajadores, etc.)
+                const publishType = user?.role === 'COMPANY' ? 'OFFER' : 'DEMAND';
+                router.push(`/publish?type=${publishType}`);
+              }}
               className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
             >
               Crear mi primera publicación
@@ -319,7 +327,11 @@ export default function MyPostsPage() {
                       {post.status === 'ACTIVE' ? (
                         <>
                           <button
-                            onClick={() => handleArchive(post.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleArchive(post.id);
+                            }}
                             disabled={archiving[post.id]}
                             className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition"
                             title="Archivar"
@@ -333,7 +345,11 @@ export default function MyPostsPage() {
                             )}
                           </button>
                           <button
-                            onClick={() => router.push(`/publish?edit=${post.id}`)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              router.push(`/publish?edit=${post.id}`);
+                            }}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             title="Editar"
                           >
@@ -342,7 +358,11 @@ export default function MyPostsPage() {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleDelete(post.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(post.id);
+                            }}
                             disabled={deleting[post.id]}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                             title="Eliminar"
@@ -358,7 +378,11 @@ export default function MyPostsPage() {
                         </>
                       ) : (
                         <button
-                          onClick={() => handleUnarchive(post.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleUnarchive(post.id);
+                          }}
                           className="px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition text-sm font-medium"
                         >
                           Reactivar
