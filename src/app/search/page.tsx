@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO } from "@/lib/constants";
+import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 
 type CategoryType = "worker" | "foreman" | "encargado" | "tractorista" | "engineer" | null;
 
@@ -297,7 +297,7 @@ export default function SearchPage() {
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">Todos los municipios</option>
-                      {(require("@/lib/constants").MUNICIPIOS_POR_PROVINCIA[filters.province] || []).map((city: string) => (
+                      {(MUNICIPIOS_POR_PROVINCIA[filters.province] || []).map((city: string) => (
                         <option key={city} value={city}>{city}</option>
                       ))}
                     </select>
@@ -456,7 +456,7 @@ export default function SearchPage() {
                         <span className="text-sm font-medium text-slate-700">Sabe manejar tractor</span>
                       </label>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -466,6 +466,22 @@ export default function SearchPage() {
                         />
                         <span className="text-sm font-medium text-slate-700">Necesita alojamiento</span>
                       </label>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Zona de trabajo preferente</label>
+                      <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                        {PROVINCIAS.map((prov) => (
+                          <label key={prov} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.workArea?.includes(prov) || false}
+                              onChange={() => toggleArrayItem("workArea", prov)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-sm">{prov}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </>
                 )}
@@ -506,6 +522,38 @@ export default function SearchPage() {
                       </div>
                     </div>
                     <div className="mb-3">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Carnets específicos</label>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.hasTractorLicense || false}
+                            onChange={(e) => handleFilterChange("hasTractorLicense", e.target.checked || undefined)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-slate-700">Carnet de tractor</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.hasSprayerLicense || false}
+                            onChange={(e) => handleFilterChange("hasSprayerLicense", e.target.checked || undefined)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-slate-700">Carnet de pulverizadora</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.hasHarvesterLicense || false}
+                            onChange={(e) => handleFilterChange("hasHarvesterLicense", e.target.checked || undefined)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-slate-700">Carnet de cosechadora</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="mb-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1013,6 +1061,30 @@ function CandidateCard({ candidate, category, categoryInfo }: {
           )}
 
           <div className="flex flex-wrap gap-2 mt-3">
+            {candidate.hasTractorLicense && (
+              <span className="text-xs px-2 py-1 rounded-md bg-teal-50 text-teal-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Tractor
+              </span>
+            )}
+            {candidate.hasSprayerLicense && (
+              <span className="text-xs px-2 py-1 rounded-md bg-green-50 text-green-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+                Pulverizadora
+              </span>
+            )}
+            {candidate.hasHarvesterLicense && (
+              <span className="text-xs px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Cosechadora
+              </span>
+            )}
             {candidate.isAvailableSeason && (
               <span className="text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
