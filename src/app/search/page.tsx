@@ -46,6 +46,8 @@ export default function SearchPage() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Verificar autenticación
   useEffect(() => {
@@ -329,7 +331,14 @@ export default function SearchPage() {
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en cultivos/tareas</label>
                     <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-2">
-                      {ESPECIALIDADES_MANIJERO.map(spec => (
+                      {[
+                        "Fresa - Recolección", "Fresa - Plantación",
+                        "Cítricos - Recolección", "Cítricos - Poda",
+                        "Aceituna - Vareo/Recolección", "Aceituna - Poda",
+                        "Fruta de Hueso - Aclareo", "Fruta de Hueso - Recolección",
+                        "Viña - Vendimia", "Viña - Poda",
+                        "Invernadero - Montaje", "Invernadero - Mantenimiento"
+                      ].map((spec) => (
                         <label key={spec} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
                           <input
                             type="checkbox"
@@ -712,6 +721,10 @@ export default function SearchPage() {
                       candidate={candidate}
                       category={selectedCategory}
                       categoryInfo={categoryInfo!}
+                      onViewProfile={() => {
+                        setSelectedCandidate(candidate);
+                        setShowProfileModal(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -720,6 +733,248 @@ export default function SearchPage() {
           </div>
         )}
       </main>
+
+      {/* Modal de perfil completo */}
+      {showProfileModal && selectedCandidate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del modal */}
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-xl font-bold text-slate-800">Perfil Completo</h2>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="p-6">
+              {/* Información básica */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className={`w-16 h-16 rounded-full ${categoryInfo?.bgColor} flex items-center justify-center`}>
+                  <span className="text-3xl">{categoryInfo?.icon}</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">{selectedCandidate.fullName || "Sin nombre"}</h3>
+                  <span className={`text-sm inline-block px-2 py-0.5 rounded-full ${categoryInfo?.bgColor} ${categoryInfo?.textColor} font-medium`}>
+                    {categoryInfo?.title}
+                  </span>
+                  {selectedCandidate.yearsExperience !== undefined && selectedCandidate.yearsExperience > 0 && (
+                    <span className="ml-2 text-sm text-slate-600">
+                      • {selectedCandidate.yearsExperience} {selectedCandidate.yearsExperience === 1 ? 'año' : 'años'} de experiencia
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Ubicación */}
+              <div className="flex items-center gap-2 text-slate-600 mb-4">
+                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{selectedCandidate.city ? `${selectedCandidate.city}, ${selectedCandidate.province}` : selectedCandidate.province}</span>
+              </div>
+
+              {/* Bio */}
+              {selectedCandidate.bio && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Sobre mí</h4>
+                  <p className="text-slate-600">{selectedCandidate.bio}</p>
+                </div>
+              )}
+
+              {/* Experiencia en cultivos */}
+              {(selectedCategory === "worker" && selectedCandidate.experience && selectedCandidate.experience.length > 0) ||
+               (selectedCategory === "foreman" && selectedCandidate.specialties && selectedCandidate.specialties.length > 0) ||
+               ((selectedCategory === "encargado" || selectedCategory === "tractorista" || selectedCategory === "engineer") && selectedCandidate.cropExperience && selectedCandidate.cropExperience.length > 0) ? (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Experiencia en cultivos</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(selectedCandidate.experience || selectedCandidate.specialties || selectedCandidate.cropExperience || []).slice(0, 20).map((exp: string, i: number) => (
+                      <span key={i} className="text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                        {exp}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Campos específicos por categoría */}
+              {selectedCategory === "worker" && (
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {selectedCandidate.hasVehicle && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      <span>Tiene vehículo</span>
+                    </div>
+                  )}
+                  {selectedCandidate.canRelocate && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 014 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Dispuesto a relocarse</span>
+                    </div>
+                  )}
+                  {selectedCandidate.phytosanitaryLevel && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <span>Fitosanitario: {selectedCandidate.phytosanitaryLevel}</span>
+                    </div>
+                  )}
+                  {selectedCandidate.foodHandler && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <span>Manipulador de alimentos</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedCategory === "foreman" && selectedCandidate.crewSize && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Cuadrilla</h4>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>{selectedCandidate.crewSize} trabajadores en el equipo</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedCandidate.hasVan && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-blue-50 text-blue-700">Furgoneta</span>
+                    )}
+                    {selectedCandidate.ownTools && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-green-50 text-green-700">Herramientas propias</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === "tractorista" && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Maquinaria y Carnets</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedCandidate.machineryTypes && selectedCandidate.machineryTypes.length > 0 && (
+                      <div>
+                        <span className="text-xs text-slate-500">Tipos de maquinaria:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedCandidate.machineryTypes.map((m: string) => (
+                            <span key={m} className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700">{m}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedCandidate.toolTypes && selectedCandidate.toolTypes.length > 0 && (
+                      <div>
+                        <span className="text-xs text-slate-500">Tipos de aperos:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedCandidate.toolTypes.map((t: string) => (
+                            <span key={t} className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedCandidate.hasTractorLicense && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-teal-50 text-teal-700">Carnet tractor</span>
+                    )}
+                    {selectedCandidate.hasSprayerLicense && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-green-50 text-green-700">Carnet pulverizadora</span>
+                    )}
+                    {selectedCandidate.hasHarvesterLicense && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-yellow-50 text-yellow-700">Carnet cosechadora</span>
+                    )}
+                    {selectedCandidate.isAvailableSeason && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">Temporada completa</span>
+                    )}
+                    {selectedCandidate.canTravel && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-blue-50 text-blue-700">Dispuesto a viajar</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === "encargado" && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Información adicional</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedCandidate.canDriveTractor && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>Maneja tractor</span>
+                      </div>
+                    )}
+                    {selectedCandidate.needsAccommodation && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span>Necesita alojamiento</span>
+                      </div>
+                    )}
+                  </div>
+                  {selectedCandidate.workArea && selectedCandidate.workArea.length > 0 && (
+                    <div className="mt-3">
+                      <span className="text-xs text-slate-500">Zona de trabajo:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedCandidate.workArea.map((area: string) => (
+                          <span key={area} className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-700">{area}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedCategory === "engineer" && selectedCandidate.collegiateNumber && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Credenciales</h4>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-4 4h8" />
+                    </svg>
+                    <span>Nº de colegiado: {selectedCandidate.collegiateNumber}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Botón de contacto */}
+              <div className="flex gap-3 pt-4 border-t border-slate-200">
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
+                >
+                  Cerrar
+                </button>
+                <a
+                  href={`tel:${selectedCandidate.phone || ''}`}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-center flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  Contactar
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -751,10 +1006,11 @@ function CategoryCard({ title, description, icon, color, onClick }: {
   );
 }
 
-function CandidateCard({ candidate, category, categoryInfo }: {
+function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
   candidate: any;
   category: CategoryType;
   categoryInfo: { title: string; bgColor: string; textColor: string; icon: string };
+  onViewProfile: () => void;
 }) {
   // Renderizar tarjeta según categoría
   if (category === "worker") {
@@ -843,6 +1099,16 @@ function CandidateCard({ candidate, category, categoryInfo }: {
               </span>
             )}
           </div>
+          <button
+            onClick={onViewProfile}
+            className="mt-4 w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Ver perfil completo
+          </button>
         </div>
       </div>
     );
@@ -934,6 +1200,16 @@ function CandidateCard({ candidate, category, categoryInfo }: {
               </span>
             )}
           </div>
+          <button
+            onClick={onViewProfile}
+            className="mt-4 w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Ver perfil completo
+          </button>
         </div>
       </div>
     );
@@ -1007,6 +1283,16 @@ function CandidateCard({ candidate, category, categoryInfo }: {
               </span>
             )}
           </div>
+          <button
+            onClick={onViewProfile}
+            className="mt-4 w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Ver perfil completo
+          </button>
         </div>
       </div>
     );
@@ -1109,6 +1395,16 @@ function CandidateCard({ candidate, category, categoryInfo }: {
               </span>
             ))}
           </div>
+          <button
+            onClick={onViewProfile}
+            className="mt-4 w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Ver perfil completo
+          </button>
         </div>
       </div>
     );
@@ -1177,6 +1473,16 @@ function CandidateCard({ candidate, category, categoryInfo }: {
             </div>
           )}
         </div>
+        <button
+          onClick={onViewProfile}
+          className="mt-4 w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Ver perfil completo
+        </button>
       </div>
     );
   }

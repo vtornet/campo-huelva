@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
         if (hasVehicle === "true") workerWhere.hasVehicle = true;
         if (canRelocate === "true") workerWhere.canRelocate = true;
-        if (phytosanitaryLevel) workerWhere.phytosanitaryLevel = phytosanitaryLevel;
+        if (phytosanitaryLevel) workerWhere.phytosanitaryLevel = { equals: phytosanitaryLevel, mode: "insensitive" };
         if (foodHandler === "true") workerWhere.foodHandler = true;
 
         candidates = await prisma.workerProfile.findMany({
@@ -60,6 +60,7 @@ export async function GET(request: Request) {
           select: {
             userId: true,
             fullName: true,
+            phone: true,
             province: true,
             city: true,
             bio: true,
@@ -125,6 +126,7 @@ export async function GET(request: Request) {
           select: {
             userId: true,
             fullName: true,
+            phone: true,
             province: true,
             city: true,
             bio: true,
@@ -187,6 +189,7 @@ export async function GET(request: Request) {
           select: {
             userId: true,
             fullName: true,
+            phone: true,
             province: true,
             city: true,
             bio: true,
@@ -263,6 +266,7 @@ export async function GET(request: Request) {
           select: {
             userId: true,
             fullName: true,
+            phone: true,
             province: true,
             city: true,
             bio: true,
@@ -330,6 +334,7 @@ export async function GET(request: Request) {
           select: {
             userId: true,
             fullName: true,
+            phone: true,
             province: true,
             city: true,
             bio: true,
