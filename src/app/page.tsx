@@ -12,7 +12,7 @@ import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
 // Dynamic imports para optimizar el bundle principal
 // RecommendedOffers se carga de forma diferida (no crítica para el renderizado inicial)
 const RecommendedOffers = dynamic(
-  () => import("@/components/RecommendedOffers").then(mod => ({ default: mod.RecommendedOffers })),
+  () => import("@/components/RecommendedOffers"),
   {
     loading: () => (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
