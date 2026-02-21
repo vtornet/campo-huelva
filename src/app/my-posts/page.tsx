@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+export const dynamic = 'force-dynamic';
+
 interface Post {
   id: string;
   title: string;
@@ -200,7 +202,7 @@ export default function MyPostsPage() {
               </svg>
               Volver
             </button>
-            <h1 className="text-xl font-bold text-slate-800">Mis Publicaciones</h1>
+            <h1 className="text-xl font-bold text-slate-800">Mis Publicaciones 🔄 V2.0</h1>
           </div>
           <button
             onClick={() => {
