@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import { auth } from "@/lib/firebase";
 
 type Message = {
@@ -26,6 +27,7 @@ type OtherUser = {
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const params = useParams();
   const conversationId = params.id as string;
 
@@ -111,7 +113,11 @@ export default function ChatPage() {
       if (res.ok) {
         await loadMessages();
       } else {
-        alert("Error al enviar mensaje");
+        showNotification({
+          type: "error",
+          title: "Error al enviar",
+          message: "Inténtalo de nuevo más tarde.",
+        });
         setNewMessage(content);
       }
     } catch (error) {

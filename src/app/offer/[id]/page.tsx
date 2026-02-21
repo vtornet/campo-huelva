@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/components/Notifications';
 import RecommendedWorkers from '@/components/RecommendedWorkers';
 import PostActions from '@/components/PostActions';
 
@@ -13,6 +14,7 @@ export default function OfferDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const { showNotification } = useNotifications();
   const offerId = params.id as string;
 
   const [offer, setOffer] = useState<any>(null);
@@ -115,12 +117,20 @@ export default function OfferDetailPage() {
 
     const otherUserId = offer.company?.user?.id || offer.publisher?.id;
     if (!otherUserId) {
-      alert('No se puede contactar con este autor');
+      showNotification({
+        type: "error",
+        title: "No se puede contactar",
+        message: "Esta publicación no tiene un contacto válido.",
+      });
       return;
     }
 
     if (otherUserId === user.uid) {
-      alert('No puedes contactarte contigo mismo');
+      showNotification({
+        type: "warning",
+        title: "¿Contactarte contigo mismo?",
+        message: "No puedes enviar mensajes a tu propio usuario.",
+      });
       return;
     }
 
@@ -140,11 +150,19 @@ export default function OfferDetailPage() {
         const data = await res.json();
         router.push(`/messages/${data.conversationId}`);
       } else {
-        alert('Error al iniciar conversación');
+        showNotification({
+          type: "error",
+          title: "Error al iniciar conversación",
+          message: "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error('Error contacting:', error);
-      alert('Error al iniciar conversación');
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     }
   };
 

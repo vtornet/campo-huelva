@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, TIPOS_MAQUINARIA, TIPOS_APEROS, NIVELES_FITOSANITARIO } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
@@ -10,6 +11,7 @@ import AIBioGenerator from "@/components/AIBioGenerator";
 export default function TractoristaProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [nameLastModified, setNameLastModified] = useState<string | null>(null);
@@ -165,7 +167,11 @@ export default function TractoristaProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("No hay usuario autenticado. Por favor, inicia sesión.");
+      showNotification({
+        type: "error",
+        title: "Sesión no iniciada",
+        message: "Por favor, inicia sesión para continuar.",
+      });
       router.push("/login");
       return;
     }
@@ -178,7 +184,11 @@ export default function TractoristaProfilePage() {
 
     if (!user.uid) {
       console.error("Error: user.uid es undefined o null", user);
-      alert("Error de autenticación. Por favor, cierra sesión y vuelve a entrar.");
+      showNotification({
+        type: "error",
+        title: "Error de autenticación",
+        message: "Cierra sesión y vuelve a entrar.",
+      });
       return;
     }
 
@@ -204,18 +214,31 @@ export default function TractoristaProfilePage() {
       const responseData = await res.json();
 
       if (res.ok) {
+        showNotification({
+          type: "success",
+          title: "Perfil guardado",
+          message: "Tu perfil de tractorista ha sido actualizado correctamente.",
+        });
         router.push("/");
       } else {
         console.error("Error del servidor:", responseData);
         if (responseData.error?.includes("60 días")) {
           setNameChangeError(responseData.error);
         } else {
-          alert(responseData.error || "Error al guardar perfil.");
+          showNotification({
+            type: "error",
+            title: "Error al guardar",
+            message: responseData.error || "Inténtalo de nuevo más tarde.",
+          });
         }
       }
     } catch (error) {
       console.error("Error de red:", error);
-      alert("Error de conexión");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setLoading(false);
     }

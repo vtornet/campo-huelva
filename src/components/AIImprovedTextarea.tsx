@@ -4,6 +4,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useNotifications } from '@/components/Notifications';
 import AIButton, { AIBadge } from './AIButton';
 
 interface AIImprovedTextareaProps {
@@ -32,10 +33,15 @@ export default function AIImprovedTextarea({
   className = '',
 }: AIImprovedTextareaProps) {
   const [loading, setLoading] = useState(false);
+  const { showNotification } = useNotifications();
 
   const mejorarConIA = async () => {
     if (!value.trim()) {
-      alert('Escribe primero un texto básico para que la IA pueda mejorarlo.');
+      showNotification({
+        type: 'info',
+        title: 'Escribe algo primero',
+        message: 'Necesitas escribir un texto básico para que la IA pueda mejorarlo.',
+      });
       return;
     }
 
@@ -63,10 +69,19 @@ export default function AIImprovedTextarea({
       // Mostrar comparación
       if (confirm(`Descripción mejorada:\n\n"${data.improved}"\n\n¿Quieres reemplazar tu texto actual con esta versión mejorada?`)) {
         onChange(data.improved);
+        showNotification({
+          type: 'success',
+          title: 'Descripción mejorada',
+          message: 'Tu texto ha sido actualizado con la versión de la IA.',
+        });
       }
     } catch (error) {
       console.error('Error mejorando descripción:', error);
-      alert('Error al mejorar la descripción. Por favor, inténtalo de nuevo.');
+      showNotification({
+        type: 'error',
+        title: 'Error al mejorar',
+        message: 'No se pudo mejorar la descripción. Inténtalo de nuevo.',
+      });
     } finally {
       setLoading(false);
     }

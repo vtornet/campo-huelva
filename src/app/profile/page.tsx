@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
+import { useNotifications } from "@/components/Notifications";
 
 type TabType = "profile" | "posts" | "contacts" | "search";
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
@@ -525,8 +527,25 @@ export default function UserProfilePage() {
                                   .then(res => {
                                     if (res.ok) {
                                       setUserPosts(prev => prev.filter(p => p.id !== post.id));
-                                      alert("Publicación eliminada");
+                                      showNotification({
+                                        type: "success",
+                                        title: "Publicación eliminada",
+                                        message: "Tu publicación ha sido eliminada permanentemente.",
+                                      });
+                                    } else {
+                                      showNotification({
+                                        type: "error",
+                                        title: "No se pudo eliminar",
+                                        message: "Inténtalo de nuevo más tarde.",
+                                      });
                                     }
+                                  })
+                                  .catch(() => {
+                                    showNotification({
+                                      type: "error",
+                                      title: "Error de conexión",
+                                      message: "Verifica tu internet e inténtalo de nuevo.",
+                                    });
                                   });
                               }}
                               className="inline-flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition text-sm font-medium"

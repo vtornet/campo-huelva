@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useNotifications } from '@/components/Notifications';
 
 interface PostActionsProps {
   postId: string;
@@ -30,6 +31,7 @@ export default function PostActions({
 }: PostActionsProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [liked, setLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [sharesCount, setSharesCount] = useState(initialSharesCount);
@@ -154,9 +156,18 @@ export default function PostActions({
           // Si no hay navigator.share o falló, copiar al portapapeles
           const copied = await copyToClipboard();
           if (copied) {
-            alert('¡Enlace copiado al portapapeles!');
+            showNotification({
+              type: 'success',
+              title: '¡Enlace copiado!',
+              message: 'Ya puedes compartirlo con quien quieras.',
+            });
           } else {
-            alert('No se pudo copiar el enlace. Por favor, copia esta URL:\n' + shareUrl);
+            showNotification({
+              type: 'warning',
+              title: 'No se pudo copiar',
+              message: `Copia esta URL manualmente: ${shareUrl}`,
+              duration: 6000,
+            });
           }
         }
       }
@@ -174,7 +185,11 @@ export default function PostActions({
     }
 
     if (isOwner) {
-      alert('No puedes denunciar tu propia publicación');
+      showNotification({
+        type: 'warning',
+        title: 'No es posible',
+        message: 'No puedes denunciar tu propia publicación.',
+      });
       return;
     }
 
@@ -197,14 +212,26 @@ export default function PostActions({
       });
 
       if (res.ok) {
-        alert('Denuncia enviada correctamente. Gracias por ayudarnos a mantener la comunidad segura.');
+        showNotification({
+          type: 'success',
+          title: 'Denuncia enviada',
+          message: 'Gracias por ayudarnos a mantener la comunidad segura. Revisaremos tu reporte.',
+        });
       } else {
         const data = await res.json();
-        alert(data.error || 'Error al enviar denuncia');
+        showNotification({
+          type: 'error',
+          title: 'No se pudo enviar',
+          message: data.error || 'Inténtalo de nuevo más tarde.',
+        });
       }
     } catch (error) {
       console.error('Error al denunciar:', error);
-      alert('Error al enviar denuncia');
+      showNotification({
+        type: 'error',
+        title: 'Error de conexión',
+        message: 'Verifica tu internet e inténtalo de nuevo.',
+      });
     } finally {
       setLoading(false);
     }

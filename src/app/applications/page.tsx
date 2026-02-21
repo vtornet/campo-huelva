@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 
 interface Application {
   id: string;
@@ -257,6 +258,7 @@ function UserProfileModal({ user, onClose }: UserProfileModalProps) {
 export default function ApplicationsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
@@ -469,13 +471,31 @@ export default function ApplicationsPage() {
             app.id === applicationId ? { ...app, status: newStatus } : app
           )
         );
+        // Mensaje personalizado según el estado
+        const statusMessages: Record<string, { type: "success" | "info" | "warning" | "error"; title: string; message: string }> = {
+          ACCEPTED: { type: "success", title: "Candidato aceptado", message: "Se notificará al trabajador." },
+          REJECTED: { type: "info", title: "Candidato descartado", message: "Se notificará al trabajador." },
+          CONTACTED: { type: "success", title: "Marcado como contactado", message: "Estado actualizado correctamente." },
+        };
+        const msg = statusMessages[newStatus];
+        if (msg) {
+          showNotification(msg);
+        }
       } else {
         const data = await res.json();
-        alert(data.error || "Error al actualizar estado");
+        showNotification({
+          type: "error",
+          title: "No se pudo actualizar",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Error al actualizar estado");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setUpdating(prev => ({ ...prev, [applicationId]: false }));
     }

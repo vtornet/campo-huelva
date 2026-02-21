@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,7 @@ type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENC
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -244,6 +246,7 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
 }
 
 function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
+  const { showNotification } = useNotifications();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<UserFilterType>("all");
@@ -285,10 +288,18 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
     if (res.ok) {
       loadUsers();
       onStatsUpdate();
-      alert(ban ? "Usuario baneado" : "Usuario desbaneado");
+      showNotification({
+        type: "success",
+        title: ban ? "Usuario baneado" : "Usuario desbaneado",
+        message: ban ? "El usuario no podrá acceder a la plataforma." : "El usuario ha sido restituido.",
+      });
     } else {
       const data = await res.json();
-      alert(data.error || "Error al realizar la acción");
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: data.error || "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 
@@ -306,7 +317,11 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
 
       const hoursNum = hours.trim() === "" ? null : parseInt(hours);
       if (hours !== "" && (hoursNum === null || isNaN(hoursNum))) {
-        alert("Por favor, introduce un número válido");
+        showNotification({
+          type: "warning",
+          title: "Número inválido",
+          message: "Por favor, introduce un número válido de horas.",
+        });
         return;
       }
 
@@ -319,9 +334,17 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
       if (res.ok) {
         loadUsers();
         onStatsUpdate();
-        alert("Usuario silenciado");
+        showNotification({
+          type: "success",
+          title: "Usuario silenciado",
+          message: "El usuario no podrá publicar temporalmente.",
+        });
       } else {
-        alert("Error al realizar la acción");
+        showNotification({
+          type: "error",
+          title: "Error al realizar la acción",
+          message: "Inténtalo de nuevo más tarde.",
+        });
       }
     } else {
       const res = await fetch("/api/admin/users/silence", {
@@ -333,9 +356,17 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
       if (res.ok) {
         loadUsers();
         onStatsUpdate();
-        alert("Silencio retirado");
+        showNotification({
+          type: "success",
+          title: "Silencio retirado",
+          message: "El usuario puede volver a publicar.",
+        });
       } else {
-        alert("Error al realizar la acción");
+        showNotification({
+          type: "error",
+          title: "Error al realizar la acción",
+          message: "Inténtalo de nuevo más tarde.",
+        });
       }
     }
   };
@@ -353,9 +384,17 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
     if (res.ok) {
       loadUsers();
       onStatsUpdate();
-      alert("Rol actualizado");
+      showNotification({
+        type: "success",
+        title: "Rol actualizado",
+        message: "El rol del usuario ha sido cambiado correctamente.",
+      });
     } else {
-      alert("Error al actualizar rol");
+      showNotification({
+        type: "error",
+        title: "Error al actualizar rol",
+        message: "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 
@@ -531,6 +570,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
 }
 
 function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
+  const { showNotification } = useNotifications();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved">("all");
@@ -564,9 +604,17 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     if (res.ok) {
       loadCompanies();
       onStatsUpdate();
-      alert(verify ? "Empresa verificada" : "Verificación retirada");
+      showNotification({
+        type: "success",
+        title: verify ? "Empresa verificada" : "Verificación retirada",
+        message: verify ? "La empresa ahora puede publicar ofertas oficiales." : "La empresa ha perdido su verificación.",
+      });
     } else {
-      alert("Error al realizar la acción");
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 
@@ -585,9 +633,17 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     if (res.ok) {
       loadCompanies();
       onStatsUpdate();
-      alert(approve ? "Empresa aprobada" : "Aprobación retirada");
+      showNotification({
+        type: "success",
+        title: approve ? "Empresa aprobada" : "Aprobación retirada",
+        message: approve ? "La empresa ha sido aprobada." : "La aprobación ha sido retirada.",
+      });
     } else {
-      alert("Error al realizar la acción");
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 
@@ -684,6 +740,7 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
 }
 
 function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdate: () => void }) {
+  const { showNotification } = useNotifications();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "ACTIVE" | "HIDDEN" | "REMOVED">("all");
@@ -722,9 +779,17 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
     if (res.ok) {
       loadPosts();
       onStatsUpdate();
-      alert("Publicación actualizada");
+      showNotification({
+        type: "success",
+        title: "Publicación actualizada",
+        message: "El estado de la publicación ha sido cambiado.",
+      });
     } else {
-      alert("Error al realizar la acción");
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 
@@ -838,6 +903,7 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
 }
 
 function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
+  const { showNotification } = useNotifications();
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "PENDING" | "RESOLVED" | "DISMISSED">("all");
@@ -870,9 +936,17 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
     if (res.ok) {
       loadReports();
       onStatsUpdate();
-      alert("Denuncia resuelta");
+      showNotification({
+        type: "success",
+        title: "Denuncia resuelta",
+        message: "La denuncia ha sido marcada como resuelta.",
+      });
     } else {
-      alert("Error al realizar la acción");
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: "Inténtalo de nuevo más tarde.",
+      });
     }
   };
 

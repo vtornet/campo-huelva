@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { NotificationsProvider } from "@/components/Notifications";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
 
@@ -129,9 +130,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          {children}
-          <ServiceWorkerProvider />
-          <PWAInstaller />
+          <NotificationsProvider>
+            {children}
+            <ServiceWorkerProvider />
+            <PWAInstaller />
+          </NotificationsProvider>
         </AuthProvider>
       </body>
     </html>

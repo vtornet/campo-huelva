@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import {
   PROVINCIAS,
   MUNICIPIOS_POR_PROVINCIA,
@@ -87,6 +88,7 @@ type RoleFilter = "all" | "USER" | "FOREMAN" | "ENGINEER";
 export default function ProfileSearchPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -248,11 +250,19 @@ export default function ProfileSearchPage() {
         setTotal(data.total || 0);
       } else {
         const data = await res.json();
-        alert(data.error || "Error al buscar perfiles");
+        showNotification({
+          type: "error",
+          title: "Error al buscar",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setLoading(false);
     }

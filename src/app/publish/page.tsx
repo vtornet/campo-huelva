@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA, TIPOS_CONTRATO, PERIODOS_SALARIALES, TIPOS_JORNADA } from "@/lib/constants";
 import AIImprovedTextarea from "@/components/AIImprovedTextarea";
 
@@ -10,6 +11,7 @@ import AIImprovedTextarea from "@/components/AIImprovedTextarea";
 function PublishForm() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "OFFER" o "DEMAND"
   const editId = searchParams.get("edit"); // ID de la publicación a editar
@@ -80,7 +82,11 @@ function PublishForm() {
         .then(data => {
           // Verificar que la publicación pertenece al usuario
           if (data.publisherId !== user.uid && data.companyId !== user.uid) {
-            alert("No tienes permiso para editar esta publicación");
+            showNotification({
+              type: "error",
+              title: "Sin permisos",
+              message: "No tienes permiso para editar esta publicación.",
+            });
             router.push("/profile");
             return;
           }
@@ -107,7 +113,11 @@ function PublishForm() {
         })
         .catch(err => {
           console.error("Error loading post:", err);
-          alert("Error al cargar la publicación");
+          showNotification({
+            type: "error",
+            title: "Error al cargar",
+            message: "No se pudo cargar la publicación. Inténtalo de nuevo.",
+          });
           router.push("/profile");
         })
         .finally(() => setLoadingPost(false));

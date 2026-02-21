@@ -6,6 +6,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
+import { useNotifications } from "@/components/Notifications";
 
 import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
 
@@ -36,6 +37,7 @@ import PostActions from "@/components/PostActions";
 export default function Dashboard() {
   const { user, loading, error: authError } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
 
   // Estado global del usuario (Rol + Perfil)
   const [userData, setUserData] = useState<any>(null);
@@ -292,19 +294,31 @@ export default function Dashboard() {
 
     // Las empresas no se inscriben
     if (role === 'COMPANY') {
-      alert("Las empresas no pueden inscribirse en ofertas");
+      showNotification({
+        type: "info",
+        title: "Acción no disponible",
+        message: "Las empresas no pueden inscribirse en ofertas. Usa 'Buscar candidatos' para encontrar trabajadores.",
+      });
       return;
     }
 
     // No puedes inscribirte en tu propia publicación
     if (post.company?.userId === user.uid || post.publisherId === user.uid) {
-      alert("No puedes inscribirte en tu propia oferta");
+      showNotification({
+        type: "warning",
+        title: "Es tu propia publicación",
+        message: "No puedes inscribirte en tu propia oferta. Edítala o elimínala desde tu perfil.",
+      });
       return;
     }
 
     // No te puedes inscribir en demandas
     if (post.type === 'DEMAND') {
-      alert("Las demandas son publicaciones de trabajadores buscando empleo. Usa el botón de contacto para conectar directamente.");
+      showNotification({
+        type: "info",
+        title: "Es una demanda",
+        message: "Las demandas son trabajadores buscando empleo. Usa el botón 'Contactar' para conectar directamente.",
+      });
       return;
     }
 
@@ -325,14 +339,26 @@ export default function Dashboard() {
             delete newApps[post.id];
             return newApps;
           });
-          alert("Inscripción retirada correctamente");
+          showNotification({
+            type: "success",
+            title: "Inscripción retirada",
+            message: "Ya no figurarás como interesado en esta oferta.",
+          });
         } else {
           const data = await res.json();
-          alert(data.error || "Error al retirar inscripción");
+          showNotification({
+            type: "error",
+            title: "No se pudo retirar",
+            message: data.error || "Inténtalo de nuevo.",
+          });
         }
       } catch (error) {
         console.error("Error withdrawing:", error);
-        alert("Error al retirar inscripción");
+        showNotification({
+          type: "error",
+          title: "Error de conexión",
+          message: "Verifica tu internet e inténtalo de nuevo.",
+        });
       } finally {
         setApplying(prev => ({ ...prev, [post.id]: false }));
       }
@@ -357,14 +383,26 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setApplications(prev => ({ ...prev, [post.id]: "PENDING" }));
-        alert("¡Te has inscrito correctamente en la oferta! La empresa será notificada y podrá ver tus datos de contacto.");
+        showNotification({
+          type: "success",
+          title: "¡Inscripción correcta!",
+          message: `Te has inscrito en "${post.title}". La empresa podrá ver tu perfil y contactarte.`,
+        });
       } else {
         const data = await res.json();
-        alert(data.error || "Error al inscribirse");
+        showNotification({
+          type: "error",
+          title: "No se pudo completar la inscripción",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error("Error applying:", error);
-      alert("Error al inscribirse");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setApplying(prev => ({ ...prev, [post.id]: false }));
     }
@@ -380,12 +418,20 @@ export default function Dashboard() {
     // Obtener ID del otro usuario
     const otherUserId = post.company?.user?.id || post.publisher?.id;
     if (!otherUserId) {
-      alert("No se puede contactar con este autor");
+      showNotification({
+        type: "error",
+        title: "No se puede contactar",
+        message: "Esta publicación no tiene un contacto válido.",
+      });
       return;
     }
 
     if (otherUserId === user.uid) {
-      alert("No puedes contactarte contigo mismo");
+      showNotification({
+        type: "warning",
+        title: "¿Contactarte contigo mismo?",
+        message: "No puedes enviar mensajes a tu propio usuario.",
+      });
       return;
     }
 
@@ -406,11 +452,19 @@ export default function Dashboard() {
         const data = await res.json();
         router.push(`/messages/${data.conversationId}`);
       } else {
-        alert("Error al iniciar conversación");
+        showNotification({
+          type: "error",
+          title: "Error al iniciar conversación",
+          message: "Inténtalo de nuevo.",
+        });
       }
     } catch (error) {
       console.error("Error contacting:", error);
-      alert("Error al iniciar conversación");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     }
   };
 

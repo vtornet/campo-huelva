@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
@@ -18,6 +19,7 @@ const ESPECIALIDADES = [
 export default function ForemanProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [nameLastModified, setNameLastModified] = useState<string | null>(null);
@@ -151,11 +153,27 @@ export default function ForemanProfilePage() {
           email: user.email
         }),
       });
-      if (res.ok) router.push("/");
-      else alert("Error al guardar perfil");
+      if (res.ok) {
+        showNotification({
+          type: "success",
+          title: "Perfil guardado",
+          message: "Tu perfil de jefe de cuadrilla ha sido actualizado.",
+        });
+        router.push("/");
+      } else {
+        showNotification({
+          type: "error",
+          title: "Error al guardar",
+          message: "Inténtalo de nuevo más tarde.",
+        });
+      }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 
 interface Application {
   id: string;
@@ -26,6 +27,7 @@ interface Application {
 export default function MyApplicationsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
   const [withdrawing, setWithdrawing] = useState<Record<string, boolean>>({});
@@ -58,14 +60,26 @@ export default function MyApplicationsPage() {
 
       if (res.ok) {
         setApplications(prev => prev.filter(app => app.post.id !== postId));
-        alert("Inscripción retirada correctamente");
+        showNotification({
+          type: "success",
+          title: "Inscripción retirada",
+          message: "Ya no figurarás como interesado en esta oferta.",
+        });
       } else {
         const data = await res.json();
-        alert(data.error || "Error al retirar inscripción");
+        showNotification({
+          type: "error",
+          title: "No se pudo retirar",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error("Error withdrawing:", error);
-      alert("Error al retirar inscripción");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setWithdrawing(prev => ({ ...prev, [postId]: false }));
     }

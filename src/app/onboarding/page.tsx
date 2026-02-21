@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
+import { useNotifications } from "@/components/Notifications";
 
 export default function Onboarding() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [pageLoading, setPageLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -61,11 +63,19 @@ export default function Onboarding() {
         else if (role === "TRACTORISTA") router.push("/profile/tractorista");
         else router.push("/");
       } else {
-        alert("Error al guardar perfil.");
+        showNotification({
+          type: "error",
+          title: "Error al guardar",
+          message: "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setActionLoading(false);
     }

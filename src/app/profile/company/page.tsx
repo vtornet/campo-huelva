@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 
 export default function CompanyProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isUpdate, setIsUpdate] = useState(false);
@@ -106,14 +108,27 @@ export default function CompanyProfilePage() {
       });
 
       if (res.ok) {
+        showNotification({
+          type: "success",
+          title: "Perfil guardado",
+          message: "Tu perfil de empresa ha sido actualizado correctamente.",
+        });
         router.push("/");
       } else {
         const data = await res.json();
-        alert(data.error || "Error al guardar perfil.");
+        showNotification({
+          type: "error",
+          title: "Error al guardar",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión");
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
     } finally {
       setLoading(false);
     }
