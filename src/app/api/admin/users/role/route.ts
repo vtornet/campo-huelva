@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // Validar que el rol es uno de los valores permitidos
 const isValidRole = (role: string): role is Role => {
-  return ["USER", "FOREMAN", "COMPANY", "ADMIN"].includes(role);
+  return ["USER", "FOREMAN", "COMPANY", "ADMIN", "ENGINEER", "ENCARGADO", "TRACTORISTA"].includes(role);
 };
 
 export async function POST(request: Request) {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   }
   if (!isValidRole(role)) {
     return NextResponse.json(
-      { error: "Rol inválido. Debe ser USER, FOREMAN, COMPANY o ADMIN" },
+      { error: "Rol inválido. Debe ser USER, FOREMAN, COMPANY, ADMIN, ENGINEER, ENCARGADO o TRACTORISTA" },
       { status: 400 }
     );
   }
@@ -34,6 +34,9 @@ export async function POST(request: Request) {
         workerProfile: true,
         foremanProfile: true,
         companyProfile: true,
+        engineerProfile: true,
+        encargadoProfile: true,
+        tractoristProfile: true,
       },
     });
 

@@ -305,7 +305,7 @@ export default function SearchPage() {
                 )}
 
                 {/* Experiencia en cultivos */}
-                {(selectedCategory === "worker" || selectedCategory === "foreman" || selectedCategory === "encargado") && (
+                {(selectedCategory === "worker" || selectedCategory === "encargado" || selectedCategory === "tractorista" || selectedCategory === "engineer") && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en cultivos</label>
                     <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-2">
@@ -324,7 +324,27 @@ export default function SearchPage() {
                   </div>
                 )}
 
-                {/* Años de experiencia */}
+                {/* Experiencia en cultivos para manijeros (usar especialidades específicas) */}
+                {selectedCategory === "foreman" && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en cultivos/tareas</label>
+                    <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                      {ESPECIALIDADES_MANIJERO.map(spec => (
+                        <label key={spec} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.cropExperience?.includes(spec) || false}
+                            onChange={() => toggleArrayItem("cropExperience", spec)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm">{spec}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Años de experiencia - global para todas las categorías */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Años de experiencia</label>
                   <select
@@ -638,24 +658,6 @@ export default function SearchPage() {
                           </label>
                         ))}
                       </div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Años de experiencia</label>
-                      <select
-                        value={filters.yearsExperience ? `${filters.yearsExperience.min}-${filters.yearsExperience.max}` : ""}
-                        onChange={(e) => {
-                          const range = RANGOS_EXPERIENCIA.find(r => e.target.value === `${r.min}-${r.max}`);
-                          handleFilterChange("yearsExperience", range || null);
-                        }}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <option value="">Cualquiera</option>
-                        {RANGOS_EXPERIENCIA.map(range => (
-                          <option key={`${range.min}-${range.max}`} value={`${range.min}-${range.max}`}>
-                            {range.label}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </>
                 )}
