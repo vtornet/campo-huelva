@@ -1,6 +1,6 @@
 {
   "name": "campo-huelva",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
+  // CACHE BUST - 2025-02-21
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@google/generative-ai": "^0.24.1",
