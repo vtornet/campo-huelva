@@ -13,12 +13,6 @@ function PublishForm() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "OFFER" o "DEMAND"
   const editId = searchParams.get("edit"); // ID de la publicación a editar
-
-  // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
-  // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
-  // En modo edición, el tipo se determina a partir de la publicación existente.
-  const isDemand = postType === "DEMAND";
-  const isOffer = !isDemand;
   const isEditMode = !!editId;
 
   // Proteger la página: si no hay usuario, ir a login
@@ -38,6 +32,13 @@ function PublishForm() {
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
   const [postType, setPostType] = useState<'DEMAND' | 'OFFER' | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
+  // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
+  // En modo edición, el tipo se determina a partir de la publicación existente.
+  const isDemand = postType === "DEMAND";
+  const isOffer = !isDemand;
   const [formData, setFormData] = useState({
     title: "",
     province: "",
@@ -53,6 +54,20 @@ function PublishForm() {
     startDate: "",
     endDate: "",
   });
+
+  // Cargar rol del usuario
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/user/me?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.role) {
+            setUserRole(data.role);
+          }
+        })
+        .catch(err => console.error("Error fetching user role:", err));
+    }
+  }, [user]);
 
   // Cargar datos de la publicación si estamos en modo edición
   useEffect(() => {
@@ -94,12 +109,12 @@ function PublishForm() {
           router.push("/my-posts");
         })
         .finally(() => setLoadingPost(false));
-    } else if (!editId) {
+    } else if (!editId && userRole !== null) {
       // Si no estamos editando, usar el typeParam o determinar por rol
-      const type = typeParam || (user?.role === 'COMPANY' ? 'OFFER' : 'DEMAND');
+      const type = typeParam || (userRole === 'COMPANY' ? 'OFFER' : 'DEMAND');
       setPostType(type === "DEMAND" ? "DEMAND" : "OFFER");
     }
-  }, [editId, user, typeParam]);
+  }, [editId, user, typeParam, userRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
