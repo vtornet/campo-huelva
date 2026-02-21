@@ -1,5 +1,5 @@
 // src/app/api/posts/[id]/route.ts
-// API para obtener una publicación individual por ID
+// API para obtener, editar y eliminar una publicación individual por ID
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
@@ -62,6 +62,22 @@ export async function GET(
                 province: true,
                 profileImage: true
               }
+            },
+            encargadoProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                profileImage: true
+              }
+            },
+            tractoristProfile: {
+              select: {
+                fullName: true,
+                city: true,
+                province: true,
+                profileImage: true
+              }
             }
           }
         }
@@ -97,6 +113,151 @@ export async function GET(
     console.error('Error cargando publicación:', error);
     return NextResponse.json(
       { error: 'Error al cargar la publicación' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT: Editar una publicación
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const userId = body.userId; // ID del usuario que hace la petición
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar que la publicación existe y pertenece al usuario
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        publisherId: true,
+        companyId: true
+      }
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Publicación no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que el usuario es el dueño de la publicación
+    if (post.publisherId !== userId && post.companyId !== userId) {
+      return NextResponse.json(
+        { error: 'No tienes permiso para editar esta publicación' },
+        { status: 403 }
+      );
+    }
+
+    // Campos permitidos para editar
+    const allowedUpdates = [
+      'title',
+      'description',
+      'location',
+      'province',
+      'taskType',
+      'contractType',
+      'providesAccommodation',
+      'salaryAmount',
+      'salaryPeriod',
+      'hoursPerWeek',
+      'startDate',
+      'endDate'
+    ];
+
+    const updateData: any = {};
+    for (const field of allowedUpdates) {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field];
+      }
+    }
+
+    // Actualizar la publicación
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: updateData
+    });
+
+    return NextResponse.json(updatedPost);
+  } catch (error) {
+    console.error('Error editando publicación:', error);
+    return NextResponse.json(
+      { error: 'Error al editar la publicación' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Eliminar (o archivar) una publicación
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+    const action = searchParams.get('action') || 'delete'; // 'delete' o 'archive'
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar que la publicación existe y pertenece al usuario
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        publisherId: true,
+        companyId: true
+      }
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Publicación no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que el usuario es el dueño de la publicación
+    if (post.publisherId !== userId && post.companyId !== userId) {
+      return NextResponse.json(
+        { error: 'No tienes permiso para eliminar esta publicación' },
+        { status: 403 }
+      );
+    }
+
+    if (action === 'archive') {
+      // Archivar (cambiar status a HIDDEN)
+      await prisma.post.update({
+        where: { id },
+        data: { status: 'HIDDEN' }
+      });
+      return NextResponse.json({ success: true, message: 'Publicación archivada' });
+    } else {
+      // Eliminar permanentemente
+      await prisma.post.delete({
+        where: { id }
+      });
+      return NextResponse.json({ success: true, message: 'Publicación eliminada' });
+    }
+  } catch (error) {
+    console.error('Error eliminando publicación:', error);
+    return NextResponse.json(
+      { error: 'Error al eliminar la publicación' },
       { status: 500 }
     );
   }

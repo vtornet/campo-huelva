@@ -62,6 +62,11 @@ export async function GET(request: Request) {
       skip: skip,
       // Incluimos los datos del autor para mostrar nombre/avatar en la tarjeta
       include: {
+        _count: {
+          select: {
+            applications: true
+          }
+        },
         company: {
           select: {
             id: true,
@@ -113,6 +118,7 @@ export async function GET(request: Request) {
     });
 
     // Si hay un usuario autenticado, verificamos sus likes para cada post
+    // Y añadir el conteo de aplicaciones para cada post
     let postsWithLikedInfo = posts;
 
     if (currentUserId) {
