@@ -47,15 +47,6 @@ export default function NotFound() {
             </svg>
             Ir al inicio
           </Link>
-          <button
-            onClick={() => history.back()}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium hover:bg-slate-50 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Volver atrás
-          </button>
         </div>
 
         {/* Sugerencias de enlaces útiles */}

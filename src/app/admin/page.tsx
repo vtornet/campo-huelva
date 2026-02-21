@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+// Forzar que esta página sea siempre dinámica (no pre-renderizar)
+export const dynamic = 'force-dynamic';
+
 type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs";
 type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA" | "banned" | "silenced";
 
