@@ -8,14 +8,15 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = 5;
+  const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
+  // Si se piden posts de un usuario específico, no limitamos (o usamos un límite mayor)
+  const limit = userId ? 100 : 5;
 
   // Soportar múltiples valores para provincia y taskType (multiselección)
   const allProvinces = searchParams.getAll("province");
   const allTaskTypes = searchParams.getAll("taskType");
 
   const viewMode = searchParams.get("view"); // "OFFERS" o "DEMANDS"
-  const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
   const currentUserId = searchParams.get("currentUserId"); // Usuario autenticado actual (para verificar sus likes)
 
   // Calculamos el offset para paginación
@@ -24,30 +25,30 @@ export async function GET(request: Request) {
   // Construimos el filtro dinámico
   const where: any = {};
 
-  // 1. Filtro por Provincia (soporta múltiples valores)
-  if (allProvinces.length > 0 && !allProvinces.includes("todas") && !allProvinces.includes("")) {
-    where.province = { in: allProvinces };
-  }
-
-  // 2. Filtro por Tipo (Ofertas vs Demandas)
-  if (viewMode === "DEMANDS") {
-    where.type = PostType.DEMAND;
-    // Si se especifican taskTypes, filtramos por esos tipos
-    if (allTaskTypes.length > 0 && !allTaskTypes.includes("todos") && !allTaskTypes.includes("")) {
-      where.taskType = { in: allTaskTypes };
-    }
-  } else {
-    // Si vemos ofertas, queremos las OFICIALES y las COMPARTIDAS
-    where.type = { in: [PostType.OFFICIAL, PostType.SHARED] };
-  }
-
-  // 3. Filtro por usuario (para ver sus propias publicaciones)
+  // 1. Filtro por usuario (para ver sus propias publicaciones) - PRIORITARIO
+  // Si se pide un userId, el usuario quiere ver TODAS sus publicaciones
   if (userId) {
-    // Si se pide un userId, filtramos por ese usuario
     where.OR = [
       { publisherId: userId },
       { companyId: userId }
     ];
+  } else {
+    // 2. Filtro por Tipo (solo si NO estamos filtrando por userId)
+    if (viewMode === "DEMANDS") {
+      where.type = PostType.DEMAND;
+      // Si se especifican taskTypes, filtramos por esos tipos
+      if (allTaskTypes.length > 0 && !allTaskTypes.includes("todos") && !allTaskTypes.includes("")) {
+        where.taskType = { in: allTaskTypes };
+      }
+    } else {
+      // Si vemos ofertas, queremos las OFICIALES y las COMPARTIDAS
+      where.type = { in: [PostType.OFFICIAL, PostType.SHARED] };
+    }
+
+    // 3. Filtro por Provincia (solo si NO estamos filtrando por userId)
+    if (allProvinces.length > 0 && !allProvinces.includes("todas") && !allProvinces.includes("")) {
+      where.province = { in: allProvinces };
+    }
   }
 
   // 4. Solo mostrar posts activos (no ocultos ni eliminados)
