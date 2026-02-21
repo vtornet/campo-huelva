@@ -198,11 +198,14 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Sitemap.xml - sitemap.ts con rutas estáticas y preparado para dinámicas
 - [x] Robots.txt - robots.ts con reglas para crawlers
 
-### 7. Optimizaciones de Producción
-- [ ] Compresión de imágenes (next/image con domains de Firebase Storage)
-- [ ] Optimización de bundles (dynamic imports para componentes pesados)
-- [ ] Configuración de imágenes Next.js (remotePatterns para Firebase Storage)
-- [ ] Variables de entorno de producción correctamente configuradas
+### ✅ 7. Optimizaciones de Producción (COMPLETADO)
+- [x] Compresión de imágenes (next/image con AVIF/WebP)
+- [x] Configuración de imágenes Next.js (remotePatterns para Firebase Storage y dominio propio)
+- [x] Optimización de bundles (dynamic imports para RecommendedOffers en dashboard)
+- [x] Headers de seguridad mejorados (CSP, X-Frame-Options, etc.)
+- [x] Cache headers para assets estáticos (iconos, manifest, favicon)
+- [x] Variables de entorno de producción configuradas (NEXT_PUBLIC_APP_URL)
+- [x] Logging optimizado para producción
 
 ### 8. Internacionalización (i18n)
 - [ ] **Soporte multiidioma para temporeros extranjeros**

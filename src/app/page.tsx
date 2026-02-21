@@ -3,11 +3,33 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
 import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
-import RecommendedOffers from "@/components/RecommendedOffers";
+
+// Dynamic imports para optimizar el bundle principal
+// RecommendedOffers se carga de forma diferida (no crítica para el renderizado inicial)
+const RecommendedOffers = dynamic(
+  () => import("@/components/RecommendedOffers").then(mod => ({ default: mod.RecommendedOffers })),
+  {
+    loading: () => (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+          <div className="space-y-3">
+            <div className="h-20 bg-slate-100 rounded-lg"></div>
+            <div className="h-20 bg-slate-100 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+// MultiSelectDropdown es pequeño pero usamos dynamic para demostración
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import PostActions from "@/components/PostActions";
 
