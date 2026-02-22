@@ -1,0 +1,159 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "required": "Obligatoire",
+    "optional": "Optionnel",
+    "other": "Autre"
+  },
+  "nav": {
+    "home": "Accueil",
+    "profile": "Profil",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "register": "S'inscrire"
+  },
+  "auth": {
+    "signIn": "Connexion",
+    "signUp": "S'inscrire",
+    "signOut": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "orContinueWith": "Ou continuer avec",
+    "google": "Google",
+    "signInWithEmail": "Se connecter avec email",
+    "createAccount": "Créer un compte",
+    "forgotPassword": "Mot de passe oublié ?",
+    "errors": {
+      "invalidCredentials": "Email ou mot de passe incorrect",
+      "weakPassword": "Le mot de passe doit contenir au moins 6 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "emailInUse": "Cet email est déjà enregistré",
+      "invalidEmail": "Email invalide",
+      "signInError": "Erreur de connexion",
+      "signUpError": "Erreur lors de l'inscription",
+      "googleError": "Erreur de connexion avec Google"
+    }
+  },
+  "onboarding": {
+    "welcome": "Bienvenue sur",
+    "selectProfile": "Choisissez votre profil :",
+    "roles": {
+      "worker": {
+        "title": "Je cherche du travail",
+        "description": "Je suis travailleur (saisonnier, machiniste, entrepôt) et je cherche un emploi."
+      },
+      "foreman": {
+        "title": "Je suis chef d'équipe",
+        "description": "J'ai ma propre équipe et j'offre des services de récolte, taille, etc."
+      },
+      "company": {
+        "title": "Je suis une entreprise",
+        "description": "Je cherche du personnel ou des équipes pour ma ferme ou coopérative."
+      },
+      "engineer": {
+        "title": "Je suis ingénieur",
+        "description": "Ingénieur technique agricole. J'offre des services techniques et des conseils."
+      },
+      "encargado": {
+        "title": "Je suis responsable/intendant",
+        "description": "Responsable de ferme. J'organise les travailleurs journaliers et gère les tâches aux champs."
+      },
+      "tractorista": {
+        "title": "Je suis tracteuriste",
+        "description": "Spécialiste en machinerie agricole. Tracteur, pulvérisateur, moissonneuse."
+      }
+    },
+    "errors": {
+      "saveError": "Erreur lors de l'enregistrement",
+      "connectionError": "Erreur de connexion",
+      "tryAgain": "Veuillez réessayer plus tard.",
+      "checkConnection": "Vérifiez votre connexion internet et réessayez."
+    }
+  },
+  "notifications": {
+    "success": "Succès",
+    "error": "Erreur",
+    "info": "Information",
+    "warning": "Avertissement"
+  },
+  "posts": {
+    "tabs": {
+      "offers": "Offres d'emploi",
+      "candidates": "Candidats et demandes"
+    },
+    "filters": {
+      "province": "Filtrer par province",
+      "taskType": "Filtrer par type de tâche",
+      "allProvinces": "Toutes les provinces",
+      "allTypes": "Tous les types"
+    },
+    "actions": {
+      "publish": "Publier",
+      "publishOffer": "Publier une offre officielle",
+      "publishDemand": "Publier une demande",
+      "shareOffer": "Partager une offre",
+      "searchCandidates": "Rechercher des candidats"
+    },
+    "labels": {
+      "verifiedCompany": "Entreprise vérifiée",
+      "sharedOffer": "Offre partagée",
+      "demand": "Demande"
+    },
+    "status": {
+      "inscribed": "Inscrit",
+      "accepted": "Accepté",
+      "rejected": "Non sélectionné",
+      "contacted": "Contacté",
+      "processing": "Traitement..."
+    },
+    "empty": {
+      "title": "Aucune publication",
+      "subtitle": "Soyez le premier à publier"
+    }
+  },
+  "application": {
+    "apply": "S'inscrire",
+    "withdraw": "Retirer l'inscription",
+    "contact": "Contacter",
+    "confirmApply": "Confirmer l'inscription",
+    "confirmApplyMessage": "En vous inscrivant, vous autorisez l'entreprise à voir vos coordonnées (téléphone, email).",
+    "confirmWithdraw": "Retirer l'inscription ?",
+    "confirmWithdrawMessage": "Cette action ne peut pas être annulée.",
+    "alreadyApplied": "Vous êtes déjà inscrit",
+    "success": "Inscription réussie",
+    "withdrawSuccess": "Inscription retirée",
+    "error": "Erreur lors de l'inscription"
+  },
+  "profile": {
+    "edit": "Modifier le profil",
+    "myPosts": "Mes publications",
+    "myApplications": "Mes inscriptions",
+    "completeProfile": "Complétez votre profil",
+    "fullName": "Nom complet",
+    "phone": "Téléphone",
+    "email": "Email",
+    "province": "Province",
+    "city": "Ville / Municipalité",
+    "bio": "Biographie",
+    "experience": "Expérience",
+    "availability": "Disponibilité",
+    "saveSuccess": "Profil enregistré correctement",
+    "saveError": "Erreur lors de l'enregistrement du profil"
+  },
+  "language": {
+    "select": "Sélectionner la langue",
+    "current": "Langue actuelle"
+  }
+}

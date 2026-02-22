@@ -1,0 +1,159 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "other": "Otro"
+  },
+  "nav": {
+    "home": "Inicio",
+    "profile": "Perfil",
+    "notifications": "Notificaciones",
+    "messages": "Mensajes",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "orContinueWith": "O continúa con",
+    "google": "Google",
+    "signInWithEmail": "Entrar con Email",
+    "createAccount": "Crear Cuenta",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "errors": {
+      "invalidCredentials": "Email o contraseña incorrectos",
+      "weakPassword": "La contraseña debe tener al menos 6 caracteres",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "emailInUse": "Este email ya está registrado",
+      "invalidEmail": "Email inválido",
+      "signInError": "Error al iniciar sesión",
+      "signUpError": "Error al registrar usuario",
+      "googleError": "Error al iniciar con Google"
+    }
+  },
+  "onboarding": {
+    "welcome": "¡Bienvenido a",
+    "selectProfile": "Elige tu perfil para continuar:",
+    "roles": {
+      "worker": {
+        "title": "Busco Trabajo",
+        "description": "Soy trabajador (temporero, maquinista, almacén) y busco empleo."
+      },
+      "foreman": {
+        "title": "Soy Manijero",
+        "description": "Tengo cuadrilla propia y ofrezco servicios de recolección, poda, etc."
+      },
+      "company": {
+        "title": "Soy Empresa",
+        "description": "Busco personal o cuadrillas para mi finca o cooperativa."
+      },
+      "engineer": {
+        "title": "Soy Ingeniero",
+        "description": "Ingeniero Técnico Agrícola. Ofrezco servicios técnicos y asesoramiento."
+      },
+      "encargado": {
+        "title": "Soy Encargado/Capataz",
+        "description": "Responsable de finca. Organizo day workers y gestiono tareas en campo."
+      },
+      "tractorista": {
+        "title": "Soy Tractorista",
+        "description": "Especialista en maquinaria agrícola. Tractor, pulverizadora, cosechadora."
+      }
+    },
+    "errors": {
+      "saveError": "Error al guardar",
+      "connectionError": "Error de conexión",
+      "tryAgain": "Inténtalo de nuevo más tarde.",
+      "checkConnection": "Verifica tu internet e inténtalo de nuevo."
+    }
+  },
+  "notifications": {
+    "success": "Éxito",
+    "error": "Error",
+    "info": "Información",
+    "warning": "Aviso"
+  },
+  "posts": {
+    "tabs": {
+      "offers": "Ofertas de empleo",
+      "candidates": "Candidatos y demandas"
+    },
+    "filters": {
+      "province": "Filtrar por provincia",
+      "taskType": "Filtrar por tipo de tarea",
+      "allProvinces": "Todas las provincias",
+      "allTypes": "Todos los tipos"
+    },
+    "actions": {
+      "publish": "Publicar",
+      "publishOffer": "Publicar oferta oficial",
+      "publishDemand": "Publicar demanda",
+      "shareOffer": "Compartir oferta",
+      "searchCandidates": "Buscar candidatos"
+    },
+    "labels": {
+      "verifiedCompany": "Empresa verificada",
+      "sharedOffer": "Oferta compartida",
+      "demand": "Demanda"
+    },
+    "status": {
+      "inscribed": "Inscrito",
+      "accepted": "Aceptado",
+      "rejected": "No seleccionado",
+      "contacted": "Contactado",
+      "processing": "Procesando..."
+    },
+    "empty": {
+      "title": "No hay publicaciones",
+      "subtitle": "Sé el primero en publicar"
+    }
+  },
+  "application": {
+    "apply": "Inscribirse",
+    "withdraw": "Retirar inscripción",
+    "contact": "Contactar",
+    "confirmApply": "Confirmar inscripción",
+    "confirmApplyMessage": "Al inscribirte, autorizas que la empresa vea tus datos de contacto (teléfono, email).",
+    "confirmWithdraw": "¿Retirar inscripción?",
+    "confirmWithdrawMessage": "Esta acción no se puede deshacer.",
+    "alreadyApplied": "Ya estás inscrito",
+    "success": "Inscripción realizada",
+    "withdrawSuccess": "Inscripción retirada",
+    "error": "Error al inscribirse"
+  },
+  "profile": {
+    "edit": "Editar perfil",
+    "myPosts": "Mis Publicaciones",
+    "myApplications": "Mis Inscripciones",
+    "completeProfile": "Completa tu perfil",
+    "fullName": "Nombre completo",
+    "phone": "Teléfono",
+    "email": "Email",
+    "province": "Provincia",
+    "city": "Ciudad / Municipio",
+    "bio": "Biografía",
+    "experience": "Experiencia",
+    "availability": "Disponibilidad",
+    "saveSuccess": "Perfil guardado correctamente",
+    "saveError": "Error al guardar el perfil"
+  },
+  "language": {
+    "select": "Seleccionar idioma",
+    "current": "Idioma actual"
+  }
+}

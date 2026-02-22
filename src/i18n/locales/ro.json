@@ -1,0 +1,159 @@
+{
+  "common": {
+    "save": "Salvează",
+    "cancel": "Anulează",
+    "confirm": "Confirmă",
+    "delete": "Șterge",
+    "edit": "Editează",
+    "close": "Închide",
+    "search": "Caută",
+    "loading": "Se încarcă...",
+    "error": "Eroare",
+    "success": "Succes",
+    "required": "Obligatoriu",
+    "optional": "Opțional",
+    "other": "Altul"
+  },
+  "nav": {
+    "home": "Acasă",
+    "profile": "Profil",
+    "notifications": "Notificări",
+    "messages": "Mesaje",
+    "logout": "Deconectare",
+    "login": "Conectare",
+    "register": "Înregistrare"
+  },
+  "auth": {
+    "signIn": "Conectare",
+    "signUp": "Înregistrare",
+    "signOut": "Deconectare",
+    "email": "Email",
+    "password": "Parolă",
+    "confirmPassword": "Confirmare parolă",
+    "orContinueWith": "Sau continuă cu",
+    "google": "Google",
+    "signInWithEmail": "Conectare cu email",
+    "createAccount": "Creează cont",
+    "forgotPassword": "Ai uitat parola?",
+    "errors": {
+      "invalidCredentials": "Email sau parolă incorectă",
+      "weakPassword": "Parola trebuie să aibă cel puțin 6 caractere",
+      "passwordMismatch": "Parolele nu coincid",
+      "emailInUse": "Acest email este deja înregistrat",
+      "invalidEmail": "Email invalid",
+      "signInError": "Eroare la conectare",
+      "signUpError": "Eroare la înregistrare",
+      "googleError": "Eroare la conectarea cu Google"
+    }
+  },
+  "onboarding": {
+    "welcome": "Bine ați venit la",
+    "selectProfile": "Alegeți profilul dumneavoastră:",
+    "roles": {
+      "worker": {
+        "title": "Caut muncă",
+        "description": "Sunt muncitor (sezonier, mașinist, depozit) și caut de muncă."
+      },
+      "foreman": {
+        "title": "Sunt șef de echipă",
+        "description": "Am propria echipă și ofer servicii de recoltare, tăiere, etc."
+      },
+      "company": {
+        "title": "Sunt companie",
+        "description": "Caut personal sau echipe pentru ferma sau cooperativa mea."
+      },
+      "engineer": {
+        "title": "Sunt inginer",
+        "description": "Inginer agronom. Ofer servicii tehnice și consultanță."
+      },
+      "encargado": {
+        "title": "Sunt responsabil/îngrijitor",
+        "description": "Responsabil de fermă. Organizez muncitorii zilnici și gestionez sarcinile în câmp."
+      },
+      "tractorista": {
+        "title": "Sunt tractorist",
+        "description": "Specialist în utilaje agricole. Tractor, pulverizator, combină."
+      }
+    },
+    "errors": {
+      "saveError": "Eroare la salvare",
+      "connectionError": "Eroare de conexiune",
+      "tryAgain": "Încercați din nou mai târziu.",
+      "checkConnection": "Verificați conexiunea la internet și încercați din nou."
+    }
+  },
+  "notifications": {
+    "success": "Succes",
+    "error": "Eroare",
+    "info": "Informație",
+    "warning": "Avertisment"
+  },
+  "posts": {
+    "tabs": {
+      "offers": "Oferte de muncă",
+      "candidates": "Candidați și cereri"
+    },
+    "filters": {
+      "province": "Filtrează după provincie",
+      "taskType": "Filtrează după tipul de sarcină",
+      "allProvinces": "Toate provinciile",
+      "allTypes": "Toate tipurile"
+    },
+    "actions": {
+      "publish": "Publică",
+      "publishOffer": "Publică ofertă oficială",
+      "publishDemand": "Publică cerere",
+      "shareOffer": "Partajează ofertă",
+      "searchCandidates": "Caută candidați"
+    },
+    "labels": {
+      "verifiedCompany": "Companie verificată",
+      "sharedOffer": "Ofertă partajată",
+      "demand": "Cerere"
+    },
+    "status": {
+      "inscribed": "Înscris",
+      "accepted": "Acceptat",
+      "rejected": "Neselectat",
+      "contacted": "Contactat",
+      "processing": "Se procesează..."
+    },
+    "empty": {
+      "title": "Nu există publicații",
+      "subtitle": "Fii primul care publică"
+    }
+  },
+  "application": {
+    "apply": "Înregistrează-te",
+    "withdraw": "Retrage înregistrarea",
+    "contact": "Contactează",
+    "confirmApply": "Confirmă înregistrarea",
+    "confirmApplyMessage": "Înregistrându-vă, autorizați compania să vă vadă datele de contact (telefon, email).",
+    "confirmWithdraw": "Retrageți înregistrarea?",
+    "confirmWithdrawMessage": "Această acțiune nu poate fi anulată.",
+    "alreadyApplied": "Sunteți deja înscris",
+    "success": "Înregistrare realizată cu succes",
+    "withdrawSuccess": "Înregistrare retrasă",
+    "error": "Eroare la înregistrare"
+  },
+  "profile": {
+    "edit": "Editează profilul",
+    "myPosts": "Publicațiile mele",
+    "myApplications": "Înregistrările mele",
+    "completeProfile": "Completați profilul",
+    "fullName": "Nume complet",
+    "phone": "Telefon",
+    "email": "Email",
+    "province": "Provincie",
+    "city": "Oraș / Municipiu",
+    "bio": "Biografie",
+    "experience": "Experiență",
+    "availability": "Disponibilitate",
+    "saveSuccess": "Profil salvat corect",
+    "saveError": "Eroare la salvarea profilului"
+  },
+  "language": {
+    "select": "Selectați limba",
+    "current": "Limba curentă"
+  }
+}

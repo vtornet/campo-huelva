@@ -1,0 +1,159 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "required": "Required",
+    "optional": "Optional",
+    "other": "Other"
+  },
+  "nav": {
+    "home": "Home",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Register"
+  },
+  "auth": {
+    "signIn": "Log in",
+    "signUp": "Register",
+    "signOut": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "signInWithEmail": "Sign in with Email",
+    "createAccount": "Create Account",
+    "forgotPassword": "Forgot password?",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "weakPassword": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match",
+      "emailInUse": "This email is already registered",
+      "invalidEmail": "Invalid email",
+      "signInError": "Error signing in",
+      "signUpError": "Error registering user",
+      "googleError": "Error signing in with Google"
+    }
+  },
+  "onboarding": {
+    "welcome": "Welcome to",
+    "selectProfile": "Choose your profile:",
+    "roles": {
+      "worker": {
+        "title": "I'm looking for work",
+        "description": "I'm a worker (seasonal, machine operator, warehouse) looking for employment."
+      },
+      "foreman": {
+        "title": "I'm a Foreman",
+        "description": "I have my own crew and offer harvesting, pruning, and other services."
+      },
+      "company": {
+        "title": "I'm a Company",
+        "description": "Looking for personnel or crews for my farm or cooperative."
+      },
+      "engineer": {
+        "title": "I'm an Engineer",
+        "description": "Agricultural Technical Engineer. I offer technical services and consulting."
+      },
+      "encargado": {
+        "title": "I'm a Farm Manager",
+        "description": "Farm supervisor. I organize day workers and manage field tasks."
+      },
+      "tractorista": {
+        "title": "I'm a Tractor Operator",
+        "description": "Agricultural machinery specialist. Tractor, sprayer, harvester."
+      }
+    },
+    "errors": {
+      "saveError": "Error saving",
+      "connectionError": "Connection error",
+      "tryAgain": "Please try again later.",
+      "checkConnection": "Check your internet connection and try again."
+    }
+  },
+  "notifications": {
+    "success": "Success",
+    "error": "Error",
+    "info": "Information",
+    "warning": "Warning"
+  },
+  "posts": {
+    "tabs": {
+      "offers": "Job Offers",
+      "candidates": "Candidates and Requests"
+    },
+    "filters": {
+      "province": "Filter by province",
+      "taskType": "Filter by task type",
+      "allProvinces": "All provinces",
+      "allTypes": "All types"
+    },
+    "actions": {
+      "publish": "Publish",
+      "publishOffer": "Publish official offer",
+      "publishDemand": "Publish demand",
+      "shareOffer": "Share offer",
+      "searchCandidates": "Search candidates"
+    },
+    "labels": {
+      "verifiedCompany": "Verified Company",
+      "sharedOffer": "Shared Offer",
+      "demand": "Demand"
+    },
+    "status": {
+      "inscribed": "Applied",
+      "accepted": "Accepted",
+      "rejected": "Not selected",
+      "contacted": "Contacted",
+      "processing": "Processing..."
+    },
+    "empty": {
+      "title": "No posts yet",
+      "subtitle": "Be the first to publish"
+    }
+  },
+  "application": {
+    "apply": "Apply",
+    "withdraw": "Withdraw application",
+    "contact": "Contact",
+    "confirmApply": "Confirm application",
+    "confirmApplyMessage": "By applying, you authorize the company to see your contact details (phone, email).",
+    "confirmWithdraw": "Withdraw application?",
+    "confirmWithdrawMessage": "This action cannot be undone.",
+    "alreadyApplied": "You have already applied",
+    "success": "Application successful",
+    "withdrawSuccess": "Application withdrawn",
+    "error": "Error applying"
+  },
+  "profile": {
+    "edit": "Edit profile",
+    "myPosts": "My Posts",
+    "myApplications": "My Applications",
+    "completeProfile": "Complete your profile",
+    "fullName": "Full name",
+    "phone": "Phone",
+    "email": "Email",
+    "province": "Province",
+    "city": "City / Municipality",
+    "bio": "Biography",
+    "experience": "Experience",
+    "availability": "Availability",
+    "saveSuccess": "Profile saved successfully",
+    "saveError": "Error saving profile"
+  },
+  "language": {
+    "select": "Select language",
+    "current": "Current language"
+  }
+}
