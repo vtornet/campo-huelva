@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 type TabType = "profile" | "posts" | "contacts" | "search";
 
@@ -13,6 +14,7 @@ export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { showNotification } = useNotifications();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
@@ -85,6 +87,40 @@ export default function UserProfilePage() {
 
   const profile = userData.profile;
   const role = userData.role;
+
+  const handleDeletePost = async (postId: string) => {
+    const confirmed = await confirm({
+      title: "Eliminar publicación",
+      message: "¿Eliminar esta publicación? Esta acción no se puede deshacer.",
+      type: "danger",
+    });
+    if (!confirmed) return;
+
+    fetch(`/api/posts/${postId}?userId=${user.uid}&action=delete`, { method: "DELETE" })
+      .then(res => {
+        if (res.ok) {
+          setUserPosts(prev => prev.filter(p => p.id !== postId));
+          showNotification({
+            type: "success",
+            title: "Publicación eliminada",
+            message: "Tu publicación ha sido eliminada permanentemente.",
+          });
+        } else {
+          showNotification({
+            type: "error",
+            title: "No se pudo eliminar",
+            message: "Inténtalo de nuevo más tarde.",
+          });
+        }
+      })
+      .catch(() => {
+        showNotification({
+          type: "error",
+          title: "Error de conexión",
+          message: "Verifica tu internet e inténtalo de nuevo.",
+        });
+      });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -521,33 +557,7 @@ export default function UserProfilePage() {
                               Editar
                             </button>
                             <button
-                              onClick={() => {
-                                if (!confirm("¿Eliminar esta publicación?")) return;
-                                fetch(`/api/posts/${post.id}?userId=${user.uid}&action=delete`, { method: "DELETE" })
-                                  .then(res => {
-                                    if (res.ok) {
-                                      setUserPosts(prev => prev.filter(p => p.id !== post.id));
-                                      showNotification({
-                                        type: "success",
-                                        title: "Publicación eliminada",
-                                        message: "Tu publicación ha sido eliminada permanentemente.",
-                                      });
-                                    } else {
-                                      showNotification({
-                                        type: "error",
-                                        title: "No se pudo eliminar",
-                                        message: "Inténtalo de nuevo más tarde.",
-                                      });
-                                    }
-                                  })
-                                  .catch(() => {
-                                    showNotification({
-                                      type: "error",
-                                      title: "Error de conexión",
-                                      message: "Verifica tu internet e inténtalo de nuevo.",
-                                    });
-                                  });
-                              }}
+                              onClick={() => handleDeletePost(post.id)}
                               className="inline-flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition text-sm font-medium"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -604,6 +614,7 @@ export default function UserProfilePage() {
           </div>
         </div>
       </div>
+      <ConfirmDialogComponent />
     </div>
   );
 }

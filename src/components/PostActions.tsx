@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/components/Notifications';
+import { usePromptDialog } from '@/components/PromptDialog';
 
 interface PostActionsProps {
   postId: string;
@@ -32,6 +33,7 @@ export default function PostActions({
   const { user } = useAuth();
   const router = useRouter();
   const { showNotification } = useNotifications();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
   const [liked, setLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [sharesCount, setSharesCount] = useState(initialSharesCount);
@@ -193,10 +195,21 @@ export default function PostActions({
       return;
     }
 
-    const reason = prompt('Razón de la denuncia:');
+    const reason = await prompt({
+      title: 'Denunciar publicación',
+      message: '¿Por qué denunciás esta publicación?',
+      placeholder: 'Razón de la denuncia...',
+      type: 'warning',
+      required: true,
+    });
     if (!reason) return;
 
-    const description = prompt('Descripción adicional (opcional):');
+    const description = await prompt({
+      title: 'Descripción adicional',
+      message: 'Añade más detalles (opcional):',
+      placeholder: 'Descripción adicional...',
+      type: 'info',
+    });
 
     setLoading(true);
     try {
@@ -243,6 +256,7 @@ export default function PostActions({
   const textClass = "text-xs";
 
   return (
+    <>
     <div className="flex items-center gap-2 w-full">
       {/* Like */}
       <button
@@ -287,5 +301,7 @@ export default function PostActions({
         <span className={textClass}>Denunciar</span>
       </button>
     </div>
+    <PromptDialogComponent />
+    </>
   );
 }

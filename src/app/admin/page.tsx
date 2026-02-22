@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
+import { usePromptDialog } from "@/components/PromptDialog";
 
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
@@ -247,6 +249,8 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
 
 function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
   const { showNotification } = useNotifications();
+  const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<UserFilterType>("all");
@@ -276,8 +280,17 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
   };
 
   const handleBan = async (userId: string, ban: boolean) => {
-    const reason = ban ? prompt("Razón del baneo:") : "";
-    if (ban && reason === null) return;
+    let reason = "";
+    if (ban) {
+      reason = await prompt({
+        title: "Banear usuario",
+        message: "Por favor, indica la razón del baneo:",
+        placeholder: "Razón del baneo...",
+        type: "danger",
+        required: true,
+      }) || "";
+      if (reason === null) return;
+    }
 
     const res = await fetch("/api/admin/users/ban", {
       method: "POST",
@@ -305,14 +318,12 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
 
   const handleSilence = async (userId: string, silence: boolean) => {
     if (silence) {
-      const hours = prompt(
-        "Duración del silencio (en horas):\n" +
-        "• 24 = 1 día\n" +
-        "• 48 = 2 días\n" +
-        "• 168 = 1 semana\n" +
-        "• 720 = 30 días\n" +
-        "• Dejar vacío = permanente"
-      );
+      const hours = await prompt({
+        title: "Silenciar usuario",
+        message: "Duración del silencio (en horas):\n• 24 = 1 día\n• 48 = 2 días\n• 168 = 1 semana\n• 720 = 30 días\n• Dejar vacío = permanente",
+        placeholder: "Número de horas (opcional)",
+        type: "warning",
+      });
       if (hours === null) return;
 
       const hoursNum = hours.trim() === "" ? null : parseInt(hours);
@@ -372,8 +383,12 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
-    const confirm = window.confirm(`¿Cambiar el rol del usuario a ${newRole}?`);
-    if (!confirm) return;
+    const confirmed = await confirmDialog({
+      title: "Cambiar rol",
+      message: `¿Cambiar el rol del usuario a ${newRole}?`,
+      type: "warning",
+    });
+    if (!confirmed) return;
 
     const res = await fetch("/api/admin/users/role", {
       method: "POST",
@@ -552,6 +567,9 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
           )}
         </>
       )}
+      {/* Diálogos personalizados */}
+      <ConfirmDialogComponent />
+      <PromptDialogComponent />
     </div>
   );
 }
@@ -571,6 +589,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
 
 function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
   const { showNotification } = useNotifications();
+  const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved">("all");
@@ -591,8 +610,12 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
 
   const handleVerify = async (companyId: string, verify: boolean) => {
     if (verify) {
-      const confirm = window.confirm("¿Verificar esta empresa? Solo verifica empresas que hayas comprobado que son legítimas.");
-      if (!confirm) return;
+      const confirmed = await confirmDialog({
+        title: "Verificar empresa",
+        message: "¿Verificar esta empresa? Solo verifica empresas que hayas comprobado que son legítimas.",
+        type: "warning",
+      });
+      if (!confirmed) return;
     }
 
     const res = await fetch("/api/admin/companies/verify", {
@@ -622,7 +645,12 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     const confirmMsg = approve
       ? "¿Aprobar esta empresa? Podrá publicar ofertas oficiales."
       : "¿Retirar aprobación? La empresa no podrá publicar ofertas oficiales.";
-    if (!window.confirm(confirmMsg)) return;
+    const confirmed = await confirmDialog({
+      title: approve ? "Aprobar empresa" : "Retirar aprobación",
+      message: confirmMsg,
+      type: "warning",
+    });
+    if (!confirmed) return;
 
     const res = await fetch("/api/admin/companies/approve", {
       method: "POST",
@@ -735,12 +763,14 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
           )}
         </div>
       )}
+      <ConfirmDialogComponent />
     </div>
   );
 }
 
 function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdate: () => void }) {
   const { showNotification } = useNotifications();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "ACTIVE" | "HIDDEN" | "REMOVED">("all");
@@ -763,11 +793,21 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
   const handleModerate = async (postId: string, status: "ACTIVE" | "HIDDEN" | "REMOVED") => {
     let reason: string | null | undefined = undefined;
     if (status === "REMOVED") {
-      reason = prompt("Razón de la eliminación:");
+      reason = await prompt({
+        title: "Eliminar publicación",
+        message: "Por favor, indica la razón de la eliminación:",
+        placeholder: "Razón de la eliminación...",
+        type: "danger",
+        required: true,
+      });
       if (reason === null) return;
     } else if (status === "HIDDEN") {
-      reason = prompt("Razón para ocultar (opcional):") || undefined;
-      if (reason === "") reason = undefined;
+      reason = await prompt({
+        title: "Ocultar publicación",
+        message: "Razón para ocultar (opcional):",
+        placeholder: "Razón para ocultar...",
+        type: "warning",
+      }) || undefined;
     }
 
     const res = await fetch("/api/admin/posts/moderate", {
@@ -898,12 +938,14 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
           )}
         </div>
       )}
+      <PromptDialogComponent />
     </div>
   );
 }
 
 function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
   const { showNotification } = useNotifications();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "PENDING" | "RESOLVED" | "DISMISSED">("all");
@@ -924,7 +966,14 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   };
 
   const handleResolve = async (reportId: string, status: "RESOLVED" | "DISMISSED") => {
-    const resolution = prompt(status === "RESOLVED" ? "Describe la resolución tomada:" : "Razón para desestimar:");
+    const resolution = await prompt({
+      title: status === "RESOLVED" ? "Resolver denuncia" : "Desestimar denuncia",
+      message: status === "RESOLVED" ? "Describe la resolución tomada:" : "Razón para desestimar:",
+      placeholder: status === "RESOLVED" ? "Resolución..." : "Razón...",
+      type: status === "RESOLVED" ? "success" : "info",
+      multiline: true,
+      required: true,
+    });
     if (resolution === null) return;
 
     const res = await fetch("/api/admin/reports/resolve", {
@@ -1191,6 +1240,7 @@ function AdminReports({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
           )}
         </div>
       )}
+      <PromptDialogComponent />
     </div>
   );
 }

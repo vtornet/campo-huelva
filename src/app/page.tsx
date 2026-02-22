@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
 
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const { user, loading, error: authError } = useAuth();
   const router = useRouter();
   const { showNotification } = useNotifications();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
 
   // Estado global del usuario (Rol + Perfil)
   const [userData, setUserData] = useState<any>(null);
@@ -325,7 +327,11 @@ export default function Dashboard() {
     // Si ya está inscrito, permitir retirarse
     const currentStatus = applications[post.id];
     if (currentStatus && currentStatus !== "WITHDRAWN") {
-      const confirmWithdraw = confirm("Ya estás inscrito en esta oferta. ¿Quieres retirar tu inscripción?");
+      const confirmWithdraw = await confirm({
+        title: "¿Retirar tu inscripción?",
+        message: "Ya estás inscrito en esta oferta. Si confirmas, dejarás de figurar como interesado y la empresa no verá tu perfil.",
+        type: "warning",
+      });
       if (!confirmWithdraw) return;
 
       setApplying(prev => ({ ...prev, [post.id]: true }));
@@ -366,10 +372,12 @@ export default function Dashboard() {
     }
 
     // Confirmar inscripción con aviso de compartir datos
-    const confirmApply = confirm(
-      "¿Deseas inscribirte en esta oferta?\n\n" +
-      "Al inscribirte, autorizas a la empresa a ver tus datos de contacto (teléfono y email) para poder ponerse en contacto contigo."
-    );
+    const confirmApply = await confirm({
+      title: "¿Inscribirte en esta oferta?",
+      message: `Al inscribirte en "${post.title}", autorizas a la empresa a ver tus datos de contacto (teléfono y email) para poder ponerse en contacto contigo.`,
+      confirmText: "Sí, inscribirme",
+      type: "success",
+    });
     if (!confirmApply) return;
 
     setApplying(prev => ({ ...prev, [post.id]: true }));
@@ -469,6 +477,7 @@ export default function Dashboard() {
   };
 
   return (
+    <>
     <main className="min-h-screen bg-slate-50">
       {/* Navbar */}
       <nav className="bg-white text-slate-800 px-4 py-3 shadow-sm border-b border-slate-200/60 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
@@ -916,5 +925,7 @@ export default function Dashboard() {
 
       </div>
     </main>
+    <ConfirmDialogComponent />
+    </>
   );
 }

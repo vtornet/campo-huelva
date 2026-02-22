@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Application {
   id: string;
@@ -28,6 +29,7 @@ export default function MyApplicationsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { showNotification } = useNotifications();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
   const [withdrawing, setWithdrawing] = useState<Record<string, boolean>>({});
@@ -47,9 +49,12 @@ export default function MyApplicationsPage() {
   }, [user]);
 
   const handleWithdraw = async (postId: string) => {
-    if (!confirm("¿Estás seguro de que quieres retirar tu inscripción?")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Retirar inscripción",
+      message: "¿Estás seguro de que quieres retirar tu inscripción?",
+      type: "warning",
+    });
+    if (!confirmed) return;
     if (!user) return;
 
     setWithdrawing(prev => ({ ...prev, [postId]: true }));
@@ -126,6 +131,7 @@ export default function MyApplicationsPage() {
   };
 
   return (
+    <>
     <main className="min-h-screen bg-slate-50">
       {/* Navbar */}
       <nav className="bg-white text-slate-800 px-4 py-3 shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
@@ -259,5 +265,7 @@ export default function MyApplicationsPage() {
         )}
       </div>
     </main>
+    <ConfirmDialogComponent />
+    </>
   );
 }

@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { useNotifications } from '@/components/Notifications';
+import { useConfirmDialog } from '@/components/ConfirmDialog';
 import AIButton, { AIBadge } from './AIButton';
 
 interface AIImprovedTextareaProps {
@@ -34,6 +35,7 @@ export default function AIImprovedTextarea({
 }: AIImprovedTextareaProps) {
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotifications();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
 
   const mejorarConIA = async () => {
     if (!value.trim()) {
@@ -67,7 +69,13 @@ export default function AIImprovedTextarea({
       const data = await response.json();
 
       // Mostrar comparación
-      if (confirm(`Descripción mejorada:\n\n"${data.improved}"\n\n¿Quieres reemplazar tu texto actual con esta versión mejorada?`)) {
+      const confirmed = await confirm({
+        title: 'Descripción mejorada por IA',
+        message: `"${data.improved}"\n\n¿Quieres reemplazar tu texto actual con esta versión mejorada?`,
+        confirmText: 'Sí, reemplazar',
+        type: 'info',
+      });
+      if (confirmed) {
         onChange(data.improved);
         showNotification({
           type: 'success',
@@ -88,6 +96,7 @@ export default function AIImprovedTextarea({
   };
 
   return (
+    <>
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center justify-between">
         <label className="block text-sm font-medium text-slate-700">
@@ -117,5 +126,7 @@ export default function AIImprovedTextarea({
         />
       </div>
     </div>
+    <ConfirmDialogComponent />
+    </>
   );
 }
