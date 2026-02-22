@@ -33,7 +33,14 @@ export async function GET(request: Request) {
     let effectiveRole = user.role; // Empezamos confiando en el rol de la BD
 
     // 1. Intento estricto (lo que dice el rol)
-    if (user.role === 'USER') selectedProfile = user.workerProfile;
+    // IMPORTANTE: ADMIN tiene prioridad, no se debe sobrescribir su rol
+    if (user.role === 'ADMIN') {
+      // Para admin, usamos workerProfile como perfil por defecto (si existe)
+      // pero mantenemos el rol ADMIN
+      selectedProfile = user.workerProfile || null;
+      // NO cambiamos effectiveRole, se mantiene ADMIN
+    }
+    else if (user.role === 'USER') selectedProfile = user.workerProfile;
     else if (user.role === 'FOREMAN') selectedProfile = user.foremanProfile;
     else if (user.role === 'COMPANY') selectedProfile = user.companyProfile;
     else if (user.role === 'ENGINEER') selectedProfile = user.engineerProfile;
@@ -41,7 +48,8 @@ export async function GET(request: Request) {
     else if (user.role === 'TRACTORISTA') selectedProfile = user.tractoristProfile;
 
     // 2. FALLBACK INTELIGENTE (Si falló lo anterior, buscamos qué perfil existe realmente)
-    if (!selectedProfile) {
+    // SOLO si no es ADMIN - los admins mantienen su rol sin importar qué perfil tengan
+    if (!selectedProfile && effectiveRole !== 'ADMIN') {
       if (user.companyProfile) {
         selectedProfile = user.companyProfile;
         effectiveRole = 'COMPANY';
