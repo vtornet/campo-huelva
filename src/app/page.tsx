@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ConfirmDialog";
 
 import { PROVINCIAS, TIPOS_TAREA } from "@/lib/constants";
 
@@ -56,6 +57,25 @@ export default function Dashboard() {
   // Estado para seguimiento de inscripciones
   const [applications, setApplications] = useState<Record<string, string>>({}); // postId -> status
   const [applying, setApplying] = useState<Record<string, boolean>>({}); // postId -> loading
+
+  // Estado para diálogos de confirmación
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    type: "danger" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirmar",
+    cancelText: "Cancelar",
+    onConfirm: () => {},
+    type: "info"
+  });
 
    // 1. CARGA DE DATOS Y PROTECCIÓN
   useEffect(() => {
@@ -325,87 +345,96 @@ export default function Dashboard() {
     // Si ya está inscrito, permitir retirarse
     const currentStatus = applications[post.id];
     if (currentStatus && currentStatus !== "WITHDRAWN") {
-      const confirmWithdraw = confirm("Ya estás inscrito en esta oferta. ¿Quieres retirar tu inscripción?");
-      if (!confirmWithdraw) return;
-
-      setApplying(prev => ({ ...prev, [post.id]: true }));
-      try {
-        const res = await fetch(`/api/posts/${post.id}/apply?userId=${user.uid}`, {
-          method: "DELETE"
-        });
-        if (res.ok) {
-          setApplications(prev => {
-            const newApps = { ...prev };
-            delete newApps[post.id];
-            return newApps;
-          });
-          showNotification({
-            type: "success",
-            title: "Inscripción retirada",
-            message: "Ya no figurarás como interesado en esta oferta.",
-          });
-        } else {
-          const data = await res.json();
-          showNotification({
-            type: "error",
-            title: "No se pudo retirar",
-            message: data.error || "Inténtalo de nuevo.",
-          });
-        }
-      } catch (error) {
-        console.error("Error withdrawing:", error);
-        showNotification({
-          type: "error",
-          title: "Error de conexión",
-          message: "Verifica tu internet e inténtalo de nuevo.",
-        });
-      } finally {
-        setApplying(prev => ({ ...prev, [post.id]: false }));
-      }
+      // Mostrar diálogo de confirmación para retirar
+      setConfirmDialog({
+        isOpen: true,
+        title: "¿Retirar tu inscripción?",
+        message: "Ya estás inscrito en esta oferta. Si confirmas, dejarás de figurar como interesado y la empresa no verá tu perfil.",
+        onConfirm: async () => {
+          setApplying(prev => ({ ...prev, [post.id]: true }));
+          try {
+            const res = await fetch(`/api/posts/${post.id}/apply?userId=${user.uid}`, {
+              method: "DELETE"
+            });
+            if (res.ok) {
+              setApplications(prev => {
+                const newApps = { ...prev };
+                delete newApps[post.id];
+                return newApps;
+              });
+              showNotification({
+                type: "success",
+                title: "Inscripción retirada",
+                message: "Ya no figurarás como interesado en esta oferta.",
+              });
+            } else {
+              const data = await res.json();
+              showNotification({
+                type: "error",
+                title: "No se pudo retirar",
+                message: data.error || "Inténtalo de nuevo.",
+              });
+            }
+          } catch (error) {
+            console.error("Error withdrawing:", error);
+            showNotification({
+              type: "error",
+              title: "Error de conexión",
+              message: "Verifica tu internet e inténtalo de nuevo.",
+            });
+          } finally {
+            setApplying(prev => ({ ...prev, [post.id]: false }));
+          }
+        },
+        type: "warning"
+      });
       return;
     }
 
-    // Confirmar inscripción con aviso de compartir datos
-    const confirmApply = confirm(
-      "¿Deseas inscribirte en esta oferta?\n\n" +
-      "Al inscribirte, autorizas a la empresa a ver tus datos de contacto (teléfono y email) para poder ponerse en contacto contigo."
-    );
-    if (!confirmApply) return;
+    // Mostrar diálogo de confirmación para inscribirse
+    setConfirmDialog({
+      isOpen: true,
+      title: "¿Inscribirte en esta oferta?",
+      message: `Al inscribirte en "${post.title}", autorizas a la empresa a ver tus datos de contacto (teléfono y email) para poder ponerse en contacto contigo.`,
+      confirmText: "Sí, inscribirme",
+      onConfirm: async () => {
+        setApplying(prev => ({ ...prev, [post.id]: true }));
+        try {
+          const res = await fetch(`/api/posts/${post.id}/apply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.uid })
+          });
 
-    setApplying(prev => ({ ...prev, [post.id]: true }));
-    try {
-      const res = await fetch(`/api/posts/${post.id}/apply`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setApplications(prev => ({ ...prev, [post.id]: "PENDING" }));
-        showNotification({
-          type: "success",
-          title: "¡Inscripción correcta!",
-          message: `Te has inscrito en "${post.title}". La empresa podrá ver tu perfil y contactarte.`,
-        });
-      } else {
-        const data = await res.json();
-        showNotification({
-          type: "error",
-          title: "No se pudo completar la inscripción",
-          message: data.error || "Inténtalo de nuevo más tarde.",
-        });
-      }
-    } catch (error) {
-      console.error("Error applying:", error);
-      showNotification({
-        type: "error",
-        title: "Error de conexión",
-        message: "Verifica tu internet e inténtalo de nuevo.",
-      });
-    } finally {
-      setApplying(prev => ({ ...prev, [post.id]: false }));
-    }
+          if (res.ok) {
+            const data = await res.json();
+            setApplications(prev => ({ ...prev, [post.id]: "PENDING" }));
+            showNotification({
+              type: "success",
+              title: "¡Inscripción correcta!",
+              message: `Te has inscrito en "${post.title}". La empresa podrá ver tu perfil y contactarte.`,
+            });
+          } else {
+            const data = await res.json();
+            showNotification({
+              type: "error",
+              title: "No se pudo completar la inscripción",
+              message: data.error || "Inténtalo de nuevo más tarde.",
+            });
+          }
+        } catch (error) {
+          console.error("Error applying:", error);
+          showNotification({
+            type: "error",
+            title: "Error de conexión",
+            message: "Verifica tu internet e inténtalo de nuevo.",
+          });
+        } finally {
+          setApplying(prev => ({ ...prev, [post.id]: false }));
+        }
+      },
+      type: "success"
+    });
   };
 
   // Función para contactar (solo para demandas o si ya estás inscrito)
@@ -913,6 +942,21 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Diálogo de confirmación */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          type={confirmDialog.type}
+          onConfirm={() => {
+            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+            confirmDialog.onConfirm();
+          }}
+          onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        />
 
       </div>
     </main>
