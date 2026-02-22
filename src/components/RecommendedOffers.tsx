@@ -5,7 +5,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useNotifications } from '@/components/Notifications';
 
 interface Offer {
   id: string;
@@ -33,7 +32,6 @@ interface RecommendedOffersProps {
 
 export default function RecommendedOffers({ userId, userRole }: RecommendedOffersProps) {
   const router = useRouter();
-  const { showNotification } = useNotifications();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,59 +77,6 @@ export default function RecommendedOffers({ userId, userRole }: RecommendedOffer
   if (!showRecommendations) return null;
   if (!loading && offers.length === 0) return null;
 
-  const handleContact = async (offer: Offer) => {
-    // Obtener ID del otro usuario
-    const otherUserId = offer.company?.user?.id || offer.publisher?.id;
-    if (!otherUserId) {
-      showNotification({
-        type: "error",
-        title: "No se puede contactar",
-        message: "Esta publicación no tiene un contacto válido.",
-      });
-      return;
-    }
-
-    if (otherUserId === userId) {
-      showNotification({
-        type: "warning",
-        title: "¿Contactarte contigo mismo?",
-        message: "No puedes enviar mensajes a tu propio usuario.",
-      });
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderId: userId,
-          receiverId: otherUserId,
-          content: `Hola, me interesa tu publicación: ${offer.title}`,
-          postId: offer.id
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        router.push(`/messages/${data.conversationId}`);
-      } else {
-        showNotification({
-          type: "error",
-          title: "Error al iniciar conversación",
-          message: "Inténtalo de nuevo más tarde.",
-        });
-      }
-    } catch (error) {
-      console.error("Error contacting:", error);
-      showNotification({
-        type: "error",
-        title: "Error de conexión",
-        message: "Verifica tu internet e inténtalo de nuevo.",
-      });
-    }
-  };
-
   return (
     <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100 p-5 mb-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -168,7 +113,7 @@ export default function RecommendedOffers({ userId, userRole }: RecommendedOffer
             <div
               key={offer.id}
               className="bg-white rounded-xl p-4 border border-purple-100 hover:border-purple-200 hover:shadow-md transition-all duration-200 cursor-pointer"
-              onClick={() => handleContact(offer)}
+              onClick={() => router.push(`/offer/${offer.id}`)}
             >
               <div className="flex items-start gap-3">
                 {/* Avatar */}
@@ -190,18 +135,12 @@ export default function RecommendedOffers({ userId, userRole }: RecommendedOffer
                   <h4 className="font-semibold text-slate-800 text-sm line-clamp-1 mb-1">
                     {offer.title}
                   </h4>
-                  <p className="text-xs text-slate-500 flex items-center gap-1 mb-2">
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     </svg>
                     {offer.location}{offer.province && `, ${offer.province}`}
                   </p>
-                  <button className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1">
-                    Contactar
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
                 </div>
               </div>
             </div>
