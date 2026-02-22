@@ -61,7 +61,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self';",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com https://firebasestorage.googleapis.com;",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com https://firebasestorage.googleapis.com https://apis.google.com;",
               "style-src 'self' 'unsafe-inline';",
               "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https:;",
               "font-src 'self' data:;",
