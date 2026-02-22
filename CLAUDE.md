@@ -25,6 +25,8 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
+**Última actualización**: 22 de febrero de 2025
+
 ## Comandos de Desarrollo
 
 # Desarrollo
@@ -234,8 +236,67 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Componentes de Skeleton reutilizables (Skeleton.tsx con PostCardSkeleton, ProfileSkeleton, etc.)
 - [ ] Validaciones avanzadas (formato de teléfono, email, etc.) - pendiente de implementar en cada formulario
 
-### 10. Seguridad
+### ✅ 10. Componentes de UI Reutilizables (COMPLETADO)
+- [x] **ConfirmDialog** (`src/components/ConfirmDialog.tsx`): Modal de confirmación para reemplazar `window.confirm()`
+  - Hook `useConfirmDialog()` para fácil integración
+  - 4 tipos visuales: danger, warning, info, success
+  - Texto personalizable para botones
+- [x] **PromptDialog** (`src/components/PromptDialog.tsx`): Modal de entrada de texto para reemplazar `window.prompt()`
+  - Hook `usePromptDialog()` para fácil integración
+  - Soporta input de una línea o textarea (multiline)
+  - Validación de campo requerido
+- [x] **Notifications** (`src/components/Notifications.tsx`): Sistema de notificaciones toast
+  - Context `NotificationsProvider` y hook `useNotifications()`
+  - 4 tipos: success, error, warning, info
+  - Auto-dismiss con timeout configurable
+- [x] **Skeleton** (`src/components/Skeleton.tsx`): Componentes de loading
+  - PostCardSkeleton, ProfileSkeleton, etc.
+- [x] **MultiSelectDropdown**: Dropdown de selección múltiple con búsqueda
+- [x] **AIButton**, **AIBioGenerator**, **AIImprovedTextarea**: Componentes para funcionalidades IA
+
+### ✅ 11. Eliminación de Alerts Nativos (COMPLETADO)
+- [x] Todos los `window.alert()`, `window.confirm()` y `window.prompt()` reemplazados por componentes personalizados
+- [x] Integración en:
+  - `src/app/admin/page.tsx` (baneos, silencios, cambios de rol)
+  - `src/app/page.tsx` (inscripciones, retiros)
+  - `src/app/my-applications/page.tsx` (retirar inscripción)
+  - `src/app/profile/page.tsx` (eliminar publicación)
+  - `src/components/PostActions.tsx` (denuncias)
+  - `src/components/AIImprovedTextarea.tsx` (mejora con IA)
+
+### ✅ 12. Restricciones de Publicación por Rol (COMPLETADO)
+- [x] **Solo ADMIN puede publicar ofertas SHARED** (compartidas)
+  - Verificación en `/api/posts/route.ts`
+  - Botón "Compartir oferta" solo visible para admin en página principal
+  - Etiqueta "⚡ Oferta compartida" con estilo indigo
+- [x] **Solo COMPANY puede publicar ofertas OFICIALES**
+  - Verificación de aprobación de empresa requerida
+- [x] **Otros roles solo pueden publicar DEMANDAS**
+- [x] **Ofertas compartidas sin botones de acción** (no inscribirse/contactar)
+
+### ✅ 13. Corrección de Rol ADMIN (COMPLETADO)
+- [x] El rol ADMIN ahora se respeta correctamente en `/api/user/me/route.ts`
+  - Antes: El rol se sobrescribía si el admin tenía un perfil asociado (workerProfile, etc.)
+  - Ahora: El rol ADMIN siempre se mantiene, independientemente de los perfiles asociados
+- [x] Botón "Compartir oferta" visible para administradores
+
+### ✅ 14. Página de Detalle de Oferta Mejorada (COMPLETADO)
+- [x] Botón "Inscribirse" funcionando en `/offer/[id]/page.tsx`
+  - Estados visuales: Inscribirse → Inscrito → Aceptado/Rechazado/Contactado
+  - Confirmación antes de inscribirse (autoriza compartir datos de contacto)
+  - Posibilidad de retirar inscripción
+- [x] Botón "Contactar" para demandas y empresas
+- [x] Ofertas compartidas (SHARED) sin botón de acción
+
+### ✅ 15. Ofertas Recomendadas por IA (COMPLETADO)
+- [x] Al pulsar una oferta recomendada, navega a la página de detalle
+  - Antes: Iniciaba un chat directamente
+  - Ahora: Abre `/offer/[id]` para ver detalles completos e inscribirse
+
+### 17. Seguridad
 - [x] Headers de seguridad (CSP, X-Frame-Options, HSTS implementados en next.config.ts)
+- [x] CSP actualizado para Google Auth (`apis.google.com` en script-src)
+- [x] CSP actualizado para Firebase iframe (`red-agricola-e06cc.firebaseapp.com` en frame-src)
 - [x] CORS configurado (next.config.ts permite oríenes externos limitados)
 - [x] Sanitización básica de inputs (Next.js sanitiza por defecto en JSX)
 - [ ] Verificación de tokens de Firebase en servidor (requiere Firebase Admin SDK)
@@ -244,13 +305,13 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 
 **Nota**: Actualmente la autenticación se maneja en el cliente con Firebase. Las APIs validan userId pero no verifican el token de Firebase. Para mayor seguridad, considerar implementar Firebase Admin SDK en el servidor.
 
-### 11. Testing
+### 18. Testing
 - [ ] Probar flujo completo de cada rol (registro, perfil, publicar, inscribirse)
 - [ ] Probar en dispositivos móviles reales (Android e iOS)
 - [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
 - [ ] Probar en modo offline (cuando se implemente PWA)
 
-### 12. Legal / Comunicación
+### 19. Legal / Comunicación
 - [ ] Política de Privacidad (RGPD compliant)
 - [ ] Términos y Condiciones de uso
 - [ ] Política de Cookies
@@ -259,17 +320,45 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 
 ## Funcionalidades Ya Implementadas
 
-- Feed con filtros por provincia y tipo de publicación.
-- Publicación de ofertas (empresas) y demandas (trabajadores/jefes de cuadrilla).
-- Sistema de "Like", "Compartir", "Denunciar", "Inscribirse".
-- Verificación manual de empresas (etiqueta "Empresa Verificada").
-- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa).
-- Sistema de inscripciones con notificaciones a empresas.
-- Las empresas ven datos de contacto de candidatos (autorizado al inscribirse).
-- Modal de perfil completo para empresas.
-- Chat/mensajería interna entre usuarios.
-- Sistema de notificaciones.
-- Reporte de contenido (denuncias).
+### Autenticación y Usuarios
+- Registro con Firebase (email/contraseña y Google)
+- Onboarding con selección de rol
+- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa, encargado, tractorista)
+- Verificación manual de empresas (etiqueta "Empresa Verificada")
+- Sistema de roles y permisos
+- Rol ADMIN con privilegios especiales
+
+### Publicaciones y Feed
+- Feed con filtros por provincia y tipo de publicación
+- Publicación de ofertas (empresas OFICIALES, admin SHARED)
+- Publicación de demandas (trabajadores/manijeros)
+- Etiquetas visuales: "Empresa verificada", "⚡ Oferta compartida", "Demanda"
+- Sistema de "Like", "Compartir", "Denunciar"
+- Recomendaciones de ofertas por IA para trabajadores
+- Gestión de publicaciones propias (ver, editar, eliminar)
+
+### Inscripciones y Contacto
+- Sistema de inscripciones en ofertas con confirmación
+- Estados: PENDIENTE, ACEPTADO, RECHAZADO, CONTACTADO
+- Autorización explícita para compartir datos de contacto al inscribirse
+- Retiro de inscripciones
+- Chat/mensajería interna entre usuarios
+- Notificaciones a empresas cuando alguien se inscribe
+
+### Interfaz y UX
+- Modales personalizados (ConfirmDialog, PromptDialog) - sin alerts nativos
+- Sistema de notificaciones toast
+- Componentes de carga (Skeleton)
+- Pantallas de error personalizadas (404, 500)
+- Diseño responsive (móvil y escritorio)
+- Dynamic imports para optimizar bundle
+
+### IA y Recomendaciones
+- Mejora de descripciones de ofertas con IA
+- Generación de biografía de perfil con IA
+- Recomendaciones de ofertas para trabajadores
+- Recomendaciones de trabajadores para empresas
+- Sistema de cache para respuestas de IA
 
 ## En Revisión / Pendientes Estratégicos
 
