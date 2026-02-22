@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/components/Notifications';
+import { useConfirmDialog } from '@/components/ConfirmDialog';
 import RecommendedWorkers from '@/components/RecommendedWorkers';
 import PostActions from '@/components/PostActions';
 
@@ -15,12 +16,15 @@ export default function OfferDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { showNotification } = useNotifications();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const offerId = params.id as string;
 
   const [offer, setOffer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
 
   // Cargar datos del usuario
   useEffect(() => {
@@ -35,6 +39,23 @@ export default function OfferDetailPage() {
         .catch((err) => console.error('Error verificando usuario:', err));
     }
   }, [user]);
+
+  // Cargar estado de inscripción del usuario en esta oferta
+  useEffect(() => {
+    if (user && offer && userData?.role !== 'COMPANY') {
+      fetch(`/api/applications?userId=${user.uid}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const app = data.find((a: any) => a.postId === offerId);
+            if (app) {
+              setApplicationStatus(app.status);
+            }
+          }
+        })
+        .catch((err) => console.error('Error loading application:', err));
+    }
+  }, [user, offer, offerId, userData]);
 
   // Cargar la oferta
   useEffect(() => {
@@ -103,11 +124,116 @@ export default function OfferDetailPage() {
   }
 
   const isCompany = userData?.role === 'COMPANY';
+  const isAdmin = userData?.role === 'ADMIN';
   const isOwner =
     (offer.companyId && userData?.profile?.id === offer.companyId) ||
     (offer.publisherId && user?.uid === offer.publisherId);
   const isDemand = offer.type === 'DEMAND';
   const isOffer = !isDemand;
+  const isSharedOffer = offer.type === 'SHARED';
+
+  // Función para inscribirse en una oferta
+  const handleApply = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    // Las empresas no se inscriben
+    if (isCompany) {
+      showNotification({
+        type: 'info',
+        title: 'Acción no disponible',
+        message: 'Las empresas no pueden inscribirse en ofertas.',
+      });
+      return;
+    }
+
+    // Si ya está inscrito, permitir retirarse
+    if (applicationStatus && applicationStatus !== 'WITHDRAWN') {
+      const confirmWithdraw = await confirm({
+        title: '¿Retirar tu inscripción?',
+        message: 'Ya estás inscrito en esta oferta. Si confirmas, dejarás de figurar como interesado.',
+        type: 'warning',
+      });
+      if (!confirmWithdraw) return;
+
+      setApplying(true);
+      try {
+        const res = await fetch(`/api/posts/${offer.id}/apply?userId=${user.uid}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          setApplicationStatus(null);
+          showNotification({
+            type: 'success',
+            title: 'Inscripción retirada',
+            message: 'Ya no figurarás como interesado en esta oferta.',
+          });
+        } else {
+          const data = await res.json();
+          showNotification({
+            type: 'error',
+            title: 'No se pudo retirar',
+            message: data.error || 'Inténtalo de nuevo.',
+          });
+        }
+      } catch (error) {
+        console.error('Error withdrawing:', error);
+        showNotification({
+          type: 'error',
+          title: 'Error de conexión',
+          message: 'Verifica tu internet e inténtalo de nuevo.',
+        });
+      } finally {
+        setApplying(false);
+      }
+      return;
+    }
+
+    // Confirmar inscripción
+    const confirmApply = await confirm({
+      title: '¿Inscribirte en esta oferta?',
+      message: `Al inscribirte en "${offer.title}", autorizas a la empresa a ver tus datos de contacto (teléfono y email).`,
+      confirmText: 'Sí, inscribirme',
+      type: 'success',
+    });
+    if (!confirmApply) return;
+
+    setApplying(true);
+    try {
+      const res = await fetch(`/api/posts/${offer.id}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid })
+      });
+
+      if (res.ok) {
+        setApplicationStatus('PENDING');
+        showNotification({
+          type: 'success',
+          title: '¡Inscripción correcta!',
+          message: `Te has inscrito en "${offer.title}". La empresa podrá ver tu perfil.`,
+        });
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: 'error',
+          title: 'No se pudo completar la inscripción',
+          message: data.error || 'Inténtalo de nuevo más tarde.',
+        });
+      }
+    } catch (error) {
+      console.error('Error applying:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error de conexión',
+        message: 'Verifica tu internet e inténtalo de nuevo.',
+      });
+    } finally {
+      setApplying(false);
+    }
+  };
 
   const handleContact = async () => {
     if (!user) {
@@ -174,6 +300,7 @@ export default function OfferDetailPage() {
   };
 
   return (
+    <>
     <main className="min-h-screen bg-slate-50">
       {/* Navbar simplificado */}
       <nav className="bg-white text-slate-800 px-4 py-3 shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
@@ -392,21 +519,95 @@ export default function OfferDetailPage() {
               </div>
             </div>
 
-            {!isOwner && (
-              <button
-                onClick={handleContact}
-                className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center gap-2 ${
-                  isDemand
-                    ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-orange-500/25'
-                    : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Contactar
-              </button>
+            {!isOwner && !isSharedOffer && (
+              <>
+                {/* Para ofertas OFICIALES: botón de inscribirse (no para empresas) */}
+                {isOffer && !isCompany && (
+                  <button
+                    onClick={handleApply}
+                    disabled={applying}
+                    className={`text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center gap-2 ${
+                      applying
+                        ? 'bg-slate-400 cursor-wait'
+                        : applicationStatus
+                          ? applicationStatus === 'ACCEPTED'
+                            ? 'bg-green-500 hover:bg-green-600 shadow-green-500/25'
+                            : applicationStatus === 'REJECTED'
+                              ? 'bg-red-400 hover:bg-red-500 shadow-red-500/25'
+                              : applicationStatus === 'CONTACTED'
+                                ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'
+                                : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
+                          : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
+                    }`}
+                  >
+                    {applying ? (
+                      <>
+                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Procesando...
+                      </>
+                    ) : applicationStatus ? (
+                      applicationStatus === 'ACCEPTED' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Aceptado
+                        </>
+                      ) : applicationStatus === 'REJECTED' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          No seleccionado
+                        </>
+                      ) : applicationStatus === 'CONTACTED' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Contactado
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Inscrito
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inscribirse
+                      </>
+                    )}
+                  </button>
+                )}
+                {/* Para demandas o empresas viendo ofertas: botón de contactar */}
+                {(isDemand || isCompany) && (
+                  <button
+                    onClick={handleContact}
+                    className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center gap-2 ${
+                      isDemand
+                        ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-orange-500/25'
+                        : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    Contactar
+                  </button>
+                )}
+              </>
             )}
+            {/* Para ofertas compartidas: sin botón de acción */}
+            {isSharedOffer && !isOwner && <div className="w-32"></div>}
           </div>
         </div>
 
@@ -420,5 +621,7 @@ export default function OfferDetailPage() {
 
       </div>
     </main>
+    <ConfirmDialogComponent />
+    </>
   );
 }
