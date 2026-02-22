@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 22 de febrero de 2025
+**Última actualización**: 23 de febrero de 2025
 
 ## Comandos de Desarrollo
 
@@ -87,16 +87,46 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - Las empresas pueden ver todos los datos de contacto de los inscritos.
 - Estados: PENDING, ACCEPTED, REJECTED, CONTACTED, WITHDRAWN.
 
-## Estructura de la Aplicación (App Router)
+## Estructura de la Aplicación (App Router con i18n)
+
+**IMPORTANTE**: Desde febrero 2025, la app usa internacionalización con next-intl. Todas las páginas están bajo `src/app/[locale]/`.
 
 - `src/app/`
-  - `page.tsx`: Dashboard principal con feed filtrable por provincia y tipo de publicación.
-  - `login/`: Autenticación con Firebase.
-  - `onboarding/`: Selección de rol para nuevos usuarios.
-  - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`, `profile/encargado/`, `profile/tractorista/`: Formularios de edición de perfil.
-  - `publish/`: Creación de publicaciones con selección de tipo.
-  - `applications/`: Gestión de candidatos para empresas (ver perfiles completos, datos de contacto).
-  - `my-applications/`: Lista de inscripciones del trabajador.
+  - `layout.tsx`: Root layout básico (el middleware maneja redirecciones)
+  - `[locale]/`: Todas las páginas con prefijo de idioma (/es/, /fr/, /ro/, /en/)
+    - `layout.tsx`: Layout principal con NextIntlClientProvider
+    - `page.tsx`: Dashboard principal con feed filtrable por provincia y tipo de publicación.
+    - `login/`: Autenticación con Firebase.
+    - `onboarding/`: Selección de rol para nuevos usuarios.
+    - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`, `profile/encargado/`, `profile/tractorista/`: Formularios de edición de perfil.
+    - `publish/`: Creación de publicaciones con selección de tipo.
+    - `applications/`: Gestión de candidatos para empresas (ver perfiles completos, datos de contacto).
+    - `my-applications/`: Lista de inscripciones del trabajador.
+    - `messages/`, `messages/[id]/`: Chat/mensajería interna.
+    - `notifications/`: Lista de notificaciones del usuario.
+    - `offer/[id]/`: Página de detalle de oferta/demanda.
+    - `search/`: Buscador de candidatos por categoría.
+    - `admin/`: Panel de administración (solo ADMIN).
+- `src/app/api/`
+  - `register/`: Crea el usuario en Prisma a partir de la autenticación de Firebase.
+  - `user/me/`: Devuelve los datos del usuario con resolución de perfil.
+  - `posts/`: Obtiene el feed (GET) y crea publicaciones (POST).
+  - `posts/[id]/apply`: Inscribirse en una oferta (POST), ver inscritos (GET), retirarse (DELETE).
+  - `applications/[id]`: Actualizar estado de inscripción (PUT).
+  - `applications/`: Listar inscripciones del usuario (GET).
+- `src/i18n/`: Sistema de internacionalización
+  - `config.ts`: Configuración de locales (es, fr, ro, en)
+  - `routing.ts`: Configuración de routing de next-intl
+  - `request.ts`: Configuración de request para next-intl
+  - `locales/`: Archivos de traducción JSON
+    - `es.json`: Español (idioma por defecto)
+    - `fr.json`: Francés
+    - `ro.json`: Rumano
+    - `en.json`: Inglés
+- `src/middleware.ts`: Middleware de next-intl para detección de idioma
+- `src/components/LanguageSelector.tsx`: Selector de idioma con banderas
+- `src/context/AuthContext.tsx`: Provee el estado de autenticación mediante el hook `useAuth()`.
+- `src/lib/constants.ts`: Listas de provincias, tipos de cultivo, municipios de Huelva, etc.
 - `src/app/api/`
   - `register/`: Crea el usuario en Prisma a partir de la autenticación de Firebase.
   - `user/me/`: Devuelve los datos del usuario con resolución de perfil.
@@ -209,24 +239,29 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Variables de entorno de producción configuradas (NEXT_PUBLIC_APP_URL)
 - [x] Logging optimizado para producción
 
-### 8. Internacionalización (i18n)
-- [ ] **Soporte multiidioma para temporeros extranjeros**
-  - Español (idioma principal/predeterminado)
-  - Francés (temporeros de origen magrebí)
-  - Rumano (temporeros rumanos, muy comunes en la fresa)
-  - Inglés (idioma universal)
-- [ ] Sistema de traducción:
-  - Integrar `next-intl` o similar
-  - Archivos de traducción por idioma (JSON)
-  - Selector de idioma en la app con persistencia en preferencias de usuario
+### 8. Internacionalización (i18n) - EN PROGRESO
+- [x] **Infraestructura instalada**
+  - `next-intl` instalado y configurado
+  - Estructura de rutas con `/[locale]/`
+  - Middleware para detección automática de idioma
+  - Archivos de traducción JSON creados (es, fr, ro, en)
+  - Selector de idioma con banderas (`LanguageSelector.tsx`)
+  - URLs localizadas funcionales (/es/login, /fr/login, etc.)
+- [ ] **PENDIENTE: Conectar traducciones en las páginas**
+  - ⚠️ **ESTADO ACTUAL**: Los archivos de traducción existen pero las páginas NO los usan
+  - Todos los textos están "hardcodeados" en español en los componentes
+  - Hay que reemplazar textos fijos por `useTranslations()` de next-intl
+  - Ejemplo: `<button>Inscribirse</button>` → `<button>{t('buttons.apply')}</button>`
 - [ ] Traducción de:
-  - Interfaz de usuario (labels, botones, mensajes)
-  - Textos de onboarding por rol
-  - Errores y notificaciones
-  - Emails (si aplica)
-  - Política de privacidad y términos legales
-- [ ] Detección automática de idioma del navegador
-- [ ] URLs localizadas (/es, /fr, /ro, /en) o subdominios
+  - [ ] Interfaz de usuario (labels, botones, mensajes) - **PRÓXIMO PASO**
+  - [ ] Textos de onboarding por rol
+  - [ ] Errores y notificaciones
+  - [ ] Emails (si aplica)
+  - [ ] Política de privacidad y términos legales
+- [ ] Detección automática de idioma del navegador (middleware ya lo hace)
+- [x] URLs localizadas (/es, /fr, /ro, /en)
+
+**NOTA PARA CONTINUAR**: Al reanudar, empieza por `src/app/[locale]/page.tsx` (dashboard principal) y reemplaza todos los textos españoles por llamadas a `useTranslations()`. Luego continúa con las demás páginas en orden de importancia.
 
 ### ✅ 9. Validaciones y UX Final (COMPLETADO)
 - [x] Validaciones básicas en formularios (required, minLength, etc.)
