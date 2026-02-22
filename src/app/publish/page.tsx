@@ -128,7 +128,14 @@ function PublishForm() {
         .finally(() => setLoadingPost(false));
     } else if (!editId && userRole !== null) {
       // Si no estamos editando, usar el typeParam o determinar por rol
-      const type = typeParam || (userRole === 'COMPANY' ? 'OFFER' : 'DEMAND');
+      // Solo COMPANY puede publicar ofertas, los demás solo demandas
+      let type = 'DEMAND'; // Por defecto es demanda
+      if (userRole === 'COMPANY') {
+        type = typeParam || 'OFFER'; // Empresas pueden elegir oferta o demanda
+      } else if (userRole === 'ADMIN') {
+        // Admin puede publicar cualquier tipo
+        type = typeParam || 'DEMAND';
+      }
       setPostType(type === "DEMAND" ? "DEMAND" : "OFFER");
     }
   }, [editId, user, typeParam, userRole]);
@@ -165,7 +172,7 @@ function PublishForm() {
             ...formData,
             providesAccommodation: formData.providesAccommodation,
             uid: user.uid,
-            type: isDemand ? "DEMAND" : "SHARED"
+            type: isDemand ? "DEMAND" : (userRole === 'COMPANY' ? "OFFICIAL" : "SHARED")
           }),
         });
       }
