@@ -588,7 +588,7 @@ export default function Dashboard() {
              </>
            ) : (
              <>
-               {/* Trabajadores y Manijeros ven esto */}
+               {/* Trabajadores, Manijeros, Ingenieros, Encargados y Tractoristas ven esto */}
                <button onClick={() => handlePublish("DEMAND")} className="bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3 px-5 rounded-xl font-semibold hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-sm shadow-orange-500/25 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -596,13 +596,16 @@ export default function Dashboard() {
                   Publicar demanda
                   <span className="text-[10px] bg-orange-800/30 px-2 py-0.5 rounded-full text-white/90">Busco tajo</span>
                </button>
-               <button onClick={() => handlePublish("OFFER")} className="bg-slate-50 border-2 border-dashed border-slate-200 text-slate-600 py-3 px-5 rounded-xl font-medium hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all duration-200 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  Compartir oferta
-                  <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded-full text-slate-500">Vi un anuncio</span>
-               </button>
+               {/* Botón de compartir oferta solo para admin */}
+               {role === 'ADMIN' && (
+                 <button onClick={() => handlePublish("OFFER")} className="bg-slate-50 border-2 border-dashed border-slate-200 text-slate-600 py-3 px-5 rounded-xl font-medium hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all duration-200 flex items-center gap-2">
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                   </svg>
+                   Compartir oferta
+                   <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded-full text-slate-500">Admin</span>
+                 </button>
+               )}
              </>
            )}
         </div>
