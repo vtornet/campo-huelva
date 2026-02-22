@@ -265,6 +265,13 @@ export async function POST(request: Request) {
       }
     }
 
+    // 2.2. Solo los admins pueden publicar ofertas SHARED (compartidas)
+    if (type === "SHARED" && user.role !== Role.ADMIN) {
+      return NextResponse.json({
+        error: "Solo los administradores pueden publicar ofertas compartidas."
+      }, { status: 403 });
+    }
+
     if (user.isSilenced) {
       // Verificar si el silencio es temporal y ha expirado
       if (user.silencedUntil && user.silencedUntil < new Date()) {

@@ -688,7 +688,7 @@ export default function Dashboard() {
                   {/* ETIQUETA DE TIPO */}
                   <div className="absolute top-4 right-4 z-10 pointer-events-none">
                      {post.type === "OFFICIAL" && <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-emerald-200 shadow-sm">Empresa verificada</span>}
-                     {post.type === "SHARED" && <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-3 py-1 rounded-full border border-slate-200">Compartida</span>}
+                     {post.type === "SHARED" && <span className="bg-indigo-100 text-indigo-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-indigo-200 shadow-sm flex items-center gap-1">⚡ Oferta compartida</span>}
                      {post.type === "DEMAND" && <span className="bg-orange-100 text-orange-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-orange-200">Demanda</span>}
                   </div>
 
@@ -791,7 +791,10 @@ export default function Dashboard() {
                       </div>
 
                       {/* Botón de acción según tipo y rol */}
-                      {role === 'COMPANY' ? (
+                      {post.type === 'SHARED' ? (
+                        // Ofertas compartidas (publicadas por admin): sin botones de acción
+                        <div className="w-24"></div>
+                      ) : role === 'COMPANY' ? (
                         // Para empresas: solo mostrar botón en demandas, no en ofertas de otras empresas
                         post.type === 'DEMAND' ? (
                           <button
@@ -825,7 +828,7 @@ export default function Dashboard() {
                           </svg>
                         </button>
                       ) : (
-                        // Para ofertas: botón de inscribirse
+                        // Para ofertas OFICIALES: botón de inscribirse
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

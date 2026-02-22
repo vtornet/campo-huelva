@@ -37,6 +37,7 @@ function PublishForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
@@ -67,6 +68,10 @@ function PublishForm() {
         .then(data => {
           if (data.role) {
             setUserRole(data.role);
+            // Verificar si es admin (necesario para publicar ofertas compartidas)
+            if (data.role === 'ADMIN') {
+              setIsAdmin(true);
+            }
           }
         })
         .catch(err => console.error("Error fetching user role:", err));
