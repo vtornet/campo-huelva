@@ -1,10 +1,11 @@
 /**
- * Root Layout - Solo para rutas API y archivos estáticos
- * Las páginas de la aplicación están en [locale]/layout.tsx
+ * Root Layout - El middleware de next-intl maneja la redirección
+ * Este layout solo se usa como fallback
  */
-import { redirect } from "next/navigation";
-
-export default function RootLayout() {
-  // Redirigir al locale por defecto
-  redirect("/es");
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
 }
