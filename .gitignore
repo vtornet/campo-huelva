@@ -34,6 +34,7 @@ yarn-error.log*
 .env
 .env.local
 .env*.local
+.env.test
 
 # vercel
 .vercel
@@ -45,3 +46,8 @@ next-env.d.ts
 /src/generated/prisma
 
 .vercel
+
+# playwright
+/playwright-report/
+/test-results/
+/playwright/.cache/

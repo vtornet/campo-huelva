@@ -136,7 +136,7 @@ export default function LoginPage() {
 
         {/* Formulario Login */}
         {activeTab === "login" && (
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-4" data-testid="login-form">
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
               <input
@@ -146,6 +146,7 @@ export default function LoginPage() {
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none"
                 required
                 autoComplete="email"
+                data-testid="login-email"
               />
             </div>
             <div>
@@ -158,6 +159,7 @@ export default function LoginPage() {
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-emerald-500 focus:outline-none"
                   required
                   autoComplete="current-password"
+                  data-testid="login-password"
                 />
                 <button
                   type="button"
@@ -180,6 +182,7 @@ export default function LoginPage() {
             <button
               type="submit"
               className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition"
+              data-testid="login-submit"
             >
               Entrar con Email
             </button>
