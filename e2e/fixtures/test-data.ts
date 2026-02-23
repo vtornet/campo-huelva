@@ -117,7 +117,7 @@ export const selectors = {
   googleButton: 'button:has-text("Google"), button:has-text("Continuar con Google")',
   emailInput: 'input[type="email"], input[name="email"]',
   passwordInput: 'input[type="password"], input[name="password"]',
-  logoutButton: 'button:has-text("Cerrar sesión")',
+  logoutButton: 'button:has-text("Salir"), button:has-text("Cerrar sesión")',
 
   // Onboarding
   roleButton: (role: string) => `button:has-text("${role}")`,
@@ -126,7 +126,7 @@ export const selectors = {
   companyRoleButton: 'button:has-text("Soy Empresa")',
 
   // Dashboard
-  postCard: '.post-card, article',
+  postCard: '.post-card, article, div[class*="bg-white"][class*="rounded-2xl"]',
   applyButton: 'button:has-text("Inscribirse")',
   withdrawButton: 'button:has-text("Retirarme")',
   appliedButton: 'button:has-text("Inscrito")',

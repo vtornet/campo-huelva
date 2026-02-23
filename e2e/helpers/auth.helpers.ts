@@ -69,10 +69,12 @@ export async function loginAsAdmin(page: Page) {
  * Logout de la aplicación
  */
 export async function logout(page: Page) {
-  // Buscar el botón de logout en el menú de perfil
-  await page.click('[data-testid="profile-menu"], button:has-text("Perfil")');
+  // El botón "Salir" está directamente visible en el navbar
+  // Hacer click en el botón de logout
   await page.click(selectors.logoutButton);
-  await page.waitForURL(urls.login);
+
+  // Esperar a que se complete el logout y redirija a login
+  await page.waitForURL(urls.login, { timeout: 5000 });
 }
 
 /**

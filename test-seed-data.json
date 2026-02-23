@@ -1,0 +1,34 @@
+{
+  "created": "2026-02-23T18:00:58.658Z",
+  "users": {
+    "worker": {
+      "email": "test-worker@example.com",
+      "uid": "osIapxLshbWRhTJNx5iBWfPmlM12"
+    },
+    "company": {
+      "email": "test-company@example.com",
+      "uid": "jKWM3W3HP7STWon6QLdZuRroUO02"
+    },
+    "foreman": {
+      "email": "test-foreman@example.com",
+      "uid": "fg0zSp53R5cFcTRwC6ZmIHgJt4A2"
+    }
+  },
+  "posts": [
+    {
+      "id": "304fbaa8-b400-477e-8a9a-b1654a043a7d",
+      "title": "Trabajador disponible para recolección",
+      "type": "DEMANDA_TRABAJADOR"
+    },
+    {
+      "id": "6d55949d-f88e-48ca-8512-f1c4608a40ba",
+      "title": "Cuadrilla completa de 8 personas disponible",
+      "type": "DEMANDA_MANIJERO"
+    },
+    {
+      "id": "5d6224c8-0ae1-4ade-aa1f-473b3c88a9ba",
+      "title": "Recolectores de Fresa - Campaña Primavera 2026",
+      "type": "OFERTA_EMPRESA"
+    }
+  ]
+}
