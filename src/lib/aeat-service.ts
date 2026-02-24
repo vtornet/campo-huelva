@@ -38,43 +38,35 @@ function getAeatCredentials(): { cert: string; key: string } | null {
   const key = process.env.AEAT_KEY_PEM;
 
   if (cert && key) {
-    const formatPem = (pem: string): string => {
+    const formatPem = (pem: string, name: string): string => {
       // Eliminar espacios alrededor
       let formatted = pem.trim();
+
+      console.log(`AEAT: ${name} - Longitud original:`, formatted.length);
 
       // Reemplazar \n literales con saltos de línea reales
       formatted = formatted.replace(/\\n/g, '\n');
 
-      // Eliminar TODOS los espacios (Railway añade espacios que rompen el formato)
-      formatted = formatted.replace(/\s+/g, '');
+      // Dividir en líneas para procesar
+      let lines = formatted.split(/\r?\n/);
 
-      // Reconstruir el PEM con el formato correcto:
-      // - Header: -----BEGIN XXX-----
-      // - Body: líneas de 64 caracteres
-      // - Footer: -----END XXX-----
+      // Eliminar espacios al inicio de cada línea (los que añade Railway)
+      lines = lines.map(line => line.trimStart());
 
-      // Extraer header y footer
-      const beginMatch = formatted.match(/-----BEGIN[^-]+-----/);
-      const endMatch = formatted.match(/-----END[^-]+-----/);
+      // Filtrar líneas vacías
+      lines = lines.filter(line => line !== '');
 
-      if (!beginMatch || !endMatch) {
-        return formatted;
-      }
+      // Unir con saltos de línea y añadir \n final
+      formatted = lines.join('\n') + '\n';
 
-      const header = beginMatch[0];
-      const footer = endMatch[0];
-      const beginIndex = formatted.indexOf(header) + header.length;
-      const endIndex = formatted.indexOf(footer);
+      console.log(`AEAT: ${name} - Líneas: ${lines.length}, primera línea: ${lines[0]?.substring(0, 30)}...`);
+      console.log(`AEAT: ${name} - Última línea: ${lines[lines.length - 1]?.substring(0, 30)}...`);
 
-      // Extraer el body (datos base64) y formatear en líneas de 64 caracteres
-      const body = formatted.substring(beginIndex, endIndex);
-      const formattedBody = body.match(/.{1,64}/g)?.join('\n') || body;
-
-      return `${header}\n${formattedBody}\n${footer}\n`;
+      return formatted;
     };
 
-    const formattedCert = formatPem(cert);
-    const formattedKey = formatPem(key);
+    const formattedCert = formatPem(cert, 'cert');
+    const formattedKey = formatPem(key, 'key');
 
     // Validar que ambos tengan el formato correcto
     if (!formattedCert.includes('-----BEGIN') || !formattedCert.includes('-----END')) {
