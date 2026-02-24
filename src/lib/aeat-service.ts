@@ -39,30 +39,45 @@ function getAeatCredentials(): { cert: string; key: string } | null {
 
   if (cert && key) {
     const formatPem = (pem: string, name: string): string => {
-      // Eliminar espacios alrededor
-      let formatted = pem.trim();
-
-      console.log(`AEAT: ${name} - Longitud original:`, formatted.length);
-
       // Reemplazar \n literales con saltos de línea reales
-      formatted = formatted.replace(/\\n/g, '\n');
+      let formatted = pem.replace(/\\n/g, '\n');
 
-      // Dividir en líneas para procesar
-      let lines = formatted.split(/\r?\n/);
+      // Eliminar TODOS los espacios y saltos de línea
+      const cleanPem = formatted.replace(/\s/g, '');
 
-      // Eliminar espacios al inicio de cada línea (los que añade Railway)
-      lines = lines.map(line => line.trimStart());
+      console.log(`AEAT: ${name} - Sin espacios longitud:`, cleanPem.length);
 
-      // Filtrar líneas vacías
-      lines = lines.filter(line => line !== '');
+      // Reconstruir el PEM correctamente:
+      // 1. Extraer header, body y footer
+      const beginMatch = cleanPem.match(/-----BEGIN[^-]+-----/);
+      const endMatch = cleanPem.match(/-----END[^-]+-----/);
 
-      // Unir con saltos de línea y añadir \n final
-      formatted = lines.join('\n') + '\n';
+      if (!beginMatch || !endMatch) {
+        console.error(`AEAT: ${name} - No se encontraron headers PEM`);
+        return pem;
+      }
 
-      console.log(`AEAT: ${name} - Líneas: ${lines.length}, primera línea: ${lines[0]?.substring(0, 30)}...`);
-      console.log(`AEAT: ${name} - Última línea: ${lines[lines.length - 1]?.substring(0, 30)}...`);
+      const header = beginMatch[0];
+      const footer = endMatch[0];
 
-      return formatted;
+      // Extraer el body (contenido base64 entre header y footer)
+      const beginIndex = cleanPem.indexOf(header) + header.length;
+      const endIndex = cleanPem.indexOf(footer);
+      const body = cleanPem.substring(beginIndex, endIndex);
+
+      // Formatear el body en líneas de 64 caracteres (estándar PEM)
+      const lines: string[] = [header];
+      for (let i = 0; i < body.length; i += 64) {
+        lines.push(body.substring(i, i + 64));
+      }
+      lines.push(footer);
+
+      const result = lines.join('\n') + '\n';
+
+      console.log(`AEAT: ${name} - Reconstruido: ${lines.length} líneas`);
+      console.log(`AEAT: ${name} - Longitud body: ${body.length}`);
+
+      return result;
     };
 
     const formattedCert = formatPem(cert, 'cert');
