@@ -42,42 +42,41 @@ function getAeatCredentials(): { cert: string; key: string } | null {
       // Reemplazar \n literales con saltos de línea reales
       let formatted = pem.replace(/\\n/g, '\n');
 
-      // Eliminar TODOS los espacios y saltos de línea
-      const cleanPem = formatted.replace(/\s/g, '');
+      // Eliminar TODOS los espacios (pero mantener saltos de línea por ahora)
+      formatted = formatted.replace(/ /g, '');
 
-      console.log(`AEAT: ${name} - Sin espacios longitud:`, cleanPem.length);
+      // Dividir en líneas y limpiar
+      const lines = formatted.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
-      // Reconstruir el PEM correctamente:
-      // 1. Extraer header, body y footer
-      const beginMatch = cleanPem.match(/-----BEGIN[^-]+-----/);
-      const endMatch = cleanPem.match(/-----END[^-]+-----/);
+      console.log(`AEAT: ${name} - Líneas originales: ${lines.length}`);
+      console.log(`AEAT: ${name} - Primera línea: "${lines[0]}"`);
+      console.log(`AEAT: ${name} - Última línea: "${lines[lines.length - 1]}"`);
 
-      if (!beginMatch || !endMatch) {
-        console.error(`AEAT: ${name} - No se encontraron headers PEM`);
-        return pem;
+      // Verificar que las líneas del cuerpo tengan 64 caracteres (estándar PEM)
+      // Si no, reconstruir
+      if (lines.length > 2) {
+        const header = lines[0];
+        const footer = lines[lines.length - 1];
+        const body = lines.slice(1, -1).join('');
+
+        console.log(`AEAT: ${name} - Body longitud: ${body.length}`);
+
+        // Reconstruir con líneas de 64 caracteres
+        const newLines = [header];
+        for (let i = 0; i < body.length; i += 64) {
+          newLines.push(body.substring(i, i + 64));
+        }
+        newLines.push(footer);
+
+        formatted = newLines.join('\n') + '\n';
+
+        console.log(`AEAT: ${name} - Reconstruido: ${newLines.length} líneas`);
+        console.log(`AEAT: ${name} - Empieza con: "${formatted.substring(0, 50)}..."`);
+      } else {
+        formatted = lines.join('\n') + '\n';
       }
 
-      const header = beginMatch[0];
-      const footer = endMatch[0];
-
-      // Extraer el body (contenido base64 entre header y footer)
-      const beginIndex = cleanPem.indexOf(header) + header.length;
-      const endIndex = cleanPem.indexOf(footer);
-      const body = cleanPem.substring(beginIndex, endIndex);
-
-      // Formatear el body en líneas de 64 caracteres (estándar PEM)
-      const lines: string[] = [header];
-      for (let i = 0; i < body.length; i += 64) {
-        lines.push(body.substring(i, i + 64));
-      }
-      lines.push(footer);
-
-      const result = lines.join('\n') + '\n';
-
-      console.log(`AEAT: ${name} - Reconstruido: ${lines.length} líneas`);
-      console.log(`AEAT: ${name} - Longitud body: ${body.length}`);
-
-      return result;
+      return formatted;
     };
 
     const formattedCert = formatPem(cert, 'cert');
