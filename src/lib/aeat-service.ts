@@ -38,28 +38,43 @@ function getAeatCredentials(): { cert: string; key: string } | null {
   const key = process.env.AEAT_KEY_PEM;
 
   if (cert && key) {
-    // Convertir \n o \n literales a saltos de línea reales
-    // También manejar el caso donde ya tienen saltos de línea correctos
-    const formatPem = (pem: string, name: string): string => {
+    const formatPem = (pem: string): string => {
+      // Eliminar espacios alrededor
       let formatted = pem.trim();
 
       // Reemplazar \n literales con saltos de línea reales
       formatted = formatted.replace(/\\n/g, '\n');
 
-      // Eliminar espacios al inicio de cada línea (Railway añade espacios)
-      formatted = formatted.replace(/^ +/gm, '');
+      // Eliminar TODOS los espacios (Railway añade espacios que rompen el formato)
+      formatted = formatted.replace(/\s+/g, '');
 
-      // Asegurar formato correcto: líneas separadas por \n
-      const lines = formatted.split(/\r?\n/).filter(line => line.trim() !== '');
-      formatted = lines.join('\n') + '\n';
+      // Reconstruir el PEM con el formato correcto:
+      // - Header: -----BEGIN XXX-----
+      // - Body: líneas de 64 caracteres
+      // - Footer: -----END XXX-----
 
-      console.log(`AEAT: ${name} formateado, longitud:`, formatted.length, 'líneas:', lines.length);
+      // Extraer header y footer
+      const beginMatch = formatted.match(/-----BEGIN[^-]+-----/);
+      const endMatch = formatted.match(/-----END[^-]+-----/);
 
-      return formatted;
+      if (!beginMatch || !endMatch) {
+        return formatted;
+      }
+
+      const header = beginMatch[0];
+      const footer = endMatch[0];
+      const beginIndex = formatted.indexOf(header) + header.length;
+      const endIndex = formatted.indexOf(footer);
+
+      // Extraer el body (datos base64) y formatear en líneas de 64 caracteres
+      const body = formatted.substring(beginIndex, endIndex);
+      const formattedBody = body.match(/.{1,64}/g)?.join('\n') || body;
+
+      return `${header}\n${formattedBody}\n${footer}\n`;
     };
 
-    const formattedCert = formatPem(cert, 'cert');
-    const formattedKey = formatPem(key, 'key');
+    const formattedCert = formatPem(cert);
+    const formattedKey = formatPem(key);
 
     // Validar que ambos tengan el formato correcto
     if (!formattedCert.includes('-----BEGIN') || !formattedCert.includes('-----END')) {
@@ -70,6 +85,8 @@ function getAeatCredentials(): { cert: string; key: string } | null {
       console.error("AEAT: Clave no tiene formato PEM válido");
       return null;
     }
+
+    console.log(`AEAT: Certificados formateados correctamente`);
 
     return { cert: formattedCert, key: formattedKey };
   }
