@@ -247,9 +247,12 @@ export default function CompanyProfilePage() {
                 value={formData.cif}
                 companiesOnly={true}
                 showErrorMessage={cifTouched}
+                onChange={(e) => {
+                  const newCif = e.target.value;
+                  setFormData((prev) => ({ ...prev, cif: newCif }));
+                }}
                 onValidChange={(valid, cif) => {
                   setCifValid(valid);
-                  setFormData((prev) => ({ ...prev, cif }));
                   // Resetear verificación si cambia el CIF y ya estábamos verificados
                   if (companyVerified && cif !== verificationData?.cif) {
                     setCompanyVerified(false);

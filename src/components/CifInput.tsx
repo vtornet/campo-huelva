@@ -80,12 +80,23 @@ export function CifInput({
     // Permitir letras, números, espacios y guiones
     newValue = newValue.replace(/[^A-Z0-9\s-]/g, "");
 
-    // Actualizar estado
+    // Actualizar estado interno si no es controlado
     if (controlledValue === undefined) {
       setValue(newValue);
     }
 
-    onChange?.(e);
+    // Siempre llamar al onChange del padre con el nuevo valor
+    if (onChange) {
+      // Crear un nuevo evento con el valor procesado
+      const syntheticEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          value: newValue,
+        },
+      };
+      onChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
+    }
   };
 
   const handleBlur = () => {
