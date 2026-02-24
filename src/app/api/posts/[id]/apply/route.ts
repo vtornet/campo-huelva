@@ -1,8 +1,27 @@
 // API para inscribirse en una oferta
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, ApplicationStatus } from "@prisma/client";
+import { authenticateRequest } from "@/lib/firebase-admin";
+import { rateLimitMiddleware, RateLimitPresets } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient();
+
+// Función auxiliar para obtener el userId desde el token o el body
+// Durante la transición, permitimos ambos métodos
+async function getUserId(request: NextRequest, body?: any): Promise<string> {
+  // Primero intentar verificar el token
+  try {
+    return await authenticateRequest(request);
+  } catch (authError) {
+    // Si no hay token o es inválido, fallback al userId del body
+    // TODO: Eliminar este fallback una vez que todos los clientes usen tokens
+    if (body?.userId) {
+      console.warn("⚠️ Usando autenticación por body (deprecated). Se debería usar Authorization header.");
+      return body.userId;
+    }
+    throw new Error("Usuario no autenticado");
+  }
+}
 
 // POST - Inscribirse en una oferta
 export async function POST(
@@ -11,12 +30,17 @@ export async function POST(
 ) {
   try {
     const { id: postId } = await params;
-    const body = await request.json();
-    const { userId } = body;
 
-    if (!userId) {
-      return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 });
+    // Rate limiting
+    const rateLimitResponse = rateLimitMiddleware(request, "applications", RateLimitPresets.applications);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
+
+    const body = await request.json();
+
+    // Verificar autenticación
+    const userId = await getUserId(request, body);
 
     // Verificar que la publicación existe
     const post = await prisma.post.findUnique({
@@ -110,8 +134,14 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, application });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error al inscribirse:", error);
+
+    // Errores de autenticación
+    if (error.message?.includes("autenticado") || error.message?.includes("Token")) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+
     return NextResponse.json({ error: "Error al inscribirse" }, { status: 500 });
   }
 }
@@ -123,6 +153,16 @@ export async function GET(
 ) {
   try {
     const { id: postId } = await params;
+
+    // Rate limiting (más permisivo para GET)
+    const rateLimitResponse = rateLimitMiddleware(request, "applications-view", {
+      maxRequests: 100,
+      windowMs: 60 * 1000,
+    });
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const requesterId = searchParams.get("userId");
 
@@ -216,6 +256,13 @@ export async function DELETE(
 ) {
   try {
     const { id: postId } = await params;
+
+    // Rate limiting
+    const rateLimitResponse = rateLimitMiddleware(request, "applications-withdraw", RateLimitPresets.applications);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
 

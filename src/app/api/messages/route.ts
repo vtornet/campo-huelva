@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { notifyNewContact } from "@/lib/notifications";
+import { rateLimitMiddleware, RateLimitPresets } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient();
 
@@ -104,6 +105,12 @@ export async function GET(request: Request) {
 
 // POST: Crear nueva conversación o enviar mensaje a existente
 export async function POST(request: Request) {
+  // Rate limiting para envío de mensajes
+  const rateLimitResponse = rateLimitMiddleware(request, "messages", RateLimitPresets.contact);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const { senderId, receiverId, content, postId } = body;
@@ -114,6 +121,11 @@ export async function POST(request: Request) {
 
     if (senderId === receiverId) {
       return NextResponse.json({ error: "No puedes enviarte mensajes a ti mismo" }, { status: 400 });
+    }
+
+    // Validar longitud del mensaje
+    if (content.length > 5000) {
+      return NextResponse.json({ error: "El mensaje es demasiado largo (máximo 5000 caracteres)" }, { status: 400 });
     }
 
     // Buscar si ya existe una conversación entre estos dos usuarios

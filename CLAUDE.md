@@ -309,13 +309,18 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Headers de seguridad (CSP, X-Frame-Options, HSTS implementados en next.config.ts)
 - [x] CSP actualizado para Google Auth (`apis.google.com` en script-src)
 - [x] CSP actualizado para Firebase iframe (`red-agricola-e06cc.firebaseapp.com` en frame-src)
+- [x] HSTS (Strict-Transport-Security) configurado
 - [x] CORS configurado (next.config.ts permite oríenes externos limitados)
 - [x] Sanitización básica de inputs (Next.js sanitiza por defecto en JSX)
-- [ ] Verificación de tokens de Firebase en servidor (requiere Firebase Admin SDK)
-- [ ] Rate limiting en endpoints sensibles (contacto, inscripciones)
-- [ ] Implementar middleware de autenticación centralizado
+- [x] **Verificación de tokens de Firebase en servidor** (módulo `src/lib/firebase-admin.ts`)
+- [x] **Rate limiting en endpoints sensibles** (módulo `src/lib/rate-limit.ts`)
+  - Inscripciones: 20 por minuto
+  - Mensajes: 10 por minuto
+  - Denuncias: 5 por minuto
+- [x] **Middleware de autenticación centralizado** (función `authenticateRequest`)
+- [x] **Cliente HTTP para peticiones autenticadas** (`src/lib/api-client.ts`)
 
-**Nota**: Actualmente la autenticación se maneja en el cliente con Firebase. Las APIs validan userId pero no verifican el token de Firebase. Para mayor seguridad, considerar implementar Firebase Admin SDK en el servidor.
+**Nota**: Se ha implementado Firebase Admin SDK para verificación de tokens en servidor. Los endpoints de inscripciones, mensajes y denuncias ahora incluyen rate limiting. Durante la transición, se mantiene compatibilidad con el método anterior (userId en body) pero se recomienda migrar al uso de Authorization header.
 
 ### ✅ 18. Testing E2E con Playwright (COMPLETADO)
 - [x] **Infraestructura de testing completa**

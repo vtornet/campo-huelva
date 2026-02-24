@@ -3,11 +3,18 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, ReportType } from "@prisma/client";
+import { rateLimitMiddleware, RateLimitPresets } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient();
 
 // POST: Crear una nueva denuncia
 export async function POST(request: NextRequest) {
+  // Rate limiting estricto para denuncias
+  const rateLimitResponse = rateLimitMiddleware(request, "reports", RateLimitPresets.reports);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const { reporterId, reportedPostId, reportedUserId, reason, description, type } = body;
@@ -18,6 +25,15 @@ export async function POST(request: NextRequest) {
 
     if (!reason) {
       return NextResponse.json({ error: "La razón es obligatoria" }, { status: 400 });
+    }
+
+    // Validar longitud de campos
+    if (reason.length > 200) {
+      return NextResponse.json({ error: "La razón es demasiado larga (máximo 200 caracteres)" }, { status: 400 });
+    }
+
+    if (description && description.length > 1000) {
+      return NextResponse.json({ error: "La descripción es demasiado larga (máximo 1000 caracteres)" }, { status: 400 });
     }
 
     if (!reportedPostId && !reportedUserId) {
