@@ -55,3 +55,6 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 /playwright/.cache/
+
+# Certificados AEAT
+certs/

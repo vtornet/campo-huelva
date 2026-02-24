@@ -3,6 +3,8 @@
 // Implementa comunicación SOAP directa con certificado digital
 
 import * as https from 'https';
+import * as fs from 'fs';
+import * as path from 'path';
 import { request as httpRequest } from 'https';
 
 /**
@@ -30,40 +32,33 @@ export interface CompanyVerificationResult {
 }
 
 /**
- * Obtiene el certificado digital desde variables de entorno
+ * Obtiene el certificado digital desde archivos
  */
 function getAeatCredentials(): { cert: string; key: string } | null {
-  const cert = process.env.AEAT_CERT_PEM;
-  const key = process.env.AEAT_KEY_PEM;
+  // Primero intentar desde variables de entorno (Railway)
+  const certEnv = process.env.AEAT_CERT_PEM;
+  const keyEnv = process.env.AEAT_KEY_PEM;
 
-  if (cert && key) {
-    // Railway añade espacios de indentación. Los eliminamos pero preservando el formato PEM.
-    const cleanRailwayIndentation = (pem: string): string => {
-      // Reemplazar \n literales primero
-      let cleaned = pem.replace(/\\n/g, '\n');
+  if (certEnv && keyEnv) {
+    // Convertir \n a saltos de línea
+    const cert = certEnv.replace(/\\n/g, '\n');
+    const key = keyEnv.replace(/\\n/g, '\n');
+    return { cert, key };
+  }
 
-      // Dividir en líneas
-      const lines = cleaned.split(/\r?\n/);
+  // Si no hay variables, intentar desde archivos
+  const certPath = path.join(process.cwd(), 'certs', 'cert.pem');
+  const keyPath = path.join(process.cwd(), 'certs', 'key.pem');
 
-      // Eliminar solo los espacios al inicio de cada línea (indentación de Railway)
-      // NO eliminar espacios dentro del contenido base64
-      const cleanedLines = lines.map(line => {
-        // Buscar dónde empieza el contenido real (después de espacios)
-        const firstNonSpace = line.search(/\S/);
-        if (firstNonSpace > 0) {
-          return line.substring(firstNonSpace);
-        }
-        return line;
-      });
-
-      // Filtrar líneas vacías y unir
-      return cleanedLines.filter(line => line.trim() !== '').join('\n') + '\n';
-    };
-
-    return {
-      cert: cleanRailwayIndentation(cert),
-      key: cleanRailwayIndentation(key)
-    };
+  try {
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      const cert = fs.readFileSync(certPath, 'utf-8');
+      const key = fs.readFileSync(keyPath, 'utf-8');
+      console.log("AEAT: Certificados leídos desde archivos");
+      return { cert, key };
+    }
+  } catch (error) {
+    console.error("AEAT: Error leyendo archivos de certificado:", error);
   }
 
   return null;
