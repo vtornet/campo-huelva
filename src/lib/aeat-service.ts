@@ -42,26 +42,31 @@ function getAeatCredentials(): { cert: string; key: string } | null {
       // Reemplazar \n literales con saltos de línea reales
       let formatted = pem.replace(/\\n/g, '\n');
 
-      // Eliminar TODOS los espacios (pero mantener saltos de línea por ahora)
-      formatted = formatted.replace(/ /g, '');
-
-      // Dividir en líneas y limpiar
+      // Dividir en líneas
       const lines = formatted.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
-      console.log(`AEAT: ${name} - Líneas originales: ${lines.length}`);
-      console.log(`AEAT: ${name} - Primera línea: "${lines[0]}"`);
-      console.log(`AEAT: ${name} - Última línea: "${lines[lines.length - 1]}"`);
+      // Arreglar headers que han perdido sus espacios internos
+      // -----BEGINCERTIFICATE----- -> -----BEGIN CERTIFICATE-----
+      // -----BEGINPRIVATEKEY----- -> -----BEGIN PRIVATE KEY-----
+      const fixHeader = (line: string): string => {
+        return line
+          .replace('-----BEGINCERTIFICATE-----', '-----BEGIN CERTIFICATE-----')
+          .replace('-----ENDCERTIFICATE-----', '-----END CERTIFICATE-----')
+          .replace('-----BEGINPRIVATEKEY-----', '-----BEGIN PRIVATE KEY-----')
+          .replace('-----ENDPRIVATEKEY-----', '-----END PRIVATE KEY-----')
+          .replace('-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----BEGIN ENCRYPTED PRIVATE KEY-----')
+          .replace('-----END ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----');
+      };
 
-      // Verificar que las líneas del cuerpo tengan 64 caracteres (estándar PEM)
-      // Si no, reconstruir
-      if (lines.length > 2) {
-        const header = lines[0];
-        const footer = lines[lines.length - 1];
-        const body = lines.slice(1, -1).join('');
+      const fixedLines = lines.map(fixHeader);
 
-        console.log(`AEAT: ${name} - Body longitud: ${body.length}`);
+      // Si hay muchas líneas (más de 3), el cuerpo puede necesitar reformateo
+      if (fixedLines.length > 3) {
+        const header = fixedLines[0];
+        const footer = fixedLines[fixedLines.length - 1];
+        const body = fixedLines.slice(1, -1).join('');
 
-        // Reconstruir con líneas de 64 caracteres
+        // Reconstruir con líneas de 64 caracteres (estándar PEM)
         const newLines = [header];
         for (let i = 0; i < body.length; i += 64) {
           newLines.push(body.substring(i, i + 64));
@@ -69,12 +74,11 @@ function getAeatCredentials(): { cert: string; key: string } | null {
         newLines.push(footer);
 
         formatted = newLines.join('\n') + '\n';
-
-        console.log(`AEAT: ${name} - Reconstruido: ${newLines.length} líneas`);
-        console.log(`AEAT: ${name} - Empieza con: "${formatted.substring(0, 50)}..."`);
       } else {
-        formatted = lines.join('\n') + '\n';
+        formatted = fixedLines.join('\n') + '\n';
       }
+
+      console.log(`AEAT: ${name} - ${fixedLines.length} líneas, header: "${fixedLines[0]}"`);
 
       return formatted;
     };
@@ -83,11 +87,11 @@ function getAeatCredentials(): { cert: string; key: string } | null {
     const formattedKey = formatPem(key, 'key');
 
     // Validar que ambos tengan el formato correcto
-    if (!formattedCert.includes('-----BEGIN') || !formattedCert.includes('-----END')) {
+    if (!formattedCert.includes('-----BEGIN CERTIFICATE-----') || !formattedCert.includes('-----END CERTIFICATE-----')) {
       console.error("AEAT: Certificado no tiene formato PEM válido");
       return null;
     }
-    if (!formattedKey.includes('-----BEGIN') || !formattedKey.includes('-----END')) {
+    if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----') && !formattedKey.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----')) {
       console.error("AEAT: Clave no tiene formato PEM válido");
       return null;
     }
