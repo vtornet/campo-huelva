@@ -43,29 +43,17 @@ function getAeatCredentials(): { cert: string; key: string } | null {
     const formatPem = (pem: string, name: string): string => {
       let formatted = pem.trim();
 
-      // Log para depurar
-      console.log(`AEAT: Longitud original ${name}:`, formatted.length);
-      console.log(`AEAT: Primeros 100 chars ${name}:`, formatted.substring(0, 100));
-
       // Reemplazar \n literales con saltos de línea reales
       formatted = formatted.replace(/\\n/g, '\n');
 
-      // Si no tiene saltos de línea (está todo en una línea), añadirlos cada 64 chars
-      if (!formatted.includes('\n') && formatted.length > 100) {
-        const headerEnd = formatted.indexOf('-----');
-        const footerStart = formatted.lastIndexOf('-----');
-        const body = formatted.substring(headerEnd, footerStart);
-        const newBody = body.match(/.{1,64}/g)?.join('\n') || body;
-        formatted = formatted.substring(0, headerEnd) + newBody + formatted.substring(footerStart);
-      }
+      // Eliminar espacios al inicio de cada línea (Railway añade espacios)
+      formatted = formatted.replace(/^ +/gm, '');
 
       // Asegurar formato correcto: líneas separadas por \n
-      // Dividir por líneas existentes y reconstruir
       const lines = formatted.split(/\r?\n/).filter(line => line.trim() !== '');
       formatted = lines.join('\n') + '\n';
 
-      console.log(`AEAT: Longitud formateada ${name}:`, formatted.length);
-      console.log(`AEAT: ¿Termina con \\n? ${name}:`, formatted.endsWith('\n'));
+      console.log(`AEAT: ${name} formateado, longitud:`, formatted.length, 'líneas:', lines.length);
 
       return formatted;
     };
