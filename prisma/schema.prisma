@@ -146,6 +146,15 @@ model CompanyProfile {
   isVerified     Boolean  @default(false) // Solo visible como "verificada" si esto es true
   verifiedAt     DateTime?
   verifiedBy     String? // UID del admin que verificó
+  verificationMethod String? // "AEAT" (automática) o "MANUAL" (admin)
+  aeatRazonSocial String? // Razón social según AEAT
+  aeatDireccion   String? // Dirección según AEAT
+  aeatLocalidad   String? // Localidad según AEAT
+  aeatProvincia   String? // Provincia según AEAT
+  aeatCodigoPostal String? // Código postal según AEAT
+  aeatSituacion   String? // Situación en AEAT (Activa, Baja, etc.)
+  aeatVerifiedAt  DateTime? // Fecha de verificación con AEAT
+  aeatLastCheck   DateTime? // Última verificación con AEAT
 
   // Foto de perfil (logo de empresa - URL de Firebase Storage)
   profileImage   String?

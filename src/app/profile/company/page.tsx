@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 import CifInput from "@/components/CifInput";
+import CompanyVerification from "@/components/CompanyVerification";
 
 export default function CompanyProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -21,6 +22,10 @@ export default function CompanyProfilePage() {
   // Estado de validación del CIF
   const [cifValid, setCifValid] = useState(false);
   const [cifTouched, setCifTouched] = useState(false);
+
+  // Estado de verificación de empresa
+  const [companyVerified, setCompanyVerified] = useState(false);
+  const [verificationData, setVerificationData] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -119,7 +124,10 @@ export default function CompanyProfilePage() {
         body: JSON.stringify({
           ...formData,
           uid: user.uid,
-          email: user.email
+          email: user.email,
+          // Incluir datos de verificación
+          companyVerified,
+          verificationData,
         }),
       });
 
@@ -247,6 +255,11 @@ export default function CompanyProfilePage() {
                   setCifValid(valid);
                   setCifTouched(true);
                   setFormData({ ...formData, cif });
+                  // Resetear verificación si cambia el CIF
+                  if (companyVerified && cif !== verificationData?.cif) {
+                    setCompanyVerified(false);
+                    setVerificationData(null);
+                  }
                 }}
                 containerClassName=""
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 uppercase font-mono"
@@ -255,6 +268,45 @@ export default function CompanyProfilePage() {
                 El CIF se validará automáticamente. El CIF no se modificará una vez guardado por razones de seguridad.
               </p>
             </div>
+
+            {/* Verificación de empresa */}
+            {cifValid && (
+              <div>
+                <CompanyVerification
+                  cif={formData.cif}
+                  onVerified={(data) => {
+                    setCompanyVerified(true);
+                    setVerificationData(data);
+                    // Auto-llenar razón social si el campo está vacío
+                    if (!formData.companyName && data.razonSocial) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        companyName: data.razonSocial,
+                      }));
+                    }
+                    // Auto-llenar dirección si está disponible
+                    if (data.direccion && !formData.address) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        address: data.direccion as string,
+                      }));
+                    }
+                    if (data.localidad && !formData.city) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        city: data.localidad as string,
+                      }));
+                    }
+                    if (data.provincia && !formData.province) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        province: data.provincia as string,
+                      }));
+                    }
+                  }}
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">

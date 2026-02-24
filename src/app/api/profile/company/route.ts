@@ -34,7 +34,9 @@ export async function PUT(request: Request) {
       phone,
       contactPerson,
       website,
-      description
+      description,
+      companyVerified,
+      verificationData
     } = body;
 
     if (!uid) {
@@ -104,6 +106,10 @@ export async function PUT(request: Request) {
 
     // 3. CREAR NUEVO PERFIL
     try {
+      // Datos de verificación de AEAT
+      const verificationMethod = verificationData?.method || null;
+      const now = new Date();
+
       const newProfile = await prisma.companyProfile.create({
         data: {
           userId: uid,
@@ -115,7 +121,18 @@ export async function PUT(request: Request) {
           phone: phone || null,
           contactPerson: contactPerson || null,
           website: website || null,
-          description: description || null
+          description: description || null,
+          // Datos de verificación
+          isVerified: companyVerified && verificationMethod === "AEAT",
+          verificationMethod: verificationMethod,
+          aeatRazonSocial: verificationData?.razonSocial || null,
+          aeatDireccion: verificationData?.direccion || null,
+          aeatLocalidad: verificationData?.localidad || null,
+          aeatProvincia: verificationData?.provincia || null,
+          aeatCodigoPostal: verificationData?.codigoPostal || null,
+          aeatSituacion: verificationData?.situacion || null,
+          aeatVerifiedAt: companyVerified && verificationMethod === "AEAT" ? now : null,
+          aeatLastCheck: companyVerified ? now : null,
         }
       });
 
