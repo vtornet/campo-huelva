@@ -1,9 +1,9 @@
 // src/lib/aeat-service.ts
 // Servicio de verificación de CIF con la Agencia Tributaria (AEAT)
-// Implementa comunicación SOAP real con certificado digital
+// Implementa comunicación SOAP directa con certificado digital
 
-import { createClientAsync } from 'soap';
 import * as https from 'https';
+import { request as httpRequest } from 'https';
 
 /**
  * Resultado de la verificación de una empresa
@@ -30,24 +30,6 @@ export interface CompanyVerificationResult {
 }
 
 /**
- * Configuración del servicio AEAT
- */
-export interface AeatConfig {
-  /** URL del servicio WSDL de AEAT */
-  wsdlUrl?: string;
-  /** Certificado digital en formato PEM */
-  cert?: string;
-  /** Clave privada del certificado en formato PEM */
-  key?: string;
-}
-
-/**
- * URLs de AEAT para servicios SOAP
- */
-const AEAT_WSDL_URL = "https://www1.agenciatributaria.es/es13/ws/sgtific/V1/0/Service?WSDL";
-const AEAT_ENDPOINT = "https://www1.agenciatributaria.es/es13/ws/sgtific/V1/0/Service";
-
-/**
  * Obtiene el certificado digital desde variables de entorno
  */
 function getAeatCredentials(): { cert: string; key: string } | null {
@@ -55,20 +37,103 @@ function getAeatCredentials(): { cert: string; key: string } | null {
   const key = process.env.AEAT_KEY_PEM;
 
   if (cert && key) {
-    return { cert, key };
+    // Convertir \n a saltos de línea reales si están escapados
+    const formattedCert = cert.replace(/\\n/g, '\n');
+    const formattedKey = key.replace(/\\n/g, '\n');
+    return { cert: formattedCert, key: formattedKey };
   }
 
   return null;
 }
 
 /**
- * Crea un agente HTTPS con el certificado cliente
+ * Construye el envelope SOAP para la petición de verificación de NIF/CIF
+ * usando el servicio de Consulta de Contribuyentes No Habituales (ES007)
  */
-function createHttpsAgent(cert: string, key: string): https.Agent {
-  return new https.Agent({
-    cert: cert,
-    key: key,
-    rejectUnauthorized: false, // AEAT usa certificados intermedios
+function buildSoapEnvelope(cif: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:ser="http://www2.agenciatributaria.es/es13/ws/sgtific/V1/0/Service">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ser:ContribuyentesES007_ObtenerNoObservaciones>
+      <ser:Nif>${cif}</ser:Nif>
+    </ser:ContribuyentesES007_ObtenerNoObservaciones>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+/**
+ * Parsea la respuesta XML de AEAT
+ */
+function parseAeatResponse(xmlText: string): {
+  razonSocial: string;
+  direccion?: string;
+  localidad?: string;
+  provincia?: string;
+  codigoPostal?: string;
+  situacion?: string;
+} | null {
+  try {
+    // Extraer campos de la respuesta XML usando regex
+    const matchNombre = xmlText.match(/<Nombre[^>]*>([^<]+)<\/Nombre>/);
+    const matchRazon = xmlText.match(/<RazonSocial[^>]*>([^<]+)<\/RazonSocial>/);
+    const matchDireccion = xmlText.match(/<Direccion[^>]*>([^<]+)<\/Direccion>/);
+    const matchDomicilio = xmlText.match(/<Domicilio[^>]*>([^<]+)<\/Domicilio>/);
+    const matchLocalidad = xmlText.match(/<Localidad[^>]*>([^<]+)<\/Localidad>/);
+    const matchProvincia = xmlText.match(/<Provincia[^>]*>([^<]+)<\/Provincia>/);
+    const matchCP = xmlText.match(/<CodigoPostal[^>]*>([^<]+)<\/CodigoPostal>/);
+    const matchCP2 = xmlText.match(/<CP[^>]*>([^<]+)<\/CP>/);
+    const matchSituacion = xmlText.match(/<Situacion[^>]*>([^<]+)<\/Situacion>/);
+    const matchSituacionMercurial = xmlText.match(/<SituacionMercurial[^>]*>([^<]+)<\/SituacionMercurial>/);
+
+    const razonSocial = matchNombre?.[1]?.trim() || matchRazon?.[1]?.trim();
+
+    if (!razonSocial) {
+      return null;
+    }
+
+    return {
+      razonSocial,
+      direccion: matchDireccion?.[1]?.trim() || matchDomicilio?.[1]?.trim(),
+      localidad: matchLocalidad?.[1]?.trim(),
+      provincia: matchProvincia?.[1]?.trim(),
+      codigoPostal: matchCP?.[1]?.trim() || matchCP2?.[1]?.trim(),
+      situacion: matchSituacion?.[1]?.trim() || matchSituacionMercurial?.[1]?.trim() || "Activa",
+    };
+  } catch (e) {
+    console.error("Error parseando respuesta XML:", e);
+    return null;
+  }
+}
+
+/**
+ * Hace una petición HTTPS con certificado cliente usando promesas
+ */
+function httpsRequest(options: https.RequestOptions, data: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(options, (res) => {
+      let responseData = '';
+
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+
+      res.on('end', () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(responseData);
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.write(data);
+    req.end();
   });
 }
 
@@ -93,53 +158,45 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
   }
 
   try {
-    console.log("AEAT: Creando cliente SOAP...");
+    console.log("AEAT: Enviando petición SOAP...");
 
-    // Crear agente HTTPS con certificado cliente
-    const httpsAgent = createHttpsAgent(credentials.cert, credentials.key);
+    // Construir petición SOAP
+    const soapEnvelope = buildSoapEnvelope(cleanCif);
 
-    // Crear cliente SOAP con opciones de conexión personalizadas
-    const client = await createClientAsync(AEAT_WSDL_URL, {
-      endpoint: AEAT_ENDPOINT,
-      request: {
-        agent: httpsAgent,
+    // Opciones de la petición HTTPS
+    const options: https.RequestOptions = {
+      hostname: 'www1.agenciatributaria.es',
+      port: 443,
+      path: '/es13/ws/sgtific/V1/0/Service',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'SOAPAction': '"http://www2.agenciatributaria.es/es13/ws/sgtific/V1/0/Service/ContribuyentesES007_ObtenerNoObservaciones"',
       },
-    } as any);
-
-    console.log("AEAT: Cliente creado, llamando al servicio...");
-
-    // Llamar al servicio de verificación de NIF
-    // El servicio se llama "ES007" o "Contribuyentes"
-    const args = {
-      Nif: cleanCif,
+      cert: credentials.cert,
+      key: credentials.key,
+      rejectUnauthorized: false, // AEAT usa certificados intermedios
     };
 
-    // Llamar al método de verificación
-    // Nota: El nombre exacto del método puede variar según la documentación de AEAT
-    const [result] = await client.ContribuyentesES007_ObtenerNoObservaciones(args);
+    // Hacer la petición
+    const xmlText = await httpsRequest(options, soapEnvelope);
+    console.log("AEAT: Respuesta recibida, longitud:", xmlText.length);
 
-    console.log("AEAT: Respuesta recibida:", result?.ContribuyenteReturn);
+    // Parsear respuesta XML
+    const companyData = parseAeatResponse(xmlText);
 
-    // Extraer datos de la respuesta
-    if (result && result.ContribuyenteReturn) {
-      const data = result.ContribuyenteReturn;
-
+    if (companyData) {
+      console.log("AEAT: Empresa encontrada:", companyData.razonSocial);
       return {
         success: true,
         method: "AEAT",
         company: {
           cif: cleanCif,
-          razonSocial: data.Nombre || data.RazonSocial || "",
-          direccion: data.Direccion || data.Domicilio,
-          localidad: data.Localidad,
-          provincia: data.Provincia,
-          codigoPostal: data.CodigoPostal || data.CP,
-          situacion: data.SituacionMercurial || "Activa",
+          ...companyData,
         },
       };
     }
 
-    // Si no hay resultado, intentar parsear la respuesta XML directamente
     console.warn("AEAT: Respuesta vacía, empresa no encontrada");
     return {
       success: false,
@@ -151,16 +208,10 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
     console.error("AEAT: Error al verificar empresa:", error.message);
     console.error("AEAT: Stack:", error.stack);
 
-    // Proporcionar información detallada del error
-    let errorMsg = "Error de comunicación con AEAT";
-    if (error.message) {
-      errorMsg += `: ${error.message}`;
-    }
-
     return {
       success: false,
       method: "AEAT",
-      error: errorMsg,
+      error: `Error de comunicación con AEAT: ${error.message}`,
     };
   }
 }
@@ -228,6 +279,6 @@ export function getAeatStatus(): {
 } {
   return {
     configured: isAeatConfigured(),
-    wsdlUrl: AEAT_WSDL_URL,
+    wsdlUrl: "https://www1.agenciatributaria.es/es13/ws/sgtific/V1/0/Service",
   };
 }
