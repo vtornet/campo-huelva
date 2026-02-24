@@ -31,74 +31,39 @@ export interface CompanyVerificationResult {
 
 /**
  * Obtiene el certificado digital desde variables de entorno
- * Formatea correctamente los saltos de línea
  */
 function getAeatCredentials(): { cert: string; key: string } | null {
   const cert = process.env.AEAT_CERT_PEM;
   const key = process.env.AEAT_KEY_PEM;
 
   if (cert && key) {
-    const formatPem = (pem: string, name: string): string => {
-      // Reemplazar \n literales con saltos de línea reales
-      let formatted = pem.replace(/\\n/g, '\n');
+    // Railway añade espacios de indentación. Los eliminamos pero preservando el formato PEM.
+    const cleanRailwayIndentation = (pem: string): string => {
+      // Reemplazar \n literales primero
+      let cleaned = pem.replace(/\\n/g, '\n');
 
       // Dividir en líneas
-      const lines = formatted.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const lines = cleaned.split(/\r?\n/);
 
-      // Arreglar headers que han perdido sus espacios internos
-      // -----BEGINCERTIFICATE----- -> -----BEGIN CERTIFICATE-----
-      // -----BEGINPRIVATEKEY----- -> -----BEGIN PRIVATE KEY-----
-      const fixHeader = (line: string): string => {
-        return line
-          .replace('-----BEGINCERTIFICATE-----', '-----BEGIN CERTIFICATE-----')
-          .replace('-----ENDCERTIFICATE-----', '-----END CERTIFICATE-----')
-          .replace('-----BEGINPRIVATEKEY-----', '-----BEGIN PRIVATE KEY-----')
-          .replace('-----ENDPRIVATEKEY-----', '-----END PRIVATE KEY-----')
-          .replace('-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----BEGIN ENCRYPTED PRIVATE KEY-----')
-          .replace('-----END ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----');
-      };
-
-      const fixedLines = lines.map(fixHeader);
-
-      // Si hay muchas líneas (más de 3), el cuerpo puede necesitar reformateo
-      if (fixedLines.length > 3) {
-        const header = fixedLines[0];
-        const footer = fixedLines[fixedLines.length - 1];
-        const body = fixedLines.slice(1, -1).join('');
-
-        // Reconstruir con líneas de 64 caracteres (estándar PEM)
-        const newLines = [header];
-        for (let i = 0; i < body.length; i += 64) {
-          newLines.push(body.substring(i, i + 64));
+      // Eliminar solo los espacios al inicio de cada línea (indentación de Railway)
+      // NO eliminar espacios dentro del contenido base64
+      const cleanedLines = lines.map(line => {
+        // Buscar dónde empieza el contenido real (después de espacios)
+        const firstNonSpace = line.search(/\S/);
+        if (firstNonSpace > 0) {
+          return line.substring(firstNonSpace);
         }
-        newLines.push(footer);
+        return line;
+      });
 
-        formatted = newLines.join('\n') + '\n';
-      } else {
-        formatted = fixedLines.join('\n') + '\n';
-      }
-
-      console.log(`AEAT: ${name} - ${fixedLines.length} líneas, header: "${fixedLines[0]}"`);
-
-      return formatted;
+      // Filtrar líneas vacías y unir
+      return cleanedLines.filter(line => line.trim() !== '').join('\n') + '\n';
     };
 
-    const formattedCert = formatPem(cert, 'cert');
-    const formattedKey = formatPem(key, 'key');
-
-    // Validar que ambos tengan el formato correcto
-    if (!formattedCert.includes('-----BEGIN CERTIFICATE-----') || !formattedCert.includes('-----END CERTIFICATE-----')) {
-      console.error("AEAT: Certificado no tiene formato PEM válido");
-      return null;
-    }
-    if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----') && !formattedKey.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----')) {
-      console.error("AEAT: Clave no tiene formato PEM válido");
-      return null;
-    }
-
-    console.log(`AEAT: Certificados formateados correctamente`);
-
-    return { cert: formattedCert, key: formattedKey };
+    return {
+      cert: cleanRailwayIndentation(cert),
+      key: cleanRailwayIndentation(key)
+    };
   }
 
   return null;
@@ -106,7 +71,6 @@ function getAeatCredentials(): { cert: string; key: string } | null {
 
 /**
  * Construye el envelope SOAP para la petición de verificación de NIF/CIF
- * usando el servicio de Consulta de Contribuyentes No Habituales (ES007)
  */
 function buildSoapEnvelope(cif: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -133,7 +97,6 @@ function parseAeatResponse(xmlText: string): {
   situacion?: string;
 } | null {
   try {
-    // Extraer campos de la respuesta XML usando regex
     const matchNombre = xmlText.match(/<Nombre[^>]*>([^<]+)<\/Nombre>/);
     const matchRazon = xmlText.match(/<RazonSocial[^>]*>([^<]+)<\/RazonSocial>/);
     const matchDireccion = xmlText.match(/<Direccion[^>]*>([^<]+)<\/Direccion>/);
@@ -197,14 +160,10 @@ function httpsRequest(options: https.RequestOptions, data: string): Promise<stri
 
 /**
  * Verifica una empresa con la AEAT usando su servicio SOAP
- * @param cif - CIF a verificar
- * @returns Resultado de la verificación
  */
 export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerificationResult> {
-  // Limpiar el CIF
   const cleanCif = cif.replace(/[\s-]/g, "").toUpperCase();
 
-  // Verificar que tenga credenciales de AEAT configuradas
   const credentials = getAeatCredentials();
   if (!credentials) {
     console.warn("AEAT: No hay credenciales configuradas. Usando validación local.");
@@ -218,10 +177,8 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
   try {
     console.log("AEAT: Enviando petición SOAP...");
 
-    // Construir petición SOAP
     const soapEnvelope = buildSoapEnvelope(cleanCif);
 
-    // Opciones de la petición HTTPS
     const options: https.RequestOptions = {
       hostname: 'www1.agenciatributaria.es',
       port: 443,
@@ -233,14 +190,12 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
       },
       cert: credentials.cert,
       key: credentials.key,
-      rejectUnauthorized: false, // AEAT usa certificados intermedios
+      rejectUnauthorized: false,
     };
 
-    // Hacer la petición
     const xmlText = await httpsRequest(options, soapEnvelope);
     console.log("AEAT: Respuesta recibida, longitud:", xmlText.length);
 
-    // Parsear respuesta XML
     const companyData = parseAeatResponse(xmlText);
 
     if (companyData) {
@@ -275,19 +230,13 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
 }
 
 /**
- * Verifica una empresa con el método híbrido:
- * 1. Intenta usar AEAT si hay credenciales
- * 2. Si falla, usa validación local (algoritmo)
- * @param cif - CIF a verificar
- * @returns Resultado de la verificación
+ * Verifica una empresa con el método híbrido
  */
 export async function verifyCompany(cif: string): Promise<CompanyVerificationResult> {
-  // Limpiar el CIF
   const cleanCif = cif.replace(/[\s-]/g, "").toUpperCase();
 
   console.log(`Verificando empresa: ${cleanCif}`);
 
-  // Primero: Intentar verificación con AEAT
   const credentials = getAeatCredentials();
   if (credentials) {
     console.log("AEAT: Intentando verificación con Agencia Tributaria...");
@@ -297,7 +246,6 @@ export async function verifyCompany(cif: string): Promise<CompanyVerificationRes
       return aeatResult;
     }
 
-    // AEAT falló, hacer fallback con aviso
     console.warn(`AEAT: Fallback a validación local. Error: ${aeatResult.error}`);
   } else {
     console.log("AEAT: No configurado, usando validación local");
