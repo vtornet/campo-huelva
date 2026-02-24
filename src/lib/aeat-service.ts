@@ -31,16 +31,32 @@ export interface CompanyVerificationResult {
 
 /**
  * Obtiene el certificado digital desde variables de entorno
+ * Formatea correctamente los saltos de línea
  */
 function getAeatCredentials(): { cert: string; key: string } | null {
   const cert = process.env.AEAT_CERT_PEM;
   const key = process.env.AEAT_KEY_PEM;
 
   if (cert && key) {
-    // Convertir \n a saltos de línea reales si están escapados
-    const formattedCert = cert.replace(/\\n/g, '\n');
-    const formattedKey = key.replace(/\\n/g, '\n');
-    return { cert: formattedCert, key: formattedKey };
+    // Convertir \n o \n literales a saltos de línea reales
+    // También manejar el caso donde ya tienen saltos de línea correctos
+    const formatPem = (pem: string): string => {
+      // Eliminar espacios en blanco alrededor
+      let formatted = pem.trim();
+      // Reemplazar \n literales con saltos de línea reales
+      formatted = formatted.replace(/\\n/g, '\n');
+      // Asegurar que cada línea del certificado/clave termine con \n
+      // pero no añadir \n extra después de -----END CERTIFICATE-----
+      if (!formatted.endsWith('\n')) {
+        formatted = formatted + '\n';
+      }
+      return formatted;
+    };
+
+    return {
+      cert: formatPem(cert),
+      key: formatPem(key)
+    };
   }
 
   return null;
