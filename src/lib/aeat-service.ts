@@ -3,7 +3,6 @@
 // Implementa comunicación SOAP real con certificado digital
 
 import { createClientAsync } from 'soap';
-import { readFileSync } from 'fs';
 import * as https from 'https';
 
 /**
@@ -99,15 +98,13 @@ export async function verifyCompanyWithAeat(cif: string): Promise<CompanyVerific
     // Crear agente HTTPS con certificado cliente
     const httpsAgent = createHttpsAgent(credentials.cert, credentials.key);
 
-    // Crear cliente SOAP
-    const client = await createClientAsync({
-      wsdl: AEAT_WSDL_URL,
+    // Crear cliente SOAP con opciones de conexión personalizadas
+    const client = await createClientAsync(AEAT_WSDL_URL, {
       endpoint: AEAT_ENDPOINT,
-      // Opciones específicas para AEAT
-      wsdl_options: {
-        httpsAgent: httpsAgent as any,
+      request: {
+        agent: httpsAgent,
       },
-    });
+    } as any);
 
     console.log("AEAT: Cliente creado, llamando al servicio...");
 
