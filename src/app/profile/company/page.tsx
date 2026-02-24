@@ -275,17 +275,20 @@ export default function CompanyProfilePage() {
               <div>
                 <CompanyVerification
                   cif={formData.cif}
-                  onVerified={(data) => {
+                  onVerified={(data, method) => {
                     setCompanyVerified(true);
-                    setVerificationData(data);
-                    // Auto-llenar todos los campos disponibles
-                    setFormData((prev) => ({
-                      ...prev,
-                      companyName: data.razonSocial || prev.companyName,
-                      address: data.direccion || prev.address,
-                      city: data.localidad || prev.city,
-                      province: data.provincia || prev.province,
-                    }));
+                    setVerificationData({ ...data, method });
+                    // Solo autocompletar si hay datos reales de AEAT (no es verificación local genérica)
+                    const isRealData = method === "AEAT" && data.razonSocial && !data.razonSocial.includes("Verificación local");
+                    if (isRealData) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        companyName: data.razonSocial || prev.companyName,
+                        address: data.direccion || prev.address,
+                        city: data.localidad || prev.city,
+                        province: data.provincia || prev.province,
+                      }));
+                    }
                   }}
                 />
               </div>

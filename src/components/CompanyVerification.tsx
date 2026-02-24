@@ -21,7 +21,7 @@ interface VerificationResult {
 
 interface CompanyVerificationProps {
   cif: string;
-  onVerified: (data: CompanyData) => void;
+  onVerified: (data: CompanyData, method: "AEAT" | "LOCAL") => void;
   disabled?: boolean;
 }
 
@@ -52,7 +52,7 @@ export function CompanyVerification({ cif, onVerified, disabled }: CompanyVerifi
       setResult(data);
 
       if (data.success && data.company) {
-        onVerified(data.company);
+        onVerified(data.company, data.method);
       } else if (!data.success) {
         setError(data.error || "No se pudo verificar la empresa");
       }
