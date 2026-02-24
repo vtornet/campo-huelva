@@ -40,23 +40,50 @@ function getAeatCredentials(): { cert: string; key: string } | null {
   if (cert && key) {
     // Convertir \n o \n literales a saltos de línea reales
     // También manejar el caso donde ya tienen saltos de línea correctos
-    const formatPem = (pem: string): string => {
-      // Eliminar espacios en blanco alrededor
+    const formatPem = (pem: string, name: string): string => {
       let formatted = pem.trim();
+
+      // Log para depurar
+      console.log(`AEAT: Longitud original ${name}:`, formatted.length);
+      console.log(`AEAT: Primeros 100 chars ${name}:`, formatted.substring(0, 100));
+
       // Reemplazar \n literales con saltos de línea reales
       formatted = formatted.replace(/\\n/g, '\n');
-      // Asegurar que cada línea del certificado/clave termine con \n
-      // pero no añadir \n extra después de -----END CERTIFICATE-----
-      if (!formatted.endsWith('\n')) {
-        formatted = formatted + '\n';
+
+      // Si no tiene saltos de línea (está todo en una línea), añadirlos cada 64 chars
+      if (!formatted.includes('\n') && formatted.length > 100) {
+        const headerEnd = formatted.indexOf('-----');
+        const footerStart = formatted.lastIndexOf('-----');
+        const body = formatted.substring(headerEnd, footerStart);
+        const newBody = body.match(/.{1,64}/g)?.join('\n') || body;
+        formatted = formatted.substring(0, headerEnd) + newBody + formatted.substring(footerStart);
       }
+
+      // Asegurar formato correcto: líneas separadas por \n
+      // Dividir por líneas existentes y reconstruir
+      const lines = formatted.split(/\r?\n/).filter(line => line.trim() !== '');
+      formatted = lines.join('\n') + '\n';
+
+      console.log(`AEAT: Longitud formateada ${name}:`, formatted.length);
+      console.log(`AEAT: ¿Termina con \\n? ${name}:`, formatted.endsWith('\n'));
+
       return formatted;
     };
 
-    return {
-      cert: formatPem(cert),
-      key: formatPem(key)
-    };
+    const formattedCert = formatPem(cert, 'cert');
+    const formattedKey = formatPem(key, 'key');
+
+    // Validar que ambos tengan el formato correcto
+    if (!formattedCert.includes('-----BEGIN') || !formattedCert.includes('-----END')) {
+      console.error("AEAT: Certificado no tiene formato PEM válido");
+      return null;
+    }
+    if (!formattedKey.includes('-----BEGIN') || !formattedKey.includes('-----END')) {
+      console.error("AEAT: Clave no tiene formato PEM válido");
+      return null;
+    }
+
+    return { cert: formattedCert, key: formattedKey };
   }
 
   return null;
