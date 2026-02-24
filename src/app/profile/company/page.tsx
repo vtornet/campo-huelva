@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import CifInput from "@/components/CifInput";
 
 export default function CompanyProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -16,6 +17,10 @@ export default function CompanyProfilePage() {
   const [dataConfirmed, setDataConfirmed] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
+
+  // Estado de validación del CIF
+  const [cifValid, setCifValid] = useState(false);
+  const [cifTouched, setCifTouched] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -87,6 +92,17 @@ export default function CompanyProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Verificar que el CIF es válido
+    if (!cifValid) {
+      showNotification({
+        type: "error",
+        title: "CIF inválido",
+        message: "Por favor, introduce un CIF válido para continuar.",
+      });
+      setCifTouched(true);
+      return;
+    }
 
     // Verificar casilla de confirmación
     if (!dataConfirmed) {
@@ -221,20 +237,22 @@ export default function CompanyProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                CIF *
-              </label>
-              <input
-                type="text"
-                required
+              <CifInput
+                label="CIF *"
                 placeholder="Ej: B12345678"
-                maxLength={9}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 uppercase font-mono"
                 value={formData.cif}
-                onChange={(e) => setFormData({ ...formData, cif: e.target.value.toUpperCase() })}
+                companiesOnly={true}
+                showErrorMessage={cifTouched}
+                onValidChange={(valid, cif) => {
+                  setCifValid(valid);
+                  setCifTouched(true);
+                  setFormData({ ...formData, cif });
+                }}
+                containerClassName=""
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 uppercase font-mono"
               />
               <p className="text-xs text-slate-500 mt-1.5">
-                Introduce el CIF sin espacios ni guiones. El CIF no se modificará una vez guardado por razones de seguridad.
+                El CIF se validará automáticamente. El CIF no se modificará una vez guardado por razones de seguridad.
               </p>
             </div>
 
