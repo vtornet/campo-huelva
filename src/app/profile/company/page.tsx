@@ -66,6 +66,11 @@ export default function CompanyProfilePage() {
             });
             setIsUpdate(true);
             setProfileLoaded(true);
+            // Si ya tiene CIF válido, marcar como verificado
+            if (data.cif) {
+              setCifValid(true);
+              setCompanyVerified(true);
+            }
           }
         })
         .catch(() => {
@@ -172,6 +177,9 @@ export default function CompanyProfilePage() {
     return null;
   }
 
+  // Determinar si mostrar el formulario completo
+  const showFullForm = companyVerified || isUpdate;
+
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center p-4">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-6 md:p-8 shadow-black/5">
@@ -185,12 +193,14 @@ export default function CompanyProfilePage() {
             {isUpdate ? "Editar perfil de empresa" : "Crear perfil de empresa"}
           </h1>
           <p className="text-slate-500">
-            Completa el perfil de tu empresa para publicar ofertas verificadas.
+            {showFullForm
+              ? "Completa los datos de tu empresa. Los campos marcados con * son obligatorios."
+              : "Introduce el CIF de tu empresa para verificarla y completar los datos automáticamente."}
           </p>
         </div>
 
-        {/* Barra de progreso */}
-        {profileLoaded && (
+        {/* Barra de progreso - solo en actualización */}
+        {isUpdate && profileLoaded && (
           <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-indigo-800">Perfil completado</span>
@@ -221,261 +231,253 @@ export default function CompanyProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Datos básicos de la empresa */}
+          {/* PASO 1: CIF - Siempre visible */}
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              Datos de la empresa
+              <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">1</span>
+              Identificación fiscal
             </h3>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nombre de la empresa / Razón social *
+                CIF de la empresa *
               </label>
-              <input
-                type="text"
-                required
-                placeholder="Ej: Agrofruta Huelva S.L."
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-              />
-            </div>
-
-            <div>
               <CifInput
-                label="CIF *"
                 placeholder="Ej: B12345678"
                 value={formData.cif}
                 companiesOnly={true}
                 showErrorMessage={cifTouched}
                 onValidChange={(valid, cif) => {
                   setCifValid(valid);
-                  setCifTouched(true);
-                  setFormData({ ...formData, cif });
-                  // Resetear verificación si cambia el CIF
+                  setFormData((prev) => ({ ...prev, cif }));
+                  // Resetear verificación si cambia el CIF y ya estábamos verificados
                   if (companyVerified && cif !== verificationData?.cif) {
                     setCompanyVerified(false);
                     setVerificationData(null);
                   }
                 }}
                 containerClassName=""
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 uppercase font-mono"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 uppercase font-mono text-lg"
+                disabled={isUpdate} // No permitir editar CIF en actualizaciones
               />
-              <p className="text-xs text-slate-500 mt-1.5">
-                El CIF se validará automáticamente. El CIF no se modificará una vez guardado por razones de seguridad.
-              </p>
+              {!isUpdate && (
+                <p className="text-xs text-slate-500 mt-1.5">
+                  Introduce el CIF de tu empresa. Una vez guardado no se podrá modificar.
+                </p>
+              )}
             </div>
 
-            {/* Verificación de empresa */}
-            {cifValid && (
+            {/* Verificación de empresa - solo si CIF es válido y no es actualización */}
+            {cifValid && !isUpdate && (
               <div>
                 <CompanyVerification
                   cif={formData.cif}
                   onVerified={(data) => {
                     setCompanyVerified(true);
                     setVerificationData(data);
-                    // Auto-llenar razón social si el campo está vacío
-                    if (!formData.companyName && data.razonSocial) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        companyName: data.razonSocial,
-                      }));
-                    }
-                    // Auto-llenar dirección si está disponible
-                    if (data.direccion && !formData.address) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        address: data.direccion as string,
-                      }));
-                    }
-                    if (data.localidad && !formData.city) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        city: data.localidad as string,
-                      }));
-                    }
-                    if (data.provincia && !formData.province) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        province: data.provincia as string,
-                      }));
-                    }
+                    // Auto-llenar todos los campos disponibles
+                    setFormData((prev) => ({
+                      ...prev,
+                      companyName: data.razonSocial || prev.companyName,
+                      address: data.direccion || prev.address,
+                      city: data.localidad || prev.city,
+                      province: data.provincia || prev.province,
+                    }));
                   }}
                 />
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Descripción de la empresa
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Ej: Empresa dedicada al cultivo y comercialización de fresas y fresones en Huelva desde 1995..."
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 resize-none"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Sitio web (opcional)
-              </label>
-              <input
-                type="url"
-                placeholder="Ej: https://www.miempresa.com"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              />
-            </div>
           </div>
 
-          {/* Datos de contacto */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              Persona de contacto
-            </h3>
+          {/* PASO 2: Resto de campos - Solo visible tras verificar o en actualización */}
+          {showFullForm && (
+            <>
+              {/* Datos básicos de la empresa */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">2</span>
+                  Datos de la empresa
+                </h3>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nombre de la persona de contacto
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Juan García García"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                value={formData.contactPerson}
-                onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Nombre de la empresa / Razón social *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Agrofruta Huelva S.L."
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono de contacto *
-              </label>
-              <input
-                type="tel"
-                required
-                placeholder="Ej: 959 123 456"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Descripción de la empresa
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Ej: Empresa dedicada al cultivo y comercialización de fresas y fresones en Huelva desde 1995..."
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 resize-none"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
 
-          {/* Dirección */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Dirección
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Provincia *
-                </label>
-                <select
-                  required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.province}
-                  onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                >
-                  <option value="">Selecciona...</option>
-                  {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Sitio web (opcional)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Ej: https://www.miempresa.com"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Ciudad / Localidad *
-                </label>
-                <select
-                  required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  disabled={!formData.province}
-                >
-                  <option value="">{formData.province ? "Selecciona..." : "Primero selecciona provincia"}</option>
-                  {formData.province && MUNICIPIOS_POR_PROVINCIA[formData.province]?.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+              {/* Datos de contacto */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">3</span>
+                  Persona de contacto
+                </h3>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Nombre de la persona de contacto
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Juan García García"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                    value={formData.contactPerson}
+                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Teléfono de contacto *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ej: 959 123 456"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Dirección completa
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Polígono Industrial La Red, Calle A, Nave 5"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </div>
-          </div>
+              {/* Dirección */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">4</span>
+                  Dirección
+                </h3>
 
-          {/* Confirmación de datos */}
-          <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-            <input
-              type="checkbox"
-              id="dataConfirmation"
-              className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0 mt-0.5"
-              checked={dataConfirmed}
-              onChange={(e) => {
-                setDataConfirmed(e.target.checked);
-                setShowConfirmation(false);
-              }}
-              required
-            />
-            <label htmlFor="dataConfirmation" className="text-sm text-amber-800 cursor-pointer">
-              <strong>Confirmo que los datos aportados son reales</strong>. Esta información será visible públicamente y declaro bajo mi responsabilidad la veracidad de los mismos.
-            </label>
-          </div>
-          {showConfirmation && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-              <p className="text-sm text-red-700">Debes confirmar que los datos son reales antes de guardar.</p>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Provincia *
+                    </label>
+                    <select
+                      required
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                      value={formData.province}
+                      onChange={(e) => setFormData({ ...formData, province: e.target.value, city: "" })}
+                    >
+                      <option value="">Selecciona...</option>
+                      {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Ciudad / Localidad *
+                    </label>
+                    <select
+                      required
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      disabled={!formData.province}
+                    >
+                      <option value="">{formData.province ? "Selecciona..." : "Primero selecciona provincia"}</option>
+                      {formData.province && MUNICIPIOS_POR_PROVINCIA[formData.province]?.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Dirección completa
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Polígono Industrial La Red, Calle A, Nave 5"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Confirmación de datos */}
+              <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <input
+                  type="checkbox"
+                  id="dataConfirmation"
+                  className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 focus:ring-offset-0 mt-0.5"
+                  checked={dataConfirmed}
+                  onChange={(e) => {
+                    setDataConfirmed(e.target.checked);
+                    setShowConfirmation(false);
+                  }}
+                  required
+                />
+                <label htmlFor="dataConfirmation" className="text-sm text-amber-800 cursor-pointer">
+                  <strong>Confirmo que los datos aportados son reales</strong>. Esta información será visible públicamente y declaro bajo mi responsabilidad la veracidad de los mismos.
+                </label>
+              </div>
+              {showConfirmation && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-sm text-red-700">Debes confirmar que los datos son reales antes de guardar.</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold py-4 rounded-2xl hover:from-indigo-700 hover:to-indigo-600 transition-all duration-200 shadow-lg shadow-indigo-500/25 disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none text-lg flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {isUpdate ? "Actualizar perfil" : "Crear perfil"}
+                  </>
+                )}
+              </button>
+            </>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold py-4 rounded-2xl hover:from-indigo-700 hover:to-indigo-600 transition-all duration-200 shadow-lg shadow-indigo-500/25 disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none text-lg flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                {isUpdate ? "Actualizar perfil" : "Crear perfil"}
-              </>
-            )}
-          </button>
         </form>
       </div>
     </div>
