@@ -273,37 +273,55 @@ export default function CompanyProfilePage() {
             {/* Verificación de empresa - solo si CIF es válido y no es actualización */}
             {cifValid && !isUpdate && (
               <div className="space-y-3">
-                <CompanyVerification
-                  cif={formData.cif}
-                  onVerified={(data, method) => {
-                    setCompanyVerified(true);
-                    setVerificationData({ ...data, method });
-                    // Solo autocompletar si hay datos reales de AEAT (no es verificación local genérica)
-                    const isRealData = method === "AEAT" && data.razonSocial && !data.razonSocial.includes("Verificación local");
-                    if (isRealData) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        companyName: data.razonSocial || prev.companyName,
-                        address: data.direccion || prev.address,
-                        city: data.localidad || prev.city,
-                        province: data.provincia || prev.province,
-                      }));
-                    }
-                  }}
-                />
+                {/* Opción 1: Verificar con AEAT (para obtener datos automáticamente) */}
+                <details className="group">
+                  <summary className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 list-none">
+                    <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    Verificar con AEAT (opcional - obtiene datos automáticamente)
+                  </summary>
+                  <div className="mt-3 pl-5">
+                    <CompanyVerification
+                      cif={formData.cif}
+                      onVerified={(data, method) => {
+                        setCompanyVerified(true);
+                        setVerificationData({ ...data, method });
+                        // Solo autocompletar si hay datos reales de AEAT (no es verificación local genérica)
+                        const isRealData = method === "AEAT" && data.razonSocial && !data.razonSocial.includes("Verificación local");
+                        if (isRealData) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            companyName: data.razonSocial || prev.companyName,
+                            address: data.direccion || prev.address,
+                            city: data.localidad || prev.city,
+                            province: data.provincia || prev.province,
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
+                </details>
 
-                {/* Botón para continuar sin verificación AEAT */}
+                {/* Botón principal para continuar */}
                 {!companyVerified && (
                   <button
                     type="button"
                     onClick={() => setCompanyVerified(true)}
-                    className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                    Continuar y rellenar datos manualmente
+                    Continuar al siguiente paso
                   </button>
+                )}
+
+                {/* Mensaje informativo */}
+                {!companyVerified && (
+                  <p className="text-xs text-slate-500 text-center">
+                    ✓ CIF válido. Puedes continuar rellenando los datos de tu empresa manualmente.
+                  </p>
                 )}
               </div>
             )}

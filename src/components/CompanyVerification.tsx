@@ -161,10 +161,8 @@ export function CompanyVerification({ cif, onVerified, disabled }: CompanyVerifi
       )}
 
       {!result?.aeatConfigured && result?.method === "LOCAL" && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-          ℹ️ La verificación con AEAT no está configurada. Se usa validación local (formato del CIF).
-          <br />
-          <span className="text-xs">Para verificación completa, contacta con el administrador.</span>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          ℹ️ <strong>CIF validado correctamente.</strong> Puedes continuar rellenando los datos de tu empresa.
         </div>
       )}
     </div>
