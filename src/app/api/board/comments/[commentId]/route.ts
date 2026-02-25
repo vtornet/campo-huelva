@@ -7,15 +7,15 @@ const prisma = new PrismaClient();
 // POST: Dar like a un comentario
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { commentId } = await params;
     const uid = await authenticateRequest(request);
 
     // Verificar que el comentario existe
     const comment = await prisma.boardComment.findUnique({
-      where: { id: id }
+      where: { id: commentId }
     });
 
     if (!comment) {
@@ -26,7 +26,7 @@ export async function POST(
     const existingLike = await prisma.boardCommentLike.findUnique({
       where: {
         commentId_userId: {
-          commentId: id,
+          commentId: commentId,
           userId: uid
         }
       }
@@ -37,7 +37,7 @@ export async function POST(
       await prisma.boardCommentLike.delete({
         where: {
           commentId_userId: {
-            commentId: id,
+            commentId: commentId,
             userId: uid
           }
         }
@@ -45,7 +45,7 @@ export async function POST(
 
       // Actualizar contador
       await prisma.boardComment.update({
-        where: { id: id },
+        where: { id: commentId },
         data: {
           likesCount: { decrement: 1 }
         }
@@ -57,14 +57,14 @@ export async function POST(
     // Crear el like
     await prisma.boardCommentLike.create({
       data: {
-        commentId: id,
+        commentId: commentId,
         userId: uid
       }
     });
 
     // Actualizar contador
     await prisma.boardComment.update({
-      where: { id: id },
+      where: { id: commentId },
       data: {
         likesCount: { increment: 1 }
       }
@@ -84,14 +84,14 @@ export async function POST(
 // DELETE: Eliminar un comentario (solo el autor o admin)
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { commentId } = await params;
     const uid = await authenticateRequest(request);
 
     const comment = await prisma.boardComment.findUnique({
-      where: { id: id },
+      where: { id: commentId },
       select: { authorId: true, postId: true }
     });
 
@@ -111,7 +111,7 @@ export async function DELETE(
 
     // Eliminar el comentario (las respuestas se eliminan en cascada por el schema)
     await prisma.boardComment.delete({
-      where: { id: id }
+      where: { id: commentId }
     });
 
     // Actualizar contador de comentarios del post
