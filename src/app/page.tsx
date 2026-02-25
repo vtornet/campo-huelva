@@ -35,6 +35,11 @@ const RecommendedOffers = dynamic(
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import PostActions from "@/components/PostActions";
 
+// Componentes del Tablón Social
+import CreateBoardPost from "@/components/CreateBoardPost";
+import BoardPostCard from "@/components/BoardPostCard";
+import { Role } from "@prisma/client";
+
 export default function Dashboard() {
   const { user, loading, error: authError } = useAuth();
   const router = useRouter();
@@ -58,6 +63,12 @@ export default function Dashboard() {
   // Estado para seguimiento de inscripciones
   const [applications, setApplications] = useState<Record<string, string>>({}); // postId -> status
   const [applying, setApplying] = useState<Record<string, boolean>>({}); // postId -> loading
+
+  // ESTADOS DEL TABLÓN SOCIAL
+  const [boardPosts, setBoardPosts] = useState<any[]>([]);
+  const [loadingBoardPosts, setLoadingBoardPosts] = useState(false);
+  const [boardPage, setBoardPage] = useState(1);
+  const [boardHasMore, setBoardHasMore] = useState(true);
 
    // 1. CARGA DE DATOS Y PROTECCIÓN
   useEffect(() => {
@@ -181,20 +192,71 @@ export default function Dashboard() {
 
   // Recargar cuando cambie el filtro o la pestaña (Ofertas/Demandas)
   useEffect(() => {
-    // No cargar posts si estamos en modo BOARD (se navega a otra página)
-    if (viewMode === "BOARD") return;
+    if (viewMode === "BOARD") {
+      // Cargar posts del tablón
+      loadBoardPosts(true);
+      return;
+    }
 
     setPage(1);
     setHasMore(true);
     fetchPosts(true);
   }, [filterProvinces, viewMode, filterTaskTypes]);
 
-  // Navegar al tablón cuando se selecciona la pestaña BOARD
-  useEffect(() => {
-    if (viewMode === "BOARD") {
-      router.push('/board');
+  // Función para cargar publicaciones del tablón
+  const loadBoardPosts = async (reset = false) => {
+    if (loadingBoardPosts && !reset) return;
+
+    const currentPage = reset ? 1 : boardPage;
+    setLoadingBoardPosts(true);
+
+    try {
+      const res = await fetch(`/api/board?page=${currentPage}&currentUserId=${user?.uid || ''}`);
+
+      if (!res.ok) {
+        console.error('Error fetching board posts:', res.status);
+        if (reset) setBoardPosts([]);
+        setBoardHasMore(false);
+        return;
+      }
+
+      const newPosts = await res.json();
+
+      if (Array.isArray(newPosts)) {
+        if (reset) {
+          setBoardPosts(newPosts);
+        } else {
+          setBoardPosts(prev => [...prev, ...newPosts]);
+        }
+        setBoardHasMore(newPosts.length >= 10);
+        if (!reset) setBoardPage(prev => prev + 1);
+      } else {
+        console.error('Respuesta no es array:', newPosts);
+        if (reset) setBoardPosts([]);
+        setBoardHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error cargando posts del tablón:', error);
+      if (reset) setBoardPosts([]);
+      setBoardHasMore(false);
+    } finally {
+      setLoadingBoardPosts(false);
     }
-  }, [viewMode, router]);
+  };
+
+  const handleLoadMoreBoard = () => {
+    loadBoardPosts();
+  };
+
+  const handleUpdateBoardPost = (postId: string, updates: any) => {
+    setBoardPosts(prev => prev.map(post =>
+      post.id === postId ? { ...post, ...updates } : post
+    ));
+  };
+
+  const handleDeleteBoardPost = (postId: string) => {
+    setBoardPosts(prev => prev.filter(post => post.id !== postId));
+  };
 
   // Cargar contador de mensajes no leídos
   useEffect(() => {
@@ -949,6 +1011,79 @@ export default function Dashboard() {
               </button>
             )}
           </div>
+          )}
+
+          {/* === CONTENIDO DEL TABLÓN SOCIAL === */}
+          {viewMode === "BOARD" && (
+            <div className="space-y-4">
+              {/* Formulario para crear post - Solo para no empresas */}
+              {role !== Role.COMPANY ? (
+                <CreateBoardPost onPostCreated={() => loadBoardPosts(true)} />
+              ) : (
+                /* Aviso para empresas */
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl mb-6">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <h3 className="font-semibold text-amber-800">Las empresas no pueden publicar en el tablón</h3>
+                      <p className="text-sm text-amber-700 mt-1">
+                        El tablón es un espacio para que trabajadores y profesionales del sector se comuniquen.
+                        Si quieres publicar una oferta de empleo, utiliza la sección de <button
+                          onClick={() => setViewMode("OFFERS")}
+                          className="underline font-medium hover:text-amber-900"
+                        >Ofertas</button>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de posts del tablón */}
+              {loadingBoardPosts && boardPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                  <p className="text-slate-500 mt-3">Cargando publicaciones...</p>
+                </div>
+              ) : boardPosts.length === 0 ? (
+                <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Tablón vacío</h3>
+                  <p className="text-slate-500 text-sm">
+                    Sé el primero en compartir algo con la comunidad.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {boardPosts.map(post => (
+                    <BoardPostCard
+                      key={post.id}
+                      post={post}
+                      onUpdate={handleUpdateBoardPost}
+                      onDelete={handleDeleteBoardPost}
+                    />
+                  ))}
+
+                  {/* Cargar más */}
+                  {boardHasMore && (
+                    <div className="text-center py-4">
+                      <button
+                        onClick={handleLoadMoreBoard}
+                        disabled={loadingBoardPosts}
+                        className="px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors font-medium text-sm"
+                      >
+                        {loadingBoardPosts ? 'Cargando...' : 'Cargar más'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
 
