@@ -96,7 +96,10 @@ export default function BoardCommentSection({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await user.getIdToken()}`
         },
-        body: JSON.stringify({ content: newComment.trim() })
+        body: JSON.stringify({
+          content: newComment.trim(),
+          userId: user.uid // Fallback para cuando Firebase Admin no está configurado
+        })
       });
 
       if (res.ok) {
@@ -141,7 +144,8 @@ export default function BoardCommentSection({
         },
         body: JSON.stringify({
           content: replyText.trim(),
-          parentId: commentId
+          parentId: commentId,
+          userId: user.uid // Fallback para cuando Firebase Admin no está configurado
         })
       });
 
@@ -180,8 +184,12 @@ export default function BoardCommentSection({
       const res = await fetch(`/api/board-comments/${commentId}`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${await user.getIdToken()}`
-        }
+        },
+        body: JSON.stringify({
+          userId: user.uid // Fallback para cuando Firebase Admin no está configurado
+        })
       });
 
       if (res.ok) {

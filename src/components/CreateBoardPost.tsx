@@ -70,7 +70,10 @@ export default function CreateBoardPost({ onPostCreated }: CreateBoardPostProps)
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await user.getIdToken()}`
         },
-        body: JSON.stringify({ content: content.trim() })
+        body: JSON.stringify({
+          content: content.trim(),
+          userId: user.uid // Enviar userId como fallback para cuando Firebase Admin no esté configurado
+        })
       });
 
       if (res.ok) {

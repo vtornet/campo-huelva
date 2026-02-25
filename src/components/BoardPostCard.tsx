@@ -129,7 +129,10 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await user.getIdToken()}`
-        }
+        },
+        body: JSON.stringify({
+          userId: user.uid // Fallback para cuando Firebase Admin no está configurado
+        })
       });
 
       if (res.ok) {

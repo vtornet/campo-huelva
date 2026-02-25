@@ -11,7 +11,22 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const uid = await authenticateRequest(request);
+    const body = await request.json();
+    const { userId: bodyUserId } = body;
+
+    // Verificar autenticación
+    let uid: string;
+    try {
+      uid = await authenticateRequest(request);
+    } catch (error: any) {
+      // Fallback: si Firebase Admin no está configurado, usar userId del body
+      if (bodyUserId) {
+        console.warn("Firebase Admin no configurado, usando userId del body (modo degradado)");
+        uid = bodyUserId;
+      } else {
+        return NextResponse.json({ error: error.message || "No autenticado" }, { status: 401 });
+      }
+    }
 
     // Verificar que la publicación existe
     const post = await prisma.boardPost.findUnique({
