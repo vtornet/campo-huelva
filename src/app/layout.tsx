@@ -3,9 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationsProvider } from "@/components/Notifications";
+import { CookieProvider } from "@/context/CookieContext";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
 import Footer from "@/components/Footer";
+import { CookieBanner } from "@/components/CookieBanner";
+import { CookieSettings } from "@/components/CookieSettings";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -131,14 +134,18 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <NotificationsProvider>
-            <div className="flex flex-col min-h-screen">
-              {children}
-              <Footer />
-            </div>
-            <ServiceWorkerProvider />
-            <PWAInstaller />
-          </NotificationsProvider>
+          <CookieProvider>
+            <NotificationsProvider>
+              <div className="flex flex-col min-h-screen">
+                {children}
+                <Footer />
+              </div>
+              <ServiceWorkerProvider />
+              <PWAInstaller />
+              <CookieBanner />
+              <CookieSettings />
+            </NotificationsProvider>
+          </CookieProvider>
         </AuthProvider>
       </body>
     </html>
