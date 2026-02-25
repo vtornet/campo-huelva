@@ -385,6 +385,22 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Aviso Legal
 - [ ] Contacto y soporte
 
+### 20. Verificación de Empresas con AEAT (PENDIENTE)
+- [ ] Verificación automática de empresas mediante CIF a través de API de AEAT
+- [ ] Uso de certificado electrónico para autenticación con AEAT
+- [ ] **Estado**: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
+- [ ] **Nota**: Dejar para más adelante. Actualmente la verificación de empresas es manual.
+
+### ✅ 21. Tablón Social (COMPLETADO)
+- [x] Nueva pestaña "Tablón" junto a "Ofertas" y "Demandas"
+- [x] Publicaciones tipo red social (compartir coche, buscar compañeros, etc.)
+- [x] Aviso al crear publicación: no se permiten ofertas/demandas de empleo
+- [x] Solo usuarios no empresas pueden publicar (trabajadores, manijeros, ingenieros, encargados, tractoristas)
+- [x] Botones en publicaciones: Like, Compartir, Denunciar, Contactar, Comentar
+- [x] Comentarios anidados con respuestas
+- [x] Botones en comentarios: Like, Responder, Denunciar
+- [x] Respuestas a comentarios también con Like y Denunciar
+
 ## Funcionalidades Ya Implementadas
 
 ### Autenticación y Usuarios

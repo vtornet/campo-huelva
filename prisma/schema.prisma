@@ -35,6 +35,12 @@ model User {
   likes           Like[]          @relation("PostLikes")
   shares          Share[]         @relation("PostShares")
 
+  // Tablón social
+  boardPosts      BoardPost[]
+  boardComments   BoardComment[]
+  boardPostLikes  BoardPostLike[]
+  boardCommentLikes BoardCommentLike[]
+
   // Sistema de Compañeros (Relación N a N)
   followedBy      Connection[]  @relation("followedBy")
   following       Connection[]  @relation("following")
@@ -50,6 +56,9 @@ model User {
   // Denuncias (reportado por otros usuarios)
   reportsReceived   Report[]   @relation("ReportedUser")
   reportsFiled     Report[]   @relation("Reporter")
+
+  // Denuncias del tablón
+  boardReportsFiled  BoardReport[] @relation("BoardReporter")
 
   // Notificaciones donde este usuario es la entidad relacionada
   notificationsAsRelated Notification[] @relation("NotificationUser")
@@ -526,6 +535,139 @@ model Message {
   @@index([receiverId])
 }
 
+// === TABLÓN SOCIAL ===
+model BoardPost {
+  id          String   @id @default(uuid())
+  content     String   // Contenido de la publicación
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  likesCount  Int      @default(0)
+  commentsCount Int    @default(0)
+
+  // Moderación
+  status      BoardPostStatus @default(ACTIVE)
+  moderatedBy String?
+  moderatedAt DateTime?
+  moderationReason String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  comments    BoardComment[]
+  likes       BoardPostLike[]
+  reports     BoardReport[]  @relation("ReportedBoardPost")
+
+  @@index([authorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum BoardPostStatus {
+  ACTIVE   // Visible en el tablón
+  HIDDEN   // Oculto temporalmente
+  REMOVED  // Eliminado
+}
+
+model BoardComment {
+  id          String   @id @default(uuid())
+  content     String
+  postId      String
+  post        BoardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Para respuestas anidadas
+  parentId    String?  // Si es null, es comentario principal. Si tiene valor, es respuesta.
+  parent      BoardComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     BoardComment[] @relation("CommentReplies")
+
+  likesCount  Int      @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  likes       BoardCommentLike[]
+  reports     BoardReport[]  @relation("ReportedBoardComment")
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model BoardPostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  post      BoardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model BoardCommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  comment   BoardComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model BoardReport {
+  id          String   @id @default(uuid())
+  type        BoardReportType
+
+  // Quién denuncia
+  reporterId  String
+  reporter    User     @relation("BoardReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  // Qué se denuncia
+  reportedPostId   String?
+  reportedPost     BoardPost? @relation("ReportedBoardPost", fields: [reportedPostId], references: [id], onDelete: Cascade)
+  reportedCommentId String?
+  reportedComment  BoardComment? @relation("ReportedBoardComment", fields: [reportedCommentId], references: [id], onDelete: Cascade)
+
+  reason      String
+  description String?
+
+  // Estado y resolución
+  status      BoardReportStatus @default(PENDING)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  resolution  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+enum BoardReportType {
+  POST
+  COMMENT
+}
+
+enum BoardReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
 // === NOTIFICACIONES ===
 model Notification {
   id          String   @id @default(uuid())
@@ -562,4 +704,7 @@ enum NotificationType {
   ADMIN_ACTION      // Acción de administrador
   POST_LIKE         // Alguien dio like a tu publicación
   POST_SHARE        // Alguien compartió tu publicación
+  BOARD_COMMENT     // Nuevo comentario en tu publicación del tablón
+  BOARD_REPLY       // Nueva respuesta a tu comentario
+  BOARD_POST_LIKE   // Alguien dio like a tu publicación del tablón
 }

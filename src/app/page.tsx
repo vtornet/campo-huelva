@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [userData, setUserData] = useState<any>(null);
 
   // ESTADOS DEL FEED (NUEVOS)
-  const [viewMode, setViewMode] = useState<"OFFERS" | "DEMANDS">("OFFERS"); // ¿Qué estamos viendo?
+  const [viewMode, setViewMode] = useState<"OFFERS" | "DEMANDS" | "BOARD">("OFFERS"); // ¿Qué estamos viendo?
   const [posts, setPosts] = useState<any[]>([]); // Usamos 'posts' en vez de 'offers' porque pueden ser demandas
   const [filterProvinces, setFilterProvinces] = useState<string[]>([]); // Multiselección de provincias
   const [filterTaskTypes, setFilterTaskTypes] = useState<string[]>([]); // Multiselección de tipos de tarea
@@ -181,10 +181,20 @@ export default function Dashboard() {
 
   // Recargar cuando cambie el filtro o la pestaña (Ofertas/Demandas)
   useEffect(() => {
+    // No cargar posts si estamos en modo BOARD (se navega a otra página)
+    if (viewMode === "BOARD") return;
+
     setPage(1);
     setHasMore(true);
     fetchPosts(true);
   }, [filterProvinces, viewMode, filterTaskTypes]);
+
+  // Navegar al tablón cuando se selecciona la pestaña BOARD
+  useEffect(() => {
+    if (viewMode === "BOARD") {
+      router.push('/board');
+    }
+  }, [viewMode, router]);
 
   // Cargar contador de mensajes no leídos
   useEffect(() => {
@@ -564,9 +574,10 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto p-4 md:p-6">
 
         {/* === OFERTAS RECOMENDADAS (IA) === */}
-        <RecommendedOffers userId={user.uid} userRole={userData?.role} />
+        {viewMode !== "BOARD" && <RecommendedOffers userId={user.uid} userRole={userData?.role} />}
 
         {/* === BOTONES DE ACCIÓN (PUBLICAR) === */}
+        {viewMode !== "BOARD" && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 flex flex-wrap gap-4 items-center shadow-black/5">
            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Publicar</h3>
 
@@ -609,11 +620,12 @@ export default function Dashboard() {
              </>
            )}
         </div>
+        )}
 
         {/* === FEED CON PESTAÑAS === */}
         <div>
 
-          {/* PESTAÑAS SUPERIORES (OFERTAS VS DEMANDAS) */}
+          {/* PESTAÑAS SUPERIORES (OFERTAS VS DEMANDS VS TABLÓN) */}
           <div className="flex gap-6 mb-6 border-b border-slate-200/60">
             <button
               onClick={() => setViewMode("OFFERS")}
@@ -629,9 +641,17 @@ export default function Dashboard() {
               Candidatos y demandas
               {viewMode === "DEMANDS" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 rounded-full"></span>}
             </button>
+            <button
+              onClick={() => setViewMode("BOARD")}
+              className={`pb-4 px-1 font-semibold text-base transition-all duration-200 relative ${viewMode === "BOARD" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+            >
+              Tablón
+              {viewMode === "BOARD" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full"></span>}
+            </button>
           </div>
 
-          {/* FILTROS */}
+          {/* FILTROS - Solo para Ofertas y Demandas */}
+          {viewMode !== "BOARD" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             {/* Filtro de Provincias */}
             <div>
@@ -665,8 +685,10 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+          )}
 
-          {/* LISTADO DE POSTS (CON ESTILOS SEGÚN TIPO) */}
+          {/* LISTADO DE POSTS (CON ESTILOS SEGÚN TIPO) - Solo para Ofertas y Demandas */}
+          {viewMode !== "BOARD" && (
           <div className="space-y-4">
             {posts.length === 0 && !loadingPosts ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
@@ -927,6 +949,7 @@ export default function Dashboard() {
               </button>
             )}
           </div>
+          )}
         </div>
 
       </div>
