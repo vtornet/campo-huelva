@@ -7,6 +7,7 @@ import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 import CifInput from "@/components/CifInput";
 import CompanyVerification from "@/components/CompanyVerification";
+import PhoneInput from "@/components/PhoneInput";
 
 export default function CompanyProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -398,19 +399,13 @@ export default function CompanyProfilePage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Teléfono de contacto *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Ej: 959 123 456"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
+                <PhoneInput
+                  label="Teléfono de contacto"
+                  value={formData.phone}
+                  onChange={(value) => setFormData({ ...formData, phone: value })}
+                  required
+                  helperText="Para que los trabajadores puedan contactar contigo"
+                />
               </div>
 
               {/* Dirección */}

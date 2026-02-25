@@ -7,6 +7,7 @@ import { useNotifications } from "@/components/Notifications";
 import { CULTIVOS, PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
+import PhoneInput from "@/components/PhoneInput";
 
 export default function WorkerProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -280,17 +281,12 @@ export default function WorkerProfilePage() {
                   placeholder="Tu nombre completo"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Teléfono *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="600 123 456"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-              </div>
+              <PhoneInput
+                label="Teléfono"
+                value={formData.phone}
+                onChange={(value) => setFormData({ ...formData, phone: value })}
+                required
+              />
             </div>
           </div>
 
