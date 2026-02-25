@@ -124,7 +124,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/board/${post.id}/like`, {
+      const res = await fetch(`/api/board-posts/${post.id}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/board/${post.id}`, {
+      const res = await fetch(`/api/board-posts/${post.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${await user.getIdToken()}`

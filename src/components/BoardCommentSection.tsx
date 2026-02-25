@@ -68,7 +68,7 @@ export default function BoardCommentSection({
   const loadComments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/board/${postId}/comments?currentUserId=${user?.uid || ''}`);
+      const res = await fetch(`/api/board-posts/${postId}/comments?currentUserId=${user?.uid || ''}`);
       if (res.ok) {
         const data = await res.json();
         setComments(data);
@@ -90,7 +90,7 @@ export default function BoardCommentSection({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/board/${postId}/comments`, {
+      const res = await fetch(`/api/board-posts/${postId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export default function BoardCommentSection({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/board/${postId}/comments`, {
+      const res = await fetch(`/api/board-posts/${postId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ export default function BoardCommentSection({
     }
 
     try {
-      const res = await fetch(`/api/board/comments/${commentId}`, {
+      const res = await fetch(`/api/board-comments/${commentId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${await user.getIdToken()}`
@@ -227,7 +227,7 @@ export default function BoardCommentSection({
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/board/comments/${commentId}`, {
+      const res = await fetch(`/api/board-comments/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${await user.getIdToken()}`
