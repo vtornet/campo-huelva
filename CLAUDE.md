@@ -245,7 +245,9 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Estados de carga en todas las operaciones async (loading states)
 - [x] Pantallas de error personalizadas (404 not-found.tsx, 500 error.tsx)
 - [x] Componentes de Skeleton reutilizables (Skeleton.tsx con PostCardSkeleton, ProfileSkeleton, etc.)
-- [ ] Validaciones avanzadas (formato de teléfono, email, etc.) - pendiente de implementar en cada formulario
+- [x] **Validaciones avanzadas** (teléfono +34, email, CIF/NIF/NIE)
+  - Módulo `src/lib/validations.ts` con validaciones RGPD
+  - Componente `PhoneInput` aplicado a 6 perfiles de usuario
 
 ### ✅ 10. Componentes de UI Reutilizables (COMPLETADO)
 - [x] **ConfirmDialog** (`src/components/ConfirmDialog.tsx`): Modal de confirmación para reemplazar `window.confirm()`
@@ -349,12 +351,18 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
 - [ ] Probar en modo offline (PWA ya implementada)
 
-### 18. Legal / Comunicación (BLOQUEANTE PARA BETA)
-- [ ] Política de Privacidad (RGPD compliant)
-- [ ] Términos y Condiciones de uso
-- [ ] Política de Cookies
-- [ ] Aviso Legal
-- [ ] Contacto y soporte
+### ✅ 18. Legal / Comunicación (COMPLETADO - 25/02/2026)
+- [x] **Documentos legales RGPD compliant**
+  - Política de Privacidad (`/privacy`) - Responsable: Víctor José Tornet García, Appstracta
+  - Términos y Condiciones (`/terms`)
+  - Política de Cookies (`/cookies`)
+  - Aviso Legal (`/legal`) - Datos: NIF 77534989B, Lepe (Huelva)
+  - Registro de Actividades de Tratamiento (RAT) interno - `docs/RAT_INTERNO.md`
+- [x] **Footer global** (`src/components/Footer.tsx`) con enlaces a todos los documentos legales
+- [x] **Casillas de aceptación en registro** (`src/components/LegalCheckboxes.tsx`)
+  - Checkbox obligatorios: Privacidad, Términos, Edad mínima (16+)
+  - Checkbox opcional: Comunicaciones comerciales
+  - Validación antes de registro (email y Google Auth)
 
 ### 19. Verificación de Empresas con AEAT (PENDIENTE)
 - [ ] Verificación automática de empresas mediante CIF a través de API de AEAT
@@ -383,6 +391,29 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Feed principal (`page.tsx`)
   - Detalle de oferta (`offer/[id]/page.tsx`)
   - Candidatos recomendados (`RecommendedWorkers.tsx`)
+- [x] Endpoint `/api/messages/find-or-create` para reutilizar conversaciones existentes
+
+### ✅ 22. Validaciones de Formularios (COMPLETADO - 25/02/2026)
+- [x] **Módulo de validaciones centralizado** (`src/lib/validations.ts`)
+  - `validatePhone()`: Formato español +34 XXX XXX XXX
+  - `formatPhone()`: Formateo automático
+  - `validateEmail()`: Validación robusta de email
+  - `validateTaxId()`: CIF/NIF/NIE con algoritmo oficial
+  - `formatTaxId()`: Formateo B-12345678 o B 12345678 0
+  - `validatePostalCode()`: 5 dígitos, 01-52
+  - Mensajes de error en español (`validationErrors`)
+- [x] **Componente PhoneInput** (`src/components/PhoneInput.tsx`)
+  - Validación en tiempo real (blur)
+  - Iconos de estado (✓/✗)
+  - Formateo automático
+  - Compatible con todos los perfiles
+- [x] **Aplicado a 6 perfiles de usuario**:
+  - Trabajador (`profile/worker/page.tsx`)
+  - Jefe de cuadrilla (`profile/foreman/page.tsx`)
+  - Ingeniero (`profile/engineer/page.tsx`)
+  - Encargado (`profile/encargado/page.tsx`)
+  - Tractorista (`profile/tractorista/page.tsx`)
+  - Empresa (`profile/company/page.tsx`)
 
 ---
 
@@ -390,43 +421,23 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 
 El proyecto está en un estado avanzado. A continuación se detallan las tareas pendientes **ordenadas por prioridad** para llegar a fase Beta:
 
+### ✅ COMPLETADOS (Bloqueantes resueltos)
+
+#### 1. ✅ Legal y Cumplimiento Normativo (COMPLETADO)
+- [x] **Política de Privacidad** (RGPD compliant)
+- [x] **Términos y Condiciones de uso**
+- [x] **Política de Cookies**
+- [x] **Aviso Legal**
+- [x] **Registro de Actividades de Tratamiento (RAT)** interno
+- [x] **Casillas de aceptación** en registro
+
+#### 2. ✅ Validaciones de Formularios (COMPLETADO)
+- [x] Validación de teléfono (formato español +34 XXX XXX XXX)
+- [x] Validación de email (robusta)
+- [x] Validación de CIF/NIF/NIE para empresas
+- [x] Componente PhoneInput aplicado a 6 perfiles
+
 ### 🔴 BLOQUEANTES (OBLIGATORIOS para Beta)
-
-#### 1. Legal y Cumplimiento Normativo
-> **Sin esto no se puede lanzar legalmente en Europa**
-
-- [ ] **Política de Privacidad** (RGPD compliant)
-  - Datos que se recogen (nombre, email, teléfono, ubicación...)
-  - Finalidad del tratamiento
-  - Destinatarios de los datos
-  - Derechos ARCO (Acceso, Rectificación, Cancelación, Oposición)
-  - Base legal para el tratamiento
-  - Transferencias internacionales (Firebase/Google)
-- [ ] **Términos y Condiciones de uso**
-  - Condiciones de acceso y uso
-  - Contenido generado por usuarios (responsabilidad)
-  - Propiedad intelectual
-  - Suspensión/cancelación de cuentas
-  - Legislación aplicable
-- [ ] **Política de Cookies**
-  - Cookies técnicas (necesarias)
-  - Cookies de analytics (si aplica)
-  - Cookies de Firebase
-  - Banner de cookies con consentimiento
-- [ ] **Aviso Legal**
-  - Datos del titular (fundador/empresa)
-  - CIF/Dirección
-  - Datos de contacto
-  - Información registral
-
-#### 2. Validaciones de Formularios
-> **Evitar datos incorrectos en la base de datos**
-
-- [ ] Validación de teléfono (formato español +34 XXX XXX XXX)
-- [ ] Validación de email (más robusta que la básica)
-- [ ] Validación de CIF/CIFNIF para empresas
-- [ ] Validación de número ROPO para ingenieros
-- [ ] Prevenir inyección de contenido malicioso (XSS)
 
 #### 3. Página de Contacto/Soporte
 > **Canal de comunicación obligatorio según RGPD**
@@ -435,9 +446,16 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Email de soporte visible
 - [ ] Política de respuesta (tiempo máximo)
 
+#### 4. Banner de Cookies
+> **Requisito RGPD para consentimiento**
+
+- [ ] Banner de cookies con botones "Aceptar" y "Configurar"
+- [ ] Opción de rechazar cookies no necesarias
+- [ ] Persistencia de consentimiento en localStorage
+
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
-#### 4. Sistema de Notificaciones Push
+#### 5. Sistema de Notificaciones Push
 > **Los usuarios necesitan saber cuando hay actividad relevante**
 
 - [ ] Notificación de nuevos mensajes
@@ -447,7 +465,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Gestión de preferencias de notificación
 - [ ] Configuración de navegador para permisos
 
-#### 5. Testing en Dispositivos Reales
+#### 6. Testing en Dispositivos Reales
 > **Asegurar que funciona en el entorno real del usuario**
 
 - [ ] Probar PWA en Android (Chrome)
@@ -456,7 +474,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Probar en diferentes tamaños de pantalla
 - [ ] Probar con conexión lenta/intermitente
 
-#### 6. Mejoras de UX en Chat
+#### 7. Mejoras de UX en Chat
 > **La experiencia de mensajería debe ser fluida**
 
 - [ ] Indicador de "escribiendo..."
@@ -465,7 +483,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 
-#### 7. Gestión de Denuncias (Admin)
+#### 8. Gestión de Denuncias (Admin)
 > **Panel para moderar contenido reportado**
 
 - [ ] Panel de denuncias pendientes
@@ -476,7 +494,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 
 ### 🟢 DESEABLES (Posponer si es necesario)
 
-#### 8. Internacionalización (i18n)
+#### 9. Internacionalización (i18n)
 > **Temporeros extranjeros necesitan la app en su idioma**
 
 - [ ] Integrar `next-intl`
@@ -484,7 +502,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Selector de idioma persistente
 - [ ] Detección automática de idioma
 
-#### 9. Perfil de Empresa Mejorado
+#### 10. Perfil de Empresa Mejorado
 > **Más información para evaluar a las empresas**
 
 - [ ] Galería de fotos (instalaciones, cultivos)
@@ -492,7 +510,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [ ] Valoraciones de trabajadores (cuando haya reputación)
 - [ ] Historial de ofertas publicadas
 
-#### 10. Dashboard de Analytics
+#### 11. Dashboard de Analytics
 > **Métricas para entender el uso de la plataforma**
 
 - [ ] Usuarios activos diarios/semanales/mensuales
@@ -512,6 +530,20 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - Geolocalización de ofertas (mapa interactivo)
 
 ## Funcionalidades Ya Implementadas
+
+### Legal y Cumplimiento (RGPD)
+- Documentos legales completos (Privacidad, Términos, Cookies, Aviso Legal)
+- Registro de Actividades de Tratamiento (RAT) interno
+- Footer global con enlaces a documentos
+- Casillas de aceptación en registro (obligatorias + opcional)
+- Validaciones de datos (teléfono, email, CIF/NIF/NIE)
+
+### Validaciones de Formularios
+- Módulo centralizado de validaciones (`src/lib/validations.ts`)
+- Validación de teléfono español (+34 XXX XXX XXX)
+- Validación de email robusta
+- Validación de CIF/NIF/NIE con algoritmo oficial
+- Componente PhoneInput aplicado a 6 perfiles de usuario
 
 ### Autenticación y Usuarios
 - Registro con Firebase (email/contraseña y Google)
@@ -537,6 +569,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - Retiro de inscripciones
 - Chat/mensajería interna entre usuarios
 - Notificaciones a empresas cuando alguien se inscribe
+- **Contacto sin mensajes automáticos**: Al pulsar "Contactar" se crea/navega a conversación vacía
 
 ### Interfaz y UX
 - Modales personalizados (ConfirmDialog, PromptDialog) - sin alerts nativos
