@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { NotificationsProvider } from "@/components/Notifications";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -131,7 +132,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <NotificationsProvider>
-            {children}
+            <div className="flex flex-col min-h-screen">
+              {children}
+              <Footer />
+            </div>
             <ServiceWorkerProvider />
             <PWAInstaller />
           </NotificationsProvider>
