@@ -310,7 +310,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
     }
   };
 
-  const handleContact = () => {
+  const handleContact = async () => {
     if (!user) {
       router.push('/login');
       return;
@@ -326,7 +326,38 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
     }
 
     // Crear conversación con el autor
-    router.push(`/messages?userId=${post.authorId}`);
+    setLoading(true);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId: user.uid,
+          receiverId: post.authorId,
+          content: `Hola, me interesa tu publicación del tablón.`,
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/messages/${data.conversationId}`);
+      } else {
+        showNotification({
+          type: 'error',
+          title: 'Error al iniciar conversación',
+          message: 'Inténtalo de nuevo.',
+        });
+      }
+    } catch (error) {
+      console.error('Error al contactar:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error de conexión',
+        message: 'Verifica tu internet e inténtalo de nuevo.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Formatear fecha
