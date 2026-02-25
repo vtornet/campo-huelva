@@ -437,21 +437,24 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] Validación de CIF/NIF/NIE para empresas
 - [x] Componente PhoneInput aplicado a 6 perfiles
 
+#### 3. ✅ Banner de Cookies (COMPLETADO - 25/02/2026)
+- [x] Banner de cookies con botones "Aceptar", "Rechazar" y "Configurar"
+- [x] Modal de configuración lateral con toggles para cada categoría
+- [x] Persistencia de consentimiento en localStorage
+- [x] Panel en página /cookies para ver estado actual y cambiar preferencias
+- [x] Contexto CookieProvider con hook useCookies()
+- [x] Sistema de versiones para futuros cambios
+- [x] Cookies necesarias siempre activas (Firebase Auth, sesión)
+- [x] Categorías opcionales: Analíticas, Marketing
+
 ### 🔴 BLOQUEANTES (OBLIGATORIOS para Beta)
 
-#### 3. Página de Contacto/Soporte
+#### 4. Página de Contacto/Soporte ← ÚLTIMO BLOQUEANTE PARA BETA
 > **Canal de comunicación obligatorio según RGPD**
 
 - [ ] Formulario de contacto (nombre, email, asunto, mensaje)
 - [ ] Email de soporte visible
 - [ ] Política de respuesta (tiempo máximo)
-
-#### 4. Banner de Cookies
-> **Requisito RGPD para consentimiento**
-
-- [ ] Banner de cookies con botones "Aceptar" y "Configurar"
-- [ ] Opción de rechazar cookies no necesarias
-- [ ] Persistencia de consentimiento en localStorage
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
