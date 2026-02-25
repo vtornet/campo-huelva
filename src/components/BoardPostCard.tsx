@@ -325,21 +325,21 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
       return;
     }
 
-    // Crear conversación con el autor
+    // Buscar o crear conversación con el autor (sin enviar mensaje)
     setLoading(true);
     try {
-      const res = await fetch('/api/messages', {
+      const res = await fetch('/api/messages/find-or-create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderId: user.uid,
-          receiverId: post.authorId,
-          content: `Hola, me interesa tu publicación del tablón.`,
+          userId1: user.uid,
+          userId2: post.authorId,
         })
       });
 
       if (res.ok) {
         const data = await res.json();
+        // Navegar directamente a la conversación
         router.push(`/messages/${data.conversationId}`);
       } else {
         showNotification({

@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 interface Worker {
   id: string;
@@ -45,8 +46,10 @@ interface RecommendedWorkersProps {
 
 export default function RecommendedWorkers({ postId, companyId }: RecommendedWorkersProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacting, setContacting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,9 +81,36 @@ export default function RecommendedWorkers({ postId, companyId }: RecommendedWor
     fetchRecommendations();
   }, [postId, companyId]);
 
-  const handleContact = (worker: Worker) => {
-    // Redirigir al chat con el trabajador
-    router.push(`/messages/new?userId=${worker.id}&postId=${postId}`);
+  const handleContact = async (worker: Worker) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (worker.id === user.uid) {
+      return;
+    }
+
+    setContacting(worker.id);
+    try {
+      const res = await fetch('/api/messages/find-or-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId1: user.uid,
+          userId2: worker.id,
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/messages/${data.conversationId}`);
+      }
+    } catch (error) {
+      console.error('Error al contactar:', error);
+    } finally {
+      setContacting(null);
+    }
   };
 
   const handleViewProfile = (worker: Worker) => {
@@ -217,9 +247,10 @@ export default function RecommendedWorkers({ postId, companyId }: RecommendedWor
                       </button>
                       <button
                         onClick={() => handleContact(worker)}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded"
+                        disabled={contacting === worker.id}
+                        className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded disabled:opacity-50"
                       >
-                        Contactar
+                        {contacting === worker.id ? '...' : 'Contactar'}
                       </button>
                     </div>
                   </div>

@@ -1,0 +1,95 @@
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// POST: Buscar conversación existente o crear nueva (sin enviar mensaje)
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { userId1, userId2 } = body;
+
+    if (!userId1 || !userId2) {
+      return NextResponse.json({ error: "Faltan IDs de usuarios" }, { status: 400 });
+    }
+
+    if (userId1 === userId2) {
+      return NextResponse.json({ error: "Los IDs deben ser diferentes" }, { status: 400 });
+    }
+
+    // Buscar si ya existe una conversación entre estos dos usuarios
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        participants: {
+          every: {
+            userId: {
+              in: [userId1, userId2]
+            }
+          }
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                role: true,
+                workerProfile: { select: { fullName: true, profileImage: true } },
+                foremanProfile: { select: { fullName: true, profileImage: true } },
+                engineerProfile: { select: { fullName: true, profileImage: true } },
+                encargadoProfile: { select: { fullName: true, profileImage: true } },
+                tractoristProfile: { select: { fullName: true, profileImage: true } },
+                companyProfile: { select: { companyName: true, profileImage: true } },
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: "desc"
+      }
+    });
+
+    // Si no existe, crear nueva conversación (sin mensaje)
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          participants: {
+            create: [
+              { userId: userId1 },
+              { userId: userId2 }
+            ]
+          }
+        },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  role: true,
+                  workerProfile: { select: { fullName: true, profileImage: true } },
+                  foremanProfile: { select: { fullName: true, profileImage: true } },
+                  engineerProfile: { select: { fullName: true, profileImage: true } },
+                  encargadoProfile: { select: { fullName: true, profileImage: true } },
+                  tractoristProfile: { select: { fullName: true, profileImage: true } },
+                  companyProfile: { select: { companyName: true, profileImage: true } },
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    return NextResponse.json({
+      conversationId: conversation.id,
+      isNewConversation: !conversation || conversation.createdAt.getTime() === conversation.updatedAt.getTime()
+    });
+
+  } catch (error) {
+    console.error("Error finding/creating conversation:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}

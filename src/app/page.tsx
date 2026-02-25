@@ -515,16 +515,14 @@ export default function Dashboard() {
       return;
     }
 
-    // Crear conversación y redirigir
+    // Buscar o crear conversación y redirigir (sin mensaje automático)
     try {
-      const res = await fetch("/api/messages", {
+      const res = await fetch("/api/messages/find-or-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          senderId: user.uid,
-          receiverId: otherUserId,
-          content: `Hola, me interesa tu publicación: ${post.title}`,
-          postId: post.id
+          userId1: user.uid,
+          userId2: otherUserId,
         })
       });
 

@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 23 de febrero de 2026
+**Última actualización**: 25 de febrero de 2026
 
 ## Comandos de Desarrollo
 
@@ -190,7 +190,6 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Incluir conteo de aplicaciones en respuesta
 - [x] **Redirecciones actualizadas** de `/publish` a `/profile` tras guardar/editar
 
-### 5. Filtros Avanzados en Gestión de Candidatos
 ### ✅ 5. Filtros Avanzados en Gestión de Candidatos (COMPLETADO)
 - [x] Filtros en `/applications` para empresas:
   - Por experiencia (años de campaña) - slider de 0 a 20+ años
@@ -305,7 +304,7 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Antes: Iniciaba un chat directamente
   - Ahora: Abre `/offer/[id]` para ver detalles completos e inscribirse
 
-### 17. Seguridad
+### ✅ 16. Seguridad (COMPLETADO)
 - [x] Headers de seguridad (CSP, X-Frame-Options, HSTS implementados en next.config.ts)
 - [x] CSP actualizado para Google Auth (`apis.google.com` en script-src)
 - [x] CSP actualizado para Firebase iframe (`red-agricola-e06cc.firebaseapp.com` en frame-src)
@@ -322,7 +321,7 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 
 **Nota**: Se ha implementado Firebase Admin SDK para verificación de tokens en servidor. Los endpoints de inscripciones, mensajes y denuncias ahora incluyen rate limiting. Durante la transición, se mantiene compatibilidad con el método anterior (userId en body) pero se recomienda migrar al uso de Authorization header.
 
-### ✅ 18. Testing E2E con Playwright (COMPLETADO)
+### ✅ 17. Testing E2E con Playwright (COMPLETADO)
 - [x] **Infraestructura de testing completa**
   - Playwright configurado con soporte multi-browser (Chromium, Firefox, WebKit, Mobile)
   - Tests organizados por funcionalidad (auth, worker, company, pwa)
@@ -350,48 +349,20 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
 - [ ] Probar en modo offline (PWA ya implementada)
 
-### 18. Testing E2E con Playwright (COMPLETADO)
-- [x] **Infraestructura de testing completa**
-  - Playwright configurado con soporte multi-browser (Chromium, Firefox, WebKit, Mobile)
-  - Tests organizados por funcionalidad (auth, worker, company, pwa)
-  - Helpers de autenticación reutilizables
-  - Scripts automáticos para crear usuarios, perfiles y datos de prueba
-- [x] **Tests implementados: 27/39 pasando (69%)**
-  - Autenticación: 5/5 ✅ (login, redirección, errores, Google Auth, logout)
-  - PWA: 10/10 ✅ (manifest, service worker, meta tags, responsive, performance)
-  - Onboarding: 3/3 ✅ (selección de rol, redirecciones)
-  - Empresa: 6/9 (dashboard, publicar, editar, eliminar, aceptar/rechazar)
-  - Trabajador: 5/7 (dashboard, feed, like, publicar demanda)
-- [x] **Scripts de datos de prueba**
-  - `scripts/create-test-users-simple.js` - Crear usuarios en Firebase
-  - `scripts/complete-profiles-direct.js` - Crear perfiles en Prisma
-  - `scripts/seed-test-data.js` - Crear posts de prueba
-- [x] **Documentación generada**
-  - `E2E_IMPLEMENTATION_SUMMARY.md` - Resumen de implementación
-  - `E2E_TEST_RESULTS_FINAL.md` - Resultados detallados
-- [ ] **Tests pendientes de completar** (requieren datos específicos o ajustes menores)
-  - Ver detalle de oferta (requiere click en post)
-  - Inscribirse en oferta (requiere click en post y botón)
-  - Ver mis inscripciones (ajuste de navegación)
-  - Ver lista de candidatos inscritos (requiere datos en BD)
-- [ ] Probar en dispositivos móviles reales (Android e iOS)
-- [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
-- [ ] Probar en modo offline (PWA ya implementada)
-
-### 19. Legal / Comunicación
+### 18. Legal / Comunicación (BLOQUEANTE PARA BETA)
 - [ ] Política de Privacidad (RGPD compliant)
 - [ ] Términos y Condiciones de uso
 - [ ] Política de Cookies
 - [ ] Aviso Legal
 - [ ] Contacto y soporte
 
-### 20. Verificación de Empresas con AEAT (PENDIENTE)
+### 19. Verificación de Empresas con AEAT (PENDIENTE)
 - [ ] Verificación automática de empresas mediante CIF a través de API de AEAT
 - [ ] Uso de certificado electrónico para autenticación con AEAT
 - [ ] **Estado**: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
 - [ ] **Nota**: Dejar para más adelante. Actualmente la verificación de empresas es manual.
 
-### ✅ 21. Tablón Social (COMPLETADO)
+### ✅ 20. Tablón Social (COMPLETADO - 25/02/2026)
 - [x] Nueva pestaña "Tablón" junto a "Ofertas" y "Demandas"
 - [x] Publicaciones tipo red social (compartir coche, buscar compañeros, etc.)
 - [x] Aviso al crear publicación: no se permiten ofertas/demandas de empleo
@@ -400,6 +371,145 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Comentarios anidados con respuestas
 - [x] Botones en comentarios: Like, Responder, Denunciar
 - [x] Respuestas a comentarios también con Like y Denunciar
+- [x] **Botón Contactar crea conversación directamente** (sin mensaje automático)
+- [x] Endpoint `/api/messages/find-or-create` para reutilizar conversaciones existentes
+
+### ✅ 21. Eliminación de Mensajes Automáticos (COMPLETADO - 25/02/2026)
+- [x] **Eliminados todos los mensajes iniciales automáticos** al contactar
+- [x] Antes: Al contactar se enviaba "Hola, me interesa tu publicación..."
+- [x] Ahora: Se crea/navega a la conversación vacía para que el usuario escriba su propio mensaje
+- [x] Afecta a:
+  - Tablón social (`BoardPostCard.tsx`)
+  - Feed principal (`page.tsx`)
+  - Detalle de oferta (`offer/[id]/page.tsx`)
+  - Candidatos recomendados (`RecommendedWorkers.tsx`)
+
+---
+
+## 🎯 Roadmap a Fase Beta
+
+El proyecto está en un estado avanzado. A continuación se detallan las tareas pendientes **ordenadas por prioridad** para llegar a fase Beta:
+
+### 🔴 BLOQUEANTES (OBLIGATORIOS para Beta)
+
+#### 1. Legal y Cumplimiento Normativo
+> **Sin esto no se puede lanzar legalmente en Europa**
+
+- [ ] **Política de Privacidad** (RGPD compliant)
+  - Datos que se recogen (nombre, email, teléfono, ubicación...)
+  - Finalidad del tratamiento
+  - Destinatarios de los datos
+  - Derechos ARCO (Acceso, Rectificación, Cancelación, Oposición)
+  - Base legal para el tratamiento
+  - Transferencias internacionales (Firebase/Google)
+- [ ] **Términos y Condiciones de uso**
+  - Condiciones de acceso y uso
+  - Contenido generado por usuarios (responsabilidad)
+  - Propiedad intelectual
+  - Suspensión/cancelación de cuentas
+  - Legislación aplicable
+- [ ] **Política de Cookies**
+  - Cookies técnicas (necesarias)
+  - Cookies de analytics (si aplica)
+  - Cookies de Firebase
+  - Banner de cookies con consentimiento
+- [ ] **Aviso Legal**
+  - Datos del titular (fundador/empresa)
+  - CIF/Dirección
+  - Datos de contacto
+  - Información registral
+
+#### 2. Validaciones de Formularios
+> **Evitar datos incorrectos en la base de datos**
+
+- [ ] Validación de teléfono (formato español +34 XXX XXX XXX)
+- [ ] Validación de email (más robusta que la básica)
+- [ ] Validación de CIF/CIFNIF para empresas
+- [ ] Validación de número ROPO para ingenieros
+- [ ] Prevenir inyección de contenido malicioso (XSS)
+
+#### 3. Página de Contacto/Soporte
+> **Canal de comunicación obligatorio según RGPD**
+
+- [ ] Formulario de contacto (nombre, email, asunto, mensaje)
+- [ ] Email de soporte visible
+- [ ] Política de respuesta (tiempo máximo)
+
+### 🟡 IMPORTANTES (Recomendados para Beta)
+
+#### 4. Sistema de Notificaciones Push
+> **Los usuarios necesitan saber cuando hay actividad relevante**
+
+- [ ] Notificación de nuevos mensajes
+- [ ] Notificación de inscripciones en ofertas (para empresas)
+- [ ] Notificación de cambios de estado (aceptado/rechazado)
+- [ ] Notificación de nuevas ofertas según perfil
+- [ ] Gestión de preferencias de notificación
+- [ ] Configuración de navegador para permisos
+
+#### 5. Testing en Dispositivos Reales
+> **Asegurar que funciona en el entorno real del usuario**
+
+- [ ] Probar PWA en Android (Chrome)
+- [ ] Probar PWA en iOS (Safari)
+- [ ] Probar instalación desde home screen
+- [ ] Probar en diferentes tamaños de pantalla
+- [ ] Probar con conexión lenta/intermitente
+
+#### 6. Mejoras de UX en Chat
+> **La experiencia de mensajería debe ser fluida**
+
+- [ ] Indicador de "escribiendo..."
+- [ ] Confirmación de lectura (✓✓)
+- [ ] Carga de imágenes en el chat
+- [ ] Envío de ubicación
+- [ ] Búsqueda en el historial de mensajes
+
+#### 7. Gestión de Denuncias (Admin)
+> **Panel para moderar contenido reportado**
+
+- [ ] Panel de denuncias pendientes
+- [ ] Vista detallada de publicación/comentario denunciado
+- [ ] Acciones: ignorar, ocultar contenido, sancionar usuario
+- [ ] Historial de denuncias por usuario
+- [ ] Estadísticas de denuncias
+
+### 🟢 DESEABLES (Posponer si es necesario)
+
+#### 8. Internacionalización (i18n)
+> **Temporeros extranjeros necesitan la app en su idioma**
+
+- [ ] Integrar `next-intl`
+- [ ] Traducir interfaz a Francés, Rumano, Inglés
+- [ ] Selector de idioma persistente
+- [ ] Detección automática de idioma
+
+#### 9. Perfil de Empresa Mejorado
+> **Más información para evaluar a las empresas**
+
+- [ ] Galería de fotos (instalaciones, cultivos)
+- [ ] Descripción extendida de la empresa
+- [ ] Valoraciones de trabajadores (cuando haya reputación)
+- [ ] Historial de ofertas publicadas
+
+#### 10. Dashboard de Analytics
+> **Métricas para entender el uso de la plataforma**
+
+- [ ] Usuarios activos diarios/semanales/mensuales
+- [ ] Ofertas publicadas vs. cubiertas
+- [ ] Tiempo medio de contratación
+- [ ] Roles más activos
+- [ ] Provincias con más actividad
+
+### 🔵 DIFERIDOS (Post-Beta)
+
+- Verificación automática de empresas con AEAT
+- Sistema de reputación/valoraciones
+- Matchmaking inteligente avanzado
+- Modelo de monetización (pagos)
+- Video llamadas integradas
+- Integración con redes sociales (login adicional)
+- Geolocalización de ofertas (mapa interactivo)
 
 ## Funcionalidades Ya Implementadas
 
