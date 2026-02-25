@@ -6,6 +6,7 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
+import LegalCheckboxes from "@/components/LegalCheckboxes";
 
 type TabType = "login" | "register";
 
@@ -21,6 +22,14 @@ export default function LoginPage() {
   // Estados para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Estados para consentimientos legales
+  const [consents, setConsents] = useState({
+    privacy: false,
+    terms: false,
+    age: false,
+    communications: false,
+  });
 
   // Si ya está autenticado, redirigir al inicio
   useEffect(() => {
@@ -43,17 +52,6 @@ export default function LoginPage() {
     return null;
   }
 
-  // Iniciar sesión con Google
-  const handleGoogleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push("/"); // Redirigir al inicio tras login
-    } catch (err) {
-      setError("Error al iniciar con Google");
-    }
-  };
-
   // Iniciar sesión con Email
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +67,12 @@ export default function LoginPage() {
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validar consentimientos obligatorios
+    if (!consents.privacy || !consents.terms || !consents.age) {
+      setError("Debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden");
@@ -95,6 +99,23 @@ export default function LoginPage() {
       } else {
         setError("Error al registrar usuario");
       }
+    }
+  };
+
+  // Login con Google (también requiere aceptación de políticas)
+  const handleGoogleLogin = async () => {
+    // Validar consentimientos obligatorios antes de continuar con Google
+    if (!consents.privacy || !consents.terms || !consents.age) {
+      setError("Para continuar con Google, debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
+      return;
+    }
+
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push("/");
+    } catch (err) {
+      setError("Error al iniciar con Google");
     }
   };
 
@@ -181,11 +202,20 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition"
+              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium"
               data-testid="login-submit"
             >
               Entrar con Email
             </button>
+
+            {/* Casillas de aceptación legal (requeridas para Google Auth) */}
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">Antes de continuar con Google, debes aceptar:</p>
+              <LegalCheckboxes
+                onConsentChange={setConsents}
+                disabled={false}
+              />
+            </div>
           </form>
         )}
 
@@ -263,9 +293,16 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Casillas de aceptación legal */}
+            <LegalCheckboxes
+              onConsentChange={setConsents}
+              disabled={false}
+            />
+
             <button
               type="submit"
-              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition"
+              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium"
             >
               Crear Cuenta
             </button>
