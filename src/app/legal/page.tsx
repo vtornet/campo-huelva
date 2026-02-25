@@ -21,20 +21,11 @@ export default function LegalNotice() {
         {/* Content */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-8 text-slate-700 leading-relaxed">
 
-          {/* Aviso de pendiente */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-            <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3h13.856c1.54 0 2.502-1.667 1.732-3z" />
-              </svg>
-              <div>
-                <h3 className="font-semibold text-amber-800 mb-1">Aviso Importante</h3>
-                <p className="text-sm text-amber-700">
-                  Este Aviso Legal está incompleto. La <strong>LSSI-CE obliga a incluir la dirección física</strong> del titular.
-                  Si no deseas hacer pública tu dirección personal, considera usar un servicio de domiciliación postal.
-                </p>
-              </div>
-            </div>
+          {/* Aviso sobre dirección */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-sm text-blue-700">
+              <strong>Nota:</strong> El titular del servicio reside en <strong>Lepe, Huelva (España)</strong>.
+            </p>
           </div>
 
           {/* 1. Responsable */}
@@ -56,9 +47,9 @@ export default function LegalNotice() {
                   <span className="font-semibold w-40 flex-shrink-0">NIF/CIF:</span>
                   <span>77534989B</span>
                 </li>
-                <li className="flex items-start">
+                <li className="flex">
                   <span className="font-semibold w-40 flex-shrink-0">Dirección:</span>
-                  <span className="text-slate-400 italic">[PENDIENTE - Ver nota superior]</span>
+                  <span>Lepe, Huelva, España</span>
                 </li>
                 <li className="flex">
                   <span className="font-semibold w-40 flex-shrink-0">Localidad:</span>
