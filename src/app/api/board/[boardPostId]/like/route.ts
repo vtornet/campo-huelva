@@ -7,15 +7,15 @@ const prisma = new PrismaClient();
 // POST: Dar like a una publicación
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ boardPostId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { boardPostId } = await params;
     const uid = await authenticateRequest(request);
 
     // Verificar que la publicación existe
     const post = await prisma.boardPost.findUnique({
-      where: { id: id }
+      where: { id: boardPostId }
     });
 
     if (!post) {
@@ -26,7 +26,7 @@ export async function POST(
     const existingLike = await prisma.boardPostLike.findUnique({
       where: {
         postId_userId: {
-          postId: id,
+          postId: boardPostId,
           userId: uid
         }
       }
@@ -37,7 +37,7 @@ export async function POST(
       await prisma.boardPostLike.delete({
         where: {
           postId_userId: {
-            postId: id,
+            postId: boardPostId,
             userId: uid
           }
         }
@@ -45,7 +45,7 @@ export async function POST(
 
       // Actualizar contador
       await prisma.boardPost.update({
-        where: { id: id },
+        where: { id: boardPostId },
         data: {
           likesCount: { decrement: 1 }
         }
@@ -57,14 +57,14 @@ export async function POST(
     // Crear el like
     await prisma.boardPostLike.create({
       data: {
-        postId: id,
+        postId: boardPostId,
         userId: uid
       }
     });
 
     // Actualizar contador
     await prisma.boardPost.update({
-      where: { id: id },
+      where: { id: boardPostId },
       data: {
         likesCount: { increment: 1 }
       }
