@@ -27,7 +27,7 @@ const cookieCategories: CookieCategoryInfo[] = [
 ];
 
 export function CookieSettings() {
-  const { consent, savePreferences, isOpen, setIsOpen, acceptAll, rejectNonNecessary } = useCookies();
+  const { consent, savePreferences, showSettings, closeSettings, acceptAll, rejectNonNecessary } = useCookies();
 
   const [localPreferences, setLocalPreferences] = React.useState({
     analytics: consent.preferences.analytics,
@@ -51,13 +51,13 @@ export function CookieSettings() {
       analytics: consent.preferences.analytics,
       marketing: consent.preferences.marketing,
     });
-    setIsOpen(false);
+    closeSettings();
   };
 
   return (
     <>
       {/* Backdrop */}
-      {isOpen && (
+      {showSettings && (
         <div
           className="fixed inset-0 bg-black/50 z-50 animate-in fade-in duration-200"
           onClick={handleClose}
@@ -67,7 +67,7 @@ export function CookieSettings() {
       {/* Modal */}
       <div
         className={`fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          showSettings ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">

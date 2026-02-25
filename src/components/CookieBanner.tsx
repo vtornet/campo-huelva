@@ -4,10 +4,10 @@ import { useCookies } from '@/context/CookieContext';
 import { X } from 'lucide-react';
 
 export function CookieBanner() {
-  const { acceptAll, rejectNonNecessary, setIsOpen } = useCookies();
+  const { acceptAll, rejectNonNecessary, openSettings } = useCookies();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] border-t border-gray-200 dark:border-gray-700">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           {/* Texto */}
@@ -35,7 +35,7 @@ export function CookieBanner() {
               Rechazar
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={openSettings}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Configurar
@@ -54,10 +54,10 @@ export function CookieBanner() {
 }
 
 export function CookieBannerMinimal() {
-  const { acceptAll, rejectNonNecessary, setIsOpen } = useCookies();
+  const { acceptAll, rejectNonNecessary, openSettings } = useCookies();
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-40 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Icono de cookie */}
@@ -78,7 +78,7 @@ export function CookieBannerMinimal() {
           {/* Botones */}
           <div className="flex flex-col sm:flex-row items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => setIsOpen(true)}
+              onClick={openSettings}
               className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               title="Configurar cookies"
             >

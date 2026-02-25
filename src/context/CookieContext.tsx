@@ -22,8 +22,10 @@ interface CookieContextType {
   rejectNonNecessary: () => void;
   savePreferences: (preferences: Omit<CookiePreferences, 'necessary'>) => void;
   resetConsent: () => void;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
+  showBanner: boolean;  // Controla si se muestra el banner inferior
+  showSettings: boolean; // Controla si se muestra el modal lateral
+  openSettings: () => void;
+  closeSettings: () => void;
 }
 
 const CookieContext = createContext<CookieContextType | undefined>(undefined);
@@ -82,8 +84,11 @@ export function CookieProvider({ children }: CookieProviderProps) {
     hasConsented: false,
     preferences: defaultPreferences,
   });
-  const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // El banner se muestra si NO hay consentimiento
+  const showBanner = isInitialized && !consent.hasConsented;
 
   // Cargar consentimiento al montar
   useEffect(() => {
@@ -91,10 +96,8 @@ export function CookieProvider({ children }: CookieProviderProps) {
 
     if (savedConsent?.hasConsented) {
       setConsent(savedConsent);
-    } else {
-      // No hay consentimiento o expiró por versión
-      setIsOpen(true);
     }
+    // No abrimos el modal automáticamente, solo el banner si no hay consentimiento
 
     setIsInitialized(true);
   }, []);
@@ -126,7 +129,7 @@ export function CookieProvider({ children }: CookieProviderProps) {
     };
     setConsent(newConsent);
     saveConsent(newConsent);
-    setIsOpen(false);
+    setShowSettings(false);
   };
 
   const rejectNonNecessary = () => {
@@ -137,7 +140,7 @@ export function CookieProvider({ children }: CookieProviderProps) {
     };
     setConsent(newConsent);
     saveConsent(newConsent);
-    setIsOpen(false);
+    setShowSettings(false);
   };
 
   const savePreferences = (userPreferences: Omit<CookiePreferences, 'necessary'>) => {
@@ -151,7 +154,7 @@ export function CookieProvider({ children }: CookieProviderProps) {
     };
     setConsent(newConsent);
     saveConsent(newConsent);
-    setIsOpen(false);
+    setShowSettings(false);
   };
 
   const resetConsent = () => {
@@ -160,8 +163,10 @@ export function CookieProvider({ children }: CookieProviderProps) {
       hasConsented: false,
       preferences: defaultPreferences,
     });
-    setIsOpen(true);
   };
+
+  const openSettings = () => setShowSettings(true);
+  const closeSettings = () => setShowSettings(false);
 
   return (
     <CookieContext.Provider
@@ -171,8 +176,10 @@ export function CookieProvider({ children }: CookieProviderProps) {
         rejectNonNecessary,
         savePreferences,
         resetConsent,
-        isOpen,
-        setIsOpen,
+        showBanner,
+        showSettings,
+        openSettings,
+        closeSettings,
       }}
     >
       {children}

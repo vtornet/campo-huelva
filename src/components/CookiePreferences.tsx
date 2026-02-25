@@ -8,11 +8,11 @@ import { Settings } from 'lucide-react';
  * Se puede usar en la página de Política de Cookies para permitir cambiar preferencias.
  */
 export function CookiePreferencesButton() {
-  const { setIsOpen } = useCookies();
+  const { openSettings } = useCookies();
 
   return (
     <button
-      onClick={() => setIsOpen(true)}
+      onClick={openSettings}
       className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
     >
       <Settings className="w-4 h-4" />

@@ -7,7 +7,7 @@ import { CookieProvider } from "@/context/CookieContext";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
 import Footer from "@/components/Footer";
-import { CookieBanner } from "@/components/CookieBanner";
+import { CookieBannerWrapper } from "@/components/CookieBannerWrapper";
 import { CookieSettings } from "@/components/CookieSettings";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -142,7 +142,7 @@ export default function RootLayout({
               </div>
               <ServiceWorkerProvider />
               <PWAInstaller />
-              <CookieBanner />
+              <CookieBannerWrapper />
               <CookieSettings />
             </NotificationsProvider>
           </CookieProvider>
