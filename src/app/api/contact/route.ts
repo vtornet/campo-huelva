@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     if (resend) {
       try {
         const emailData = {
-          from: 'Red Agro <noreply@agroredjob.com>',
+          from: 'Red Agro <onboarding@resend.dev>',
           to: [SUPPORT_EMAIL],
           replyTo: sanitizedEmail,
           subject: `📧 Nuevo contacto: ${sanitizedSubject}`,
