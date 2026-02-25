@@ -52,22 +52,33 @@ export default function BoardPage() {
     try {
       const res = await fetch(`/api/board?page=${currentPage}&currentUserId=${user?.uid || ''}`);
 
-      if (res.ok) {
-        const newPosts = await res.json();
+      if (!res.ok) {
+        console.error('Error fetching posts:', res.status, res.statusText);
+        setPosts([]);
+        setHasMore(false);
+        return;
+      }
 
-        if (Array.isArray(newPosts)) {
-          if (reset) {
-            setPosts(newPosts);
-          } else {
-            setPosts(prev => [...prev, ...newPosts]);
-          }
+      const newPosts = await res.json();
 
-          setHasMore(newPosts.length >= 10);
-          if (!reset) setPage(prev => prev + 1);
+      if (Array.isArray(newPosts)) {
+        if (reset) {
+          setPosts(newPosts);
+        } else {
+          setPosts(prev => [...prev, ...newPosts]);
         }
+
+        setHasMore(newPosts.length >= 10);
+        if (!reset) setPage(prev => prev + 1);
+      } else {
+        console.error('Respuesta no es array:', newPosts);
+        setPosts([]);
+        setHasMore(false);
       }
     } catch (error) {
       console.error('Error cargando posts:', error);
+      setPosts([]);
+      setHasMore(false);
     } finally {
       setLoadingPosts(false);
     }
