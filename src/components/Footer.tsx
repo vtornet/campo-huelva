@@ -31,9 +31,9 @@ export default function Footer() {
               Aviso Legal
             </Link>
             <span className="text-slate-300">•</span>
-            <a href="mailto:contact@appstracta.app" className="hover:text-emerald-600 transition-colors">
+            <Link href="/contact" className="hover:text-emerald-600 transition-colors">
               Contacto
-            </a>
+            </Link>
           </nav>
         </div>
       </div>
