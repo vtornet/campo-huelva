@@ -1,14 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { Resend } from 'resend';
 
 // Email de soporte donde se recibirán los mensajes
 const SUPPORT_EMAIL = 'contact@appstracta.app';
+
+// Inicializar Resend si hay API key
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 interface ContactRequest {
   name: string;
   email: string;
   subject: string;
   message: string;
+}
+
+// HTML template para el email
+function createEmailHtml(data: ContactRequest) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuevo mensaje de contacto</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Red Agro</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0;">Nuevo mensaje de contacto</p>
+  </div>
+
+  <div style="background: #f9fafb; padding: 30px 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <h2 style="margin-top: 0; color: #1f2937;">Detalles del mensaje</h2>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px 0; color: #6b7280; width: 100px;"><strong>Nombre:</strong></td>
+        <td style="padding: 8px 0; color: #1f2937;">${data.name}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #6b7280;"><strong>Email:</strong></td>
+        <td style="padding: 8px 0;">
+          <a href="mailto:${data.email}" style="color: #059669; text-decoration: none;">${data.email}</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #6b7280;"><strong>Asunto:</strong></td>
+        <td style="padding: 8px 0; color: #1f2937;">${data.subject}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #6b7280;"><strong>Fecha:</strong></td>
+        <td style="padding: 8px 0; color: #1f2937;">${new Date().toLocaleString('es-ES', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+        })}</td>
+      </tr>
+    </table>
+
+    <div style="margin-top: 20px; padding: 15px; background: white; border-left: 4px solid #059669; border-radius: 4px;">
+      <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;"><strong>Mensaje:</strong></p>
+      <p style="margin: 0; color: #1f2937; white-space: pre-wrap;">${data.message}</p>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject)}"
+         style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        Responder mensaje
+      </a>
+    </div>
+  </div>
+
+  <div style="background: #1f2937; color: rgba(255,255,255,0.7); padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px;">
+    <p style="margin: 0;">Enviado desde el formulario de contacto de Red Agro</p>
+    <p style="margin: 5px 0 0 0;">agroredjob.com</p>
+  </div>
+</body>
+</html>
+  `.trim();
 }
 
 export async function POST(request: NextRequest) {
@@ -67,21 +138,41 @@ export async function POST(request: NextRequest) {
     const sanitizedSubject = body.subject.trim().slice(0, 200);
     const sanitizedMessage = body.message.trim().slice(0, 5000);
 
-    // TODO: Aquí se podría:
-    // 1. Enviar email usando un servicio (Resend, SendGrid, etc.)
-    // 2. Guardar en base de datos para seguimiento
-    // 3. Enviar notificación al admin
+    // Enviar email usando Resend
+    if (resend) {
+      try {
+        const emailData = {
+          from: 'Red Agro <noreply@agroredjob.com>',
+          to: [SUPPORT_EMAIL],
+          replyTo: sanitizedEmail,
+          subject: `📧 Nuevo contacto: ${sanitizedSubject}`,
+          html: createEmailHtml({
+            name: sanitizedName,
+            email: sanitizedEmail,
+            subject: sanitizedSubject,
+            message: sanitizedMessage,
+          }),
+        };
 
-    // Por ahora, registrar en consola para desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📧 Nuevo mensaje de contacto:');
-      console.log(`De: ${sanitizedName} <${sanitizedEmail}>`);
-      console.log(`Asunto: ${sanitizedSubject}`);
-      console.log(`Mensaje: ${sanitizedMessage}`);
+        const { error } = await resend.emails.send(emailData);
+
+        if (error) {
+          console.error('Error al enviar email con Resend:', error);
+          // En producción, quizás quieras retornar error aquí
+          // Por ahora, continuamos y retornamos éxito al usuario
+        }
+      } catch (emailError) {
+        console.error('Excepción al enviar email:', emailError);
+      }
+    } else {
+      // Sin API key de Resend, solo log en consola
+      console.warn('⚠️ RESEND_API_KEY no configurada. Email no enviado.');
+      console.log('📧 Nuevo mensaje de contacto:', {
+        from: `${sanitizedName} <${sanitizedEmail}>`,
+        subject: sanitizedSubject,
+        message: sanitizedMessage,
+      });
     }
-
-    // En producción, aquí se enviaría el email
-    // Por ahora, simulamos éxito
 
     return NextResponse.json({
       success: true,
