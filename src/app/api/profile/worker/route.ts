@@ -34,6 +34,8 @@ export async function PUT(request: Request) {
       province,
       phone,
       experience = [], // Valor por defecto: array vacío
+      toolsExperience = [],
+      warehouseExperience = [],
       bio,
       hasVehicle,
       canRelocate,
@@ -69,6 +71,8 @@ export async function PUT(request: Request) {
         province,
         phone,
         experience: experience || [], // Aseguramos array vacío si es null/undefined
+        toolsExperience: toolsExperience || [],
+        warehouseExperience: warehouseExperience || [],
         bio,
         hasVehicle,
         canRelocate,
@@ -83,6 +87,8 @@ export async function PUT(request: Request) {
         province,
         phone,
         experience: experience || [], // Aseguramos array vacío si es null/undefined
+        toolsExperience: toolsExperience || [],
+        warehouseExperience: warehouseExperience || [],
         bio,
         hasVehicle,
         canRelocate,

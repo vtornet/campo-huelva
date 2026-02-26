@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO, MUNICIPIOS_POR_PROVINCIA, EXPERIENCIA_ALMACEN, EXPERIENCIA_ALMACEN_ENCARGADO, HERRAMIENTAS_MANUALES } from "@/lib/constants";
 
 type CategoryType = "worker" | "foreman" | "encargado" | "tractorista" | "engineer" | null;
 
@@ -16,14 +16,22 @@ interface FilterState {
   canRelocate?: boolean;
   phytosanitaryLevel?: string;
   foodHandler?: boolean;
+  // Worker - Nuevos campos
+  toolsExperience?: string[];
+  warehouseExperience?: string[];
   // Manijero
   crewSize?: { min: number; max: number } | null;
   hasVan?: boolean;
   ownTools?: boolean;
+  foodHandlerManijero?: boolean;
   // Encargado
   canDriveTractor?: boolean;
   needsAccommodation?: boolean;
   workArea?: string[];
+  warehouseExperienceEncargado?: string[];
+  hasFarmTransformation?: boolean;
+  hasOfficeSkills?: boolean;
+  hasReportSkills?: boolean;
   // Tractorista
   machineryTypes?: string[];
   toolTypes?: string[];
@@ -82,6 +90,8 @@ export default function SearchPage() {
       if (filters.canRelocate !== undefined) params.append("canRelocate", filters.canRelocate.toString());
       if (filters.phytosanitaryLevel) params.append("phytosanitaryLevel", filters.phytosanitaryLevel);
       if (filters.foodHandler !== undefined) params.append("foodHandler", filters.foodHandler.toString());
+      if (filters.toolsExperience?.length) params.append("toolsExperience", filters.toolsExperience.join(","));
+      if (filters.warehouseExperience?.length) params.append("warehouseExperience", filters.warehouseExperience.join(","));
 
       // Manijero
       if (selectedCategory === "foreman") {
@@ -91,6 +101,7 @@ export default function SearchPage() {
         }
         if (filters.hasVan !== undefined) params.append("hasVan", filters.hasVan.toString());
         if (filters.ownTools !== undefined) params.append("ownTools", filters.ownTools.toString());
+        if (filters.foodHandlerManijero !== undefined) params.append("foodHandlerManijero", filters.foodHandlerManijero.toString());
       }
 
       // Encargado
@@ -98,6 +109,10 @@ export default function SearchPage() {
         if (filters.canDriveTractor !== undefined) params.append("canDriveTractor", filters.canDriveTractor.toString());
         if (filters.needsAccommodation !== undefined) params.append("needsAccommodation", filters.needsAccommodation.toString());
         if (filters.workArea?.length) params.append("workArea", filters.workArea.join(","));
+        if (filters.warehouseExperienceEncargado?.length) params.append("warehouseExperienceEncargado", filters.warehouseExperienceEncargado.join(","));
+        if (filters.hasFarmTransformation !== undefined) params.append("hasFarmTransformation", filters.hasFarmTransformation.toString());
+        if (filters.hasOfficeSkills !== undefined) params.append("hasOfficeSkills", filters.hasOfficeSkills.toString());
+        if (filters.hasReportSkills !== undefined) params.append("hasReportSkills", filters.hasReportSkills.toString());
       }
 
       // Tractorista
@@ -422,6 +437,42 @@ export default function SearchPage() {
                         <span className="text-sm font-medium text-slate-700">Carnet manipulador</span>
                       </label>
                     </div>
+
+                    {/* Experiencia en herramientas manuales */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en herramientas manuales</label>
+                      <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                        {HERRAMIENTAS_MANUALES.map(tool => (
+                          <label key={tool} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.toolsExperience?.includes(tool) || false}
+                              onChange={() => toggleArrayItem("toolsExperience", tool)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-sm">{tool}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Experiencia en almacén */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en almacén</label>
+                      <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                        {EXPERIENCIA_ALMACEN.map(exp => (
+                          <label key={exp} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.warehouseExperience?.includes(exp) || false}
+                              onChange={() => toggleArrayItem("warehouseExperience", exp)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-sm">{exp}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </>
                 )}
 
@@ -468,6 +519,17 @@ export default function SearchPage() {
                         <span className="text-sm font-medium text-slate-700">Herramientas propias</span>
                       </label>
                     </div>
+                    <div className="mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.foodHandlerManijero || false}
+                          onChange={(e) => handleFilterChange("foodHandlerManijero", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Carnet manipulador</span>
+                      </label>
+                    </div>
                   </>
                 )}
 
@@ -511,6 +573,59 @@ export default function SearchPage() {
                           </label>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Experiencia en almacén para encargados */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en almacén</label>
+                      <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
+                        {EXPERIENCIA_ALMACEN_ENCARGADO.map(exp => (
+                          <label key={exp} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.warehouseExperienceEncargado?.includes(exp) || false}
+                              onChange={() => toggleArrayItem("warehouseExperienceEncargado", exp)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-sm">{exp}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Habilidades de gestión */}
+                    <div className="mb-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.hasFarmTransformation || false}
+                          onChange={(e) => handleFilterChange("hasFarmTransformation", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Experiencia en transformación de fincas</span>
+                      </label>
+                    </div>
+                    <div className="mb-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.hasOfficeSkills || false}
+                          onChange={(e) => handleFilterChange("hasOfficeSkills", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Manejo de Office</span>
+                      </label>
+                    </div>
+                    <div className="mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.hasReportSkills || false}
+                          onChange={(e) => handleFilterChange("hasReportSkills", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Emisión de informes</span>
+                      </label>
                     </div>
                   </>
                 )}
@@ -842,6 +957,36 @@ export default function SearchPage() {
                 </div>
               )}
 
+              {/* Herramientas manuales y almacén para worker */}
+              {selectedCategory === "worker" && (
+                <div className="mb-6">
+                  {selectedCandidate.toolsExperience && selectedCandidate.toolsExperience.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Herramientas manuales</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCandidate.toolsExperience.map((tool: string) => (
+                          <span key={tool} className="text-sm px-3 py-1 rounded-full bg-stone-100 text-stone-700">
+                            {tool}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedCandidate.warehouseExperience && selectedCandidate.warehouseExperience.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Experiencia en almacén</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCandidate.warehouseExperience.map((exp: string) => (
+                          <span key={exp} className="text-sm px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                            {exp}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {selectedCategory === "foreman" && selectedCandidate.crewSize && (
                 <div className="mb-6">
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Cuadrilla</h4>
@@ -857,6 +1002,9 @@ export default function SearchPage() {
                     )}
                     {selectedCandidate.ownTools && (
                       <span className="text-sm px-3 py-1 rounded-full bg-green-50 text-green-700">Herramientas propias</span>
+                    )}
+                    {selectedCandidate.foodHandler && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-orange-50 text-orange-700">Carnet manipulador</span>
                     )}
                   </div>
                 </div>
@@ -938,6 +1086,29 @@ export default function SearchPage() {
                       </div>
                     </div>
                   )}
+                  {/* Experiencia en almacén para encargado */}
+                  {selectedCandidate.warehouseExperience && selectedCandidate.warehouseExperience.length > 0 && (
+                    <div className="mt-3">
+                      <span className="text-xs text-slate-500">Experiencia en almacén:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedCandidate.warehouseExperience.map((exp: string) => (
+                          <span key={exp} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700">{exp}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Habilidades de gestión */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedCandidate.hasFarmTransformation && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-indigo-50 text-indigo-700">Transformación de fincas</span>
+                    )}
+                    {selectedCandidate.hasOfficeSkills && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-sky-50 text-sky-700">Manejo de Office</span>
+                    )}
+                    {selectedCandidate.hasReportSkills && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-purple-50 text-purple-700">Emisión de informes</span>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1098,6 +1269,23 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                 {candidate.phytosanitaryLevel}
               </span>
             )}
+            {candidate.toolsExperience && candidate.toolsExperience.length > 0 && (
+              <span className="text-xs px-2 py-1 rounded-md bg-stone-100 text-stone-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Herramientas ({candidate.toolsExperience.length})
+              </span>
+            )}
+            {candidate.warehouseExperience && candidate.warehouseExperience.length > 0 && (
+              <span className="text-xs px-2 py-1 rounded-md bg-blue-50 text-blue-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                </svg>
+                Almacén ({candidate.warehouseExperience.length})
+              </span>
+            )}
           </div>
           <button
             onClick={onViewProfile}
@@ -1199,6 +1387,14 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                 Herramientas
               </span>
             )}
+            {candidate.foodHandler && (
+              <span className="text-xs px-2 py-1 rounded-md bg-orange-50 text-orange-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Manipulador
+              </span>
+            )}
           </div>
           <button
             onClick={onViewProfile}
@@ -1280,6 +1476,38 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 Necesita alojamiento
+              </span>
+            )}
+            {candidate.warehouseExperience && candidate.warehouseExperience.length > 0 && (
+              <span className="text-xs px-2 py-1 rounded-md bg-blue-50 text-blue-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                </svg>
+                Almacén ({candidate.warehouseExperience.length})
+              </span>
+            )}
+            {candidate.hasFarmTransformation && (
+              <span className="text-xs px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Transformación fincas
+              </span>
+            )}
+            {candidate.hasOfficeSkills && (
+              <span className="text-xs px-2 py-1 rounded-md bg-sky-50 text-sky-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Office
+              </span>
+            )}
+            {candidate.hasReportSkills && (
+              <span className="text-xs px-2 py-1 rounded-md bg-purple-50 text-purple-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Informes
               </span>
             )}
           </div>

@@ -30,6 +30,7 @@ export async function PUT(request: Request) {
       crewSize, workArea, // Array de zonas
       hasVan, needsBus, ownTools,
       yearsExperience, specialties, bio,
+      foodHandler,
       profileImage // Foto de perfil
     } = body;
 
@@ -82,6 +83,7 @@ export async function PUT(request: Request) {
       yearsExperience: expInt,
       specialties,
       bio,
+      ...(foodHandler !== undefined ? { foodHandler } : {}),
       ...(nameChanged || !existingProfile?.nameLastModified ? { nameLastModified: new Date() } : {}),
       ...(profileImage !== undefined ? { profileImage } : {})
     };

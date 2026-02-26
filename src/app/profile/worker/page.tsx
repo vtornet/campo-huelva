@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { CULTIVOS, PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
+import { CULTIVOS, PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, EXPERIENCIA_ALMACEN, HERRAMIENTAS_MANUALES } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import PhoneInput from "@/components/PhoneInput";
@@ -46,6 +46,8 @@ export default function WorkerProfilePage() {
               foodHandler: data.foodHandler || false,
               phytosanitaryLevel: data.phytosanitaryLevel || "",
               experience: data.experience || [],
+              toolsExperience: data.toolsExperience || [],
+              warehouseExperience: data.warehouseExperience || [],
               profileImage: data.profileImage || "",
             });
 
@@ -86,13 +88,15 @@ export default function WorkerProfilePage() {
     foodHandler: false,
     phytosanitaryLevel: "",
     experience: [] as string[],
+    toolsExperience: [] as string[],
+    warehouseExperience: [] as string[],
     profileImage: "",
   });
 
   // Calcular porcentaje de completitud del perfil
   const calculateCompleteness = () => {
     let filled = 0;
-    let total = 9; // Campos principales a considerar
+    let total = 11; // Campos principales a considerar
 
     if (formData.fullName) filled++;
     if (formData.phone) filled++;
@@ -102,6 +106,8 @@ export default function WorkerProfilePage() {
     if (formData.phytosanitaryLevel) filled++;
     if (formData.foodHandler !== undefined) filled++;
     if (formData.experience.length > 0) filled++;
+    if (formData.toolsExperience.length > 0) filled++;
+    if (formData.warehouseExperience.length > 0) filled++;
     if (formData.bio) filled++;
 
     return Math.round((filled / total) * 100);
@@ -116,6 +122,28 @@ export default function WorkerProfilePage() {
         return { ...prev, experience: prev.experience.filter(c => c !== crop) };
       } else {
         return { ...prev, experience: [...prev.experience, crop] };
+      }
+    });
+  };
+
+  const toggleTool = (tool: string) => {
+    setFormData(prev => {
+      const exists = prev.toolsExperience.includes(tool);
+      if (exists) {
+        return { ...prev, toolsExperience: prev.toolsExperience.filter(t => t !== tool) };
+      } else {
+        return { ...prev, toolsExperience: [...prev.toolsExperience, tool] };
+      }
+    });
+  };
+
+  const toggleWarehouse = (role: string) => {
+    setFormData(prev => {
+      const exists = prev.warehouseExperience.includes(role);
+      if (exists) {
+        return { ...prev, warehouseExperience: prev.warehouseExperience.filter(r => r !== role) };
+      } else {
+        return { ...prev, warehouseExperience: [...prev.warehouseExperience, role] };
       }
     });
   };
@@ -432,6 +460,53 @@ export default function WorkerProfilePage() {
                   <input type="checkbox" className="hidden" checked={formData.experience.includes(crop)} onChange={() => toggleCrop(crop)} />
                   <span className="mr-2">{formData.experience.includes(crop) ? '✓' : ''}</span>
                   {crop}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* HERRAMIENTAS MANUALES */}
+          <div className="bg-stone-50 p-5 rounded-2xl border border-stone-100">
+            <label className="block text-lg font-semibold text-stone-700 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 01-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-3.138-3.138c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 011.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Manejo de herramientas manuales
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {HERRAMIENTAS_MANUALES.map(tool => (
+                <label key={tool} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
+                  formData.toolsExperience.includes(tool)
+                    ? 'bg-stone-200 border-stone-500 text-stone-800 shadow-sm'
+                    : 'border-slate-200 hover:bg-stone-50 text-slate-600'
+                }`}>
+                  <input type="checkbox" className="hidden" checked={formData.toolsExperience.includes(tool)} onChange={() => toggleTool(tool)} />
+                  <span className="mr-2">{formData.toolsExperience.includes(tool) ? '✓' : ''}</span>
+                  {tool}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* EXPERIENCIA EN ALMACÉN */}
+          <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
+            <label className="block text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Experiencia en almacén
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {EXPERIENCIA_ALMACEN.map(role => (
+                <label key={role} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
+                  formData.warehouseExperience.includes(role)
+                    ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm'
+                    : 'border-slate-200 hover:bg-blue-50 text-slate-600'
+                }`}>
+                  <input type="checkbox" className="hidden" checked={formData.warehouseExperience.includes(role)} onChange={() => toggleWarehouse(role)} />
+                  <span className="mr-2">{formData.warehouseExperience.includes(role) ? '✓' : ''}</span>
+                  {role}
                 </label>
               ))}
             </div>

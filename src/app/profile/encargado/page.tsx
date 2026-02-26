@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, NIVELES_FITOSANITARIO } from "@/lib/constants";
+import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, CULTIVOS, NIVELES_FITOSANITARIO, EXPERIENCIA_ALMACEN_ENCARGADO } from "@/lib/constants";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import PhoneInput from "@/components/PhoneInput";
@@ -49,6 +49,10 @@ export default function EncargadoProfilePage() {
               workArea: data.workArea || [],
               phytosanitaryLevel: data.phytosanitaryLevel || "",
               foodHandler: data.foodHandler || false,
+              warehouseExperience: data.warehouseExperience || [],
+              hasFarmTransformation: data.hasFarmTransformation || false,
+              hasOfficeSkills: data.hasOfficeSkills || false,
+              hasReportSkills: data.hasReportSkills || false,
               profileImage: data.profileImage || "",
             });
 
@@ -90,13 +94,17 @@ export default function EncargadoProfilePage() {
     workArea: [] as string[],
     phytosanitaryLevel: "",
     foodHandler: false,
+    warehouseExperience: [] as string[],
+    hasFarmTransformation: false,
+    hasOfficeSkills: false,
+    hasReportSkills: false,
     profileImage: "",
   });
 
   // Calcular porcentaje de completitud del perfil
   const calculateCompleteness = () => {
     let filled = 0;
-    let total = 10;
+    let total = 13;
 
     if (formData.fullName) filled++;
     if (formData.phone) filled++;
@@ -107,6 +115,10 @@ export default function EncargadoProfilePage() {
     if (formData.workArea.length > 0) filled++;
     if (formData.phytosanitaryLevel) filled++;
     if (formData.foodHandler !== undefined) filled++;
+    if (formData.warehouseExperience.length > 0) filled++;
+    if (formData.hasFarmTransformation !== undefined) filled++;
+    if (formData.hasOfficeSkills !== undefined) filled++;
+    if (formData.hasReportSkills !== undefined) filled++;
     if (formData.bio) filled++;
 
     return Math.round((filled / total) * 100);
@@ -132,6 +144,17 @@ export default function EncargadoProfilePage() {
         return { ...prev, workArea: prev.workArea.filter(p => p !== province) };
       } else {
         return { ...prev, workArea: [...prev.workArea, province] };
+      }
+    });
+  };
+
+  const toggleWarehouse = (role: string) => {
+    setFormData(prev => {
+      const exists = prev.warehouseExperience.includes(role);
+      if (exists) {
+        return { ...prev, warehouseExperience: prev.warehouseExperience.filter(r => r !== role) };
+      } else {
+        return { ...prev, warehouseExperience: [...prev.warehouseExperience, role] };
       }
     });
   };
@@ -488,6 +511,71 @@ export default function EncargadoProfilePage() {
                   </div>
                 </label>
               </div>
+            </div>
+          </div>
+
+          {/* EXPERIENCIA EN ALMACÉN */}
+          <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
+            <label className="block text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Experiencia en almacén
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {EXPERIENCIA_ALMACEN_ENCARGADO.map(role => (
+                <label key={role} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
+                  formData.warehouseExperience.includes(role)
+                    ? 'bg-blue-200 border-blue-500 text-blue-900 shadow-sm'
+                    : 'border-slate-200 hover:bg-blue-50 text-slate-600'
+                }`}>
+                  <input type="checkbox" className="hidden" checked={formData.warehouseExperience.includes(role)} onChange={() => toggleWarehouse(role)} />
+                  <span className="mr-2">{formData.warehouseExperience.includes(role) ? '✓' : ''}</span>
+                  {role}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* HABILIDADES DE GESTIÓN */}
+          <div className="bg-indigo-50 p-5 rounded-2xl border border-indigo-100">
+            <h2 className="text-lg font-semibold text-indigo-800 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.293H19a2 2 0 012-2z" />
+              </svg>
+              Habilidades de gestión
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200 shadow-sm">
+                <input type="checkbox" className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 focus:ring-offset-0"
+                  checked={formData.hasFarmTransformation} onChange={(e) => setFormData({ ...formData, hasFarmTransformation: e.target.checked })} />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                  </svg>
+                  <span className="text-slate-700 font-medium text-sm">Transformación/conversión de fincas</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200 shadow-sm">
+                <input type="checkbox" className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 focus:ring-offset-0"
+                  checked={formData.hasOfficeSkills} onChange={(e) => setFormData({ ...formData, hasOfficeSkills: e.target.checked })} />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4h6M5 9H3m2 6h6M5 9l3 3m-3-3l3 3" />
+                  </svg>
+                  <span className="text-slate-700 font-medium text-sm">Paquete Office (Excel, Word)</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200 shadow-sm">
+                <input type="checkbox" className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 focus:ring-offset-0"
+                  checked={formData.hasReportSkills} onChange={(e) => setFormData({ ...formData, hasReportSkills: e.target.checked })} />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.293H19a2 2 0 012-2z" />
+                  </svg>
+                  <span className="text-slate-700 font-medium text-sm">Emisión de informes</span>
+                </div>
+              </label>
             </div>
           </div>
 

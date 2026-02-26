@@ -49,11 +49,21 @@ export async function GET(request: Request) {
         const canRelocate = searchParams.get("canRelocate");
         const phytosanitaryLevel = searchParams.get("phytosanitaryLevel");
         const foodHandler = searchParams.get("foodHandler");
+        const toolsExperienceStr = searchParams.get("toolsExperience");
+        const warehouseExperienceStr = searchParams.get("warehouseExperience");
 
         if (hasVehicle === "true") workerWhere.hasVehicle = true;
         if (canRelocate === "true") workerWhere.canRelocate = true;
         if (phytosanitaryLevel) workerWhere.phytosanitaryLevel = { equals: phytosanitaryLevel, mode: "insensitive" };
         if (foodHandler === "true") workerWhere.foodHandler = true;
+        if (toolsExperienceStr) {
+          const tools = toolsExperienceStr.split(",");
+          workerWhere.toolsExperience = { hasSome: tools };
+        }
+        if (warehouseExperienceStr) {
+          const warehouse = warehouseExperienceStr.split(",");
+          workerWhere.warehouseExperience = { hasSome: warehouse };
+        }
 
         candidates = await prisma.workerProfile.findMany({
           where: workerWhere,
@@ -70,6 +80,8 @@ export async function GET(request: Request) {
             canRelocate: true,
             phytosanitaryLevel: true,
             foodHandler: true,
+            toolsExperience: true,
+            warehouseExperience: true,
             profileImage: true,
           },
           orderBy: { yearsExperience: "desc" },
@@ -118,8 +130,10 @@ export async function GET(request: Request) {
         // Filtros específicos
         const hasVan = searchParams.get("hasVan");
         const ownTools = searchParams.get("ownTools");
+        const foodHandlerManijero = searchParams.get("foodHandlerManijero");
         if (hasVan === "true") foremanWhere.hasVan = true;
         if (ownTools === "true") foremanWhere.ownTools = true;
+        if (foodHandlerManijero === "true") foremanWhere.foodHandler = true;
 
         candidates = await prisma.foremanProfile.findMany({
           where: foremanWhere,
@@ -135,6 +149,7 @@ export async function GET(request: Request) {
             crewSize: true,
             hasVan: true,
             ownTools: true,
+            foodHandler: true,
             profileImage: true,
           },
           orderBy: { yearsExperience: "desc" },
@@ -175,13 +190,24 @@ export async function GET(request: Request) {
         const canDriveTractor = searchParams.get("canDriveTractor");
         const needsAccommodation = searchParams.get("needsAccommodation");
         const workAreaStr = searchParams.get("workArea");
+        const warehouseExperienceEncargadoStr = searchParams.get("warehouseExperienceEncargado");
+        const hasFarmTransformation = searchParams.get("hasFarmTransformation");
+        const hasOfficeSkills = searchParams.get("hasOfficeSkills");
+        const hasReportSkills = searchParams.get("hasReportSkills");
 
         if (canDriveTractor === "true") encargadoWhere.canDriveTractor = true;
         if (needsAccommodation === "true") encargadoWhere.needsAccommodation = true;
+        if (hasFarmTransformation === "true") encargadoWhere.hasFarmTransformation = true;
+        if (hasOfficeSkills === "true") encargadoWhere.hasOfficeSkills = true;
+        if (hasReportSkills === "true") encargadoWhere.hasReportSkills = true;
 
         if (workAreaStr) {
           const areas = workAreaStr.split(",");
           encargadoWhere.workArea = { hasSome: areas };
+        }
+        if (warehouseExperienceEncargadoStr) {
+          const warehouse = warehouseExperienceEncargadoStr.split(",");
+          encargadoWhere.warehouseExperience = { hasSome: warehouse };
         }
 
         candidates = await prisma.encargadoProfile.findMany({
@@ -198,6 +224,10 @@ export async function GET(request: Request) {
             canDriveTractor: true,
             needsAccommodation: true,
             workArea: true,
+            warehouseExperience: true,
+            hasFarmTransformation: true,
+            hasOfficeSkills: true,
+            hasReportSkills: true,
             profileImage: true,
           },
           orderBy: { yearsExperience: "desc" },

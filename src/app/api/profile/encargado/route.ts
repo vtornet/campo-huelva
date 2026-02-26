@@ -40,6 +40,10 @@ export async function PUT(request: Request) {
       workArea = [],
       phytosanitaryLevel,
       foodHandler,
+      warehouseExperience = [],
+      hasFarmTransformation,
+      hasOfficeSkills,
+      hasReportSkills,
       profileImage
     } = body;
 
@@ -107,6 +111,10 @@ export async function PUT(request: Request) {
         workArea: workArea || [],
         phytosanitaryLevel,
         foodHandler,
+        warehouseExperience: warehouseExperience || [],
+        hasFarmTransformation,
+        hasOfficeSkills,
+        hasReportSkills,
         profileImage,
       },
       create: {
@@ -123,6 +131,10 @@ export async function PUT(request: Request) {
         workArea: workArea || [],
         phytosanitaryLevel,
         foodHandler,
+        warehouseExperience: warehouseExperience || [],
+        hasFarmTransformation,
+        hasOfficeSkills,
+        hasReportSkills,
         profileImage,
         nameLastModified: fullName ? new Date() : null,
       }

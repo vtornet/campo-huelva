@@ -56,6 +56,7 @@ export default function ForemanProfilePage() {
               ownTools: data.ownTools || false,
               workArea: data.workArea || [],
               specialties: data.specialties || [],
+              foodHandler: data.foodHandler || false,
               profileImage: data.profileImage || "",
             });
 
@@ -91,13 +92,14 @@ export default function ForemanProfilePage() {
     hasVan: false, needsBus: false, ownTools: false,
     workArea: [] as string[],
     specialties: [] as string[],
+    foodHandler: false,
     profileImage: ""
   });
 
   // Calcular porcentaje de completitud del perfil
   const calculateCompleteness = () => {
     let filled = 0;
-    let total = 10; // Campos principales a considerar
+    let total = 11; // Campos principales a considerar
 
     if (formData.fullName) filled++;
     if (formData.phone) filled++;
@@ -108,6 +110,7 @@ export default function ForemanProfilePage() {
     if (formData.workArea.length > 0) filled++;
     if (formData.specialties.length > 0) filled++;
     if (formData.hasVan !== undefined || formData.ownTools !== undefined) filled++;
+    if (formData.foodHandler !== undefined) filled++;
     if (formData.bio) filled++;
 
     return Math.round((filled / total) * 100);
@@ -338,6 +341,15 @@ export default function ForemanProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span className="text-slate-700 font-medium text-sm">Herramientas propias</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50/30 transition-all duration-200 shadow-sm">
+                  <input type="checkbox" className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500 focus:ring-offset-0" checked={formData.foodHandler} onChange={e => setFormData({...formData, foodHandler: e.target.checked})} />
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="text-slate-700 font-medium text-sm">Carnet manipulador de alimentos</span>
                   </div>
                 </label>
             </div>

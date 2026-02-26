@@ -91,8 +91,12 @@ model WorkerProfile {
   foodHandler Boolean  @default(false)
   phytosanitaryLevel String?
 
-  // Experiencia en maquinaria y herramientas
+  // Experiencia en maquinaria (tractores, cosechadoras, etc.)
   machineryExperience String[]
+  // Experiencia en herramientas manuales
+  toolsExperience     String[]
+  // Experiencia en almacén
+  warehouseExperience String[]
   yearsExperience    Int?
   canWorkAway        Boolean  @default(false)
 
@@ -123,6 +127,9 @@ model ForemanProfile {
   yearsExperience Int?
   specialties     String[]
   bio             String?
+
+  // Carnet de manipulador de alimentos
+  foodHandler     Boolean  @default(false)
 
   // Control de modificación de nombre (60 días)
   nameLastModified DateTime?
@@ -225,6 +232,14 @@ model EncargadoProfile {
 
   // Experiencia por cultivos
   cropExperience    String[] // Tipos de cultivo en los que tiene experiencia
+
+  // Experiencia en almacén
+  warehouseExperience String[] // Puestos en almacén (encargado, control calidad, etc.)
+
+  // Habilidades de gestión
+  hasFarmTransformation Boolean @default(false) // Transformación/conversión de fincas
+  hasOfficeSkills       Boolean @default(false) // Paquete Office
+  hasReportSkills       Boolean @default(false) // Emisión de informes
 
   // Disponibilidad de alojamiento
   needsAccommodation Boolean @default(false) // ¿Necesita alojamiento en finca?

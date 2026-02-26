@@ -173,6 +173,41 @@ export const TIPOS_APEROS = [
   "Rastra", "Rulo", "Otro"
 ];
 
+// Experiencia en almacén para trabajadores
+export const EXPERIENCIA_ALMACEN = [
+  "Manipulador/a de alimentos",
+  "Operador/a de carga y descarga",
+  "Operador/a de líneas de envasado",
+  "Responsable de línea",
+  "Operario/a de limpieza",
+  "Auxiliar de calidad"
+];
+
+// Experiencia en almacén para encargados (incluye roles de responsabilidad)
+export const EXPERIENCIA_ALMACEN_ENCARGADO = [
+  "Manipulador/a de alimentos",
+  "Operador/a de carga y descarga",
+  "Operador/a de líneas de envasado",
+  "Responsable de línea",
+  "Operario/a de limpieza",
+  "Auxiliar de calidad",
+  "Encargado/a de almacén",
+  "Control de stock/inventarios",
+  "Control de calidad"
+];
+
+// Herramientas manuales para trabajadores
+export const HERRAMIENTAS_MANUALES = [
+  "Desbrozadora",
+  "Motosierra",
+  "Cortasetos",
+  "Azada/Pala",
+  "Pulverizadora manual",
+  "Tijeras de poda",
+  "Rotovator/Motocultor",
+  "Máquina de atar"
+];
+
 // Tipos de experiencia para encargados
 export const EXPERIENCIAS_ENCARGADO = [
   "Gestión de personal", "Organización de day workers", "Control de calidad",
