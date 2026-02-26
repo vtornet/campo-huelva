@@ -256,7 +256,7 @@ export async function POST(request: Request) {
         type: "CONTACT_REQUEST",
         title: "Nueva solicitud de contacto",
         message: "Alguien quiere añadirte como contacto",
-        link: `/profile/contacts?requests=true`
+        link: `/profile?tab=contacts`
       }
     });
 
