@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
+import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -11,6 +12,9 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-5xl mx-auto">
+        {/* Botón volver */}
+        <PageBackButton />
+
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">

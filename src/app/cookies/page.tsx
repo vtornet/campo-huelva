@@ -3,6 +3,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { CookiePreferencesButton, CookieConsentStatus } from "@/components/CookiePreferences";
+import { PageBackButton } from "@/components/BackButton";
 
 // En Next.js 15 con app router, la metadata se exporta desde un archivo separado
 // o se genera dinámicamente. Para este cliente component, añadimos el título al head.
@@ -18,6 +19,9 @@ export default function CookiePolicy() {
 
       <div className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">
+          {/* Botón volver */}
+          <PageBackButton />
+
           {/* Header */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Política de Cookies</h1>

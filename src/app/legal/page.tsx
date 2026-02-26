@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Aviso Legal",
@@ -12,6 +13,9 @@ export default function LegalNotice() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Botón volver */}
+        <PageBackButton />
+
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Aviso Legal</h1>
