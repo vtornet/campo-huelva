@@ -114,11 +114,11 @@ export default function EncargadoProfilePage() {
     if (formData.cropExperience.length > 0) filled++;
     if (formData.workArea.length > 0) filled++;
     if (formData.phytosanitaryLevel) filled++;
-    if (formData.foodHandler !== undefined) filled++;
+    if (formData.foodHandler) filled++;
     if (formData.warehouseExperience.length > 0) filled++;
-    if (formData.hasFarmTransformation !== undefined) filled++;
-    if (formData.hasOfficeSkills !== undefined) filled++;
-    if (formData.hasReportSkills !== undefined) filled++;
+    if (formData.hasFarmTransformation) filled++;
+    if (formData.hasOfficeSkills) filled++;
+    if (formData.hasReportSkills) filled++;
     if (formData.bio) filled++;
 
     return Math.round((filled / total) * 100);
@@ -428,7 +428,7 @@ export default function EncargadoProfilePage() {
                   <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v5h4a1 1 0 001-1v-6" />
                   </svg>
-                  <span className="text-slate-700 font-medium">Necesito alojamiento en la finca de la empresa</span>
+                  <span className="text-slate-700 font-medium">Disponibilidad para alojarse en finca</span>
                 </div>
               </label>
             </div>
@@ -516,25 +516,19 @@ export default function EncargadoProfilePage() {
 
           {/* EXPERIENCIA EN ALMACÉN */}
           <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
-            <label className="block text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              Experiencia en almacén
+            <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200 shadow-sm">
+              <input type="checkbox" className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-offset-0"
+                checked={formData.warehouseExperience.length > 0} onChange={(e) => setFormData({ ...formData, warehouseExperience: e.target.checked ? ["Sí"] : [] })} />
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <div>
+                  <span className="text-slate-700 font-medium block">Experiencia en almacén</span>
+                  <span className="text-xs text-slate-500">Manipulación, control de calidad, gestión de stock, etc.</span>
+                </div>
+              </div>
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {EXPERIENCIA_ALMACEN_ENCARGADO.map(role => (
-                <label key={role} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
-                  formData.warehouseExperience.includes(role)
-                    ? 'bg-blue-200 border-blue-500 text-blue-900 shadow-sm'
-                    : 'border-slate-200 hover:bg-blue-50 text-slate-600'
-                }`}>
-                  <input type="checkbox" className="hidden" checked={formData.warehouseExperience.includes(role)} onChange={() => toggleWarehouse(role)} />
-                  <span className="mr-2">{formData.warehouseExperience.includes(role) ? '✓' : ''}</span>
-                  {role}
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* HABILIDADES DE GESTIÓN */}
@@ -553,7 +547,7 @@ export default function EncargadoProfilePage() {
                   <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                   </svg>
-                  <span className="text-slate-700 font-medium text-sm">Transformación/conversión de fincas</span>
+                  <span className="text-slate-700 font-medium text-sm">Experiencia en transformación de fincas</span>
                 </div>
               </label>
               <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200 shadow-sm">

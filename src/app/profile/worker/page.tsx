@@ -474,15 +474,15 @@ export default function WorkerProfilePage() {
               </svg>
               Manejo de herramientas manuales
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="flex flex-wrap gap-2">
               {HERRAMIENTAS_MANUALES.map(tool => (
-                <label key={tool} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
+                <label key={tool} className={`flex items-center px-3 py-2 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
                   formData.toolsExperience.includes(tool)
                     ? 'bg-stone-200 border-stone-500 text-stone-800 shadow-sm'
                     : 'border-slate-200 hover:bg-stone-50 text-slate-600'
                 }`}>
                   <input type="checkbox" className="hidden" checked={formData.toolsExperience.includes(tool)} onChange={() => toggleTool(tool)} />
-                  <span className="mr-2">{formData.toolsExperience.includes(tool) ? '✓' : ''}</span>
+                  <span className="mr-1.5">{formData.toolsExperience.includes(tool) ? '✓' : ''}</span>
                   {tool}
                 </label>
               ))}
@@ -497,15 +497,15 @@ export default function WorkerProfilePage() {
               </svg>
               Experiencia en almacén
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-2">
               {EXPERIENCIA_ALMACEN.map(role => (
-                <label key={role} className={`flex items-center p-3 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
+                <label key={role} className={`flex items-center px-3 py-2 rounded-xl border cursor-pointer text-sm transition-all duration-200 font-medium ${
                   formData.warehouseExperience.includes(role)
                     ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm'
                     : 'border-slate-200 hover:bg-blue-50 text-slate-600'
                 }`}>
                   <input type="checkbox" className="hidden" checked={formData.warehouseExperience.includes(role)} onChange={() => toggleWarehouse(role)} />
-                  <span className="mr-2">{formData.warehouseExperience.includes(role) ? '✓' : ''}</span>
+                  <span className="mr-1.5">{formData.warehouseExperience.includes(role) ? '✓' : ''}</span>
                   {role}
                 </label>
               ))}

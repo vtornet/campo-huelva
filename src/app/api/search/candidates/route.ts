@@ -205,9 +205,9 @@ export async function GET(request: Request) {
           const areas = workAreaStr.split(",");
           encargadoWhere.workArea = { hasSome: areas };
         }
-        if (warehouseExperienceEncargadoStr) {
-          const warehouse = warehouseExperienceEncargadoStr.split(",");
-          encargadoWhere.warehouseExperience = { hasSome: warehouse };
+        if (warehouseExperienceEncargadoStr === "true") {
+          // Buscar encargados que tengan experiencia en almacén (array no vacío)
+          encargadoWhere.warehouseExperience = { isEmpty: false };
         }
 
         candidates = await prisma.encargadoProfile.findMany({

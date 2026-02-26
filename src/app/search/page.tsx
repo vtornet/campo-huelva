@@ -28,7 +28,7 @@ interface FilterState {
   canDriveTractor?: boolean;
   needsAccommodation?: boolean;
   workArea?: string[];
-  warehouseExperienceEncargado?: string[];
+  warehouseExperienceEncargado?: boolean;
   hasFarmTransformation?: boolean;
   hasOfficeSkills?: boolean;
   hasReportSkills?: boolean;
@@ -109,7 +109,7 @@ export default function SearchPage() {
         if (filters.canDriveTractor !== undefined) params.append("canDriveTractor", filters.canDriveTractor.toString());
         if (filters.needsAccommodation !== undefined) params.append("needsAccommodation", filters.needsAccommodation.toString());
         if (filters.workArea?.length) params.append("workArea", filters.workArea.join(","));
-        if (filters.warehouseExperienceEncargado?.length) params.append("warehouseExperienceEncargado", filters.warehouseExperienceEncargado.join(","));
+        if (filters.warehouseExperienceEncargado !== undefined) params.append("warehouseExperienceEncargado", filters.warehouseExperienceEncargado.toString());
         if (filters.hasFarmTransformation !== undefined) params.append("hasFarmTransformation", filters.hasFarmTransformation.toString());
         if (filters.hasOfficeSkills !== undefined) params.append("hasOfficeSkills", filters.hasOfficeSkills.toString());
         if (filters.hasReportSkills !== undefined) params.append("hasReportSkills", filters.hasReportSkills.toString());
@@ -576,21 +576,16 @@ export default function SearchPage() {
                     </div>
 
                     {/* Experiencia en almacén para encargados */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Experiencia en almacén</label>
-                      <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2">
-                        {EXPERIENCIA_ALMACEN_ENCARGADO.map(exp => (
-                          <label key={exp} className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 rounded cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={filters.warehouseExperienceEncargado?.includes(exp) || false}
-                              onChange={() => toggleArrayItem("warehouseExperienceEncargado", exp)}
-                              className="rounded text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <span className="text-sm">{exp}</span>
-                          </label>
-                        ))}
-                      </div>
+                    <div className="mb-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.warehouseExperienceEncargado || false}
+                          onChange={(e) => handleFilterChange("warehouseExperienceEncargado", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Experiencia en almacén</span>
+                      </label>
                     </div>
 
                     {/* Habilidades de gestión */}
@@ -1089,12 +1084,7 @@ export default function SearchPage() {
                   {/* Experiencia en almacén para encargado */}
                   {selectedCandidate.warehouseExperience && selectedCandidate.warehouseExperience.length > 0 && (
                     <div className="mt-3">
-                      <span className="text-xs text-slate-500">Experiencia en almacén:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedCandidate.warehouseExperience.map((exp: string) => (
-                          <span key={exp} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700">{exp}</span>
-                        ))}
-                      </div>
+                      <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700">Experiencia en almacén</span>
                     </div>
                   )}
                   {/* Habilidades de gestión */}
@@ -1283,7 +1273,7 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                 </svg>
-                Almacén ({candidate.warehouseExperience.length})
+                Almacén
               </span>
             )}
           </div>
@@ -1483,7 +1473,7 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                 </svg>
-                Almacén ({candidate.warehouseExperience.length})
+                Almacén
               </span>
             )}
             {candidate.hasFarmTransformation && (
