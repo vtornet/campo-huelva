@@ -107,6 +107,7 @@ export default function ContactsPage() {
   };
 
   const handleViewProfile = async (userId: string) => {
+    console.log("CONTACTS PAGE: handleViewProfile called - NEW VERSION");
     setProfileLoading(true);
     try {
       const res = await fetch(`/api/search/user-by-id?id=${userId}`);
