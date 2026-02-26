@@ -45,6 +45,10 @@ model User {
   followedBy      Connection[]  @relation("followedBy")
   following       Connection[]  @relation("following")
 
+  // Sistema de Contactos
+  contactsSent     Contact[]     @relation("ContactRequester")
+  contactsReceived Contact[]   @relation("ContactRecipient")
+
   // Mensajería
   sentMessages      Message[]     @relation("MessageSender")
   receivedMessages  Message[]     @relation("MessageReceiver")
@@ -430,6 +434,29 @@ model Connection {
   @@unique([followerId, followingId])
 }
 
+// === SISTEMA DE CONTACTOS ===
+model Contact {
+  id          String        @id @default(uuid())
+  requesterId String
+  requester   User         @relation("ContactRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User         @relation("ContactRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  status      ContactStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  acceptedAt  DateTime?
+
+  @@unique([requesterId, recipientId])
+  @@index([requesterId])
+  @@index([recipientId])
+  @@index([status])
+}
+
+enum ContactStatus {
+  PENDING   // Solicitud enviada, esperando respuesta
+  ACCEPTED  // Aceptado como contacto
+  BLOCKED   // Bloqueado (no quiere recibir mensajes de esta persona)
+}
+
 // === DENUNCIAS ===
 model Report {
   id          String   @id @default(uuid())
@@ -722,4 +749,6 @@ enum NotificationType {
   BOARD_COMMENT     // Nuevo comentario en tu publicación del tablón
   BOARD_REPLY       // Nueva respuesta a tu comentario
   BOARD_POST_LIKE   // Alguien dio like a tu publicación del tablón
+  CONTACT_REQUEST   // Nueva solicitud de contacto
+  CONTACT_ACCEPTED  // Solicitud de contacto aceptada
 }

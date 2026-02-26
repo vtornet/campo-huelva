@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/components/Notifications';
 import { usePromptDialog } from '@/components/PromptDialog';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
+import { AddContactButton } from '@/components/AddContactButton';
 import BoardCommentSection from '@/components/BoardCommentSection';
 import Link from 'next/link';
 
@@ -342,11 +343,20 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
         // Navegar directamente a la conversación
         router.push(`/messages/${data.conversationId}`);
       } else {
-        showNotification({
-          type: 'error',
-          title: 'Error al iniciar conversación',
-          message: 'Inténtalo de nuevo.',
-        });
+        const data = await res.json();
+        if (data.errorCode === 'NOT_CONTACT') {
+          showNotification({
+            type: 'info',
+            title: 'Primero añade como contacto',
+            message: 'Para enviar mensajes, primero debes añadir a esta persona como contacto.',
+          });
+        } else {
+          showNotification({
+            type: 'error',
+            title: 'Error al iniciar conversación',
+            message: data.error || 'Inténtalo de nuevo.',
+          });
+        }
       }
     } catch (error) {
       console.error('Error al contactar:', error);
@@ -466,6 +476,16 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 01-5.367 2.684m0 9.316a3 3 0 105.368 2.684 3 3 0 01-5.367-2.684" />
             </svg>
           </button>
+
+          {/* Añadir como contacto (no para el propio autor) */}
+          {!isOwner && (
+            <AddContactButton
+              userId={post.authorId}
+              variant="icon"
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all duration-200 font-medium text-sm text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 bg-slate-50"
+              label="Añadir"
+            />
+          )}
 
           {/* Contactar (no para el propio autor) */}
           {!isOwner && (
