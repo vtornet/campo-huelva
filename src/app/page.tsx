@@ -889,55 +889,13 @@ export default function Dashboard() {
                       {post.type === 'SHARED' ? (
                         // Ofertas compartidas (publicadas por admin): sin botones de acción
                         <div className="w-24"></div>
-                      ) : role === 'COMPANY' ? (
-                        // Para empresas: solo mostrar botón en demandas, no en ofertas de otras empresas
-                        post.type === 'DEMAND' ? (
-                          <div className="flex items-center gap-2">
-                            <AddContactButton
-                              userId={post.publisher?.id || post.company?.userId || ""}
-                              variant="icon"
-                              className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-3 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                              label="Añadir"
-                            />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleContact(post);
-                              }}
-                              className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                            >
-                              Contactar
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                              </svg>
-                            </button>
-                          </div>
-                        ) : (
-                          // En ofertas de otras empresas, no mostrar botón principal
-                          <div className="w-24"></div>
-                        )
                       ) : post.type === 'DEMAND' ? (
-                        // Para demandas: botones de contacto y añadir como contacto
-                        <div className="flex items-center gap-2">
-                          <AddContactButton
-                            userId={post.publisher?.id || post.company?.userId || ""}
-                            variant="icon"
-                            className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-3 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                            label="Añadir"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleContact(post);
-                            }}
-                            className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                          >
-                            Contactar
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                          </button>
-                        </div>
+                        // Para demandas: solo botón de añadir como contacto
+                        <AddContactButton
+                          userId={post.publisher?.id || post.company?.userId || ""}
+                          variant="button"
+                          className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
+                        />
                       ) : (
                         // Para ofertas OFICIALES: botón de inscribirse
                         <button

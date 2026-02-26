@@ -8,7 +8,7 @@ import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 
-type TabType = "profile" | "posts" | "contacts" | "search";
+type TabType = "profile" | "posts" | "contacts" | "messages" | "search";
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -24,6 +24,11 @@ export default function UserProfilePage() {
   // Datos de publicaciones
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
+
+  // Datos de contactos
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
 
   // Cargar datos del usuario
   useEffect(() => {
@@ -52,6 +57,13 @@ export default function UserProfilePage() {
     }
   }, [activeTab, user]);
 
+  // Cargar contactos cuando se cambia a la pestaña de contactos
+  useEffect(() => {
+    if (activeTab === "contacts" && user) {
+      loadContacts();
+    }
+  }, [activeTab, user]);
+
   const loadUserPosts = async () => {
     if (!user) return;
     setPostsLoading(true);
@@ -66,6 +78,178 @@ export default function UserProfilePage() {
     } finally {
       setPostsLoading(false);
     }
+  };
+
+  const loadContacts = async () => {
+    if (!user) return;
+    setContactsLoading(true);
+    try {
+      // Fetch contactos aceptados
+      const contactsRes = await fetch(`/api/contacts?uid=${user.uid}`);
+      if (contactsRes.ok) {
+        const data = await contactsRes.json();
+        setContacts(data);
+      }
+
+      // Fetch solicitudes pendientes
+      const requestsRes = await fetch(`/api/contacts?uid=${user.uid}&requests=true`);
+      if (requestsRes.ok) {
+        const data = await requestsRes.json();
+        setPendingRequests(data);
+      }
+    } catch (error) {
+      console.error("Error cargando contactos:", error);
+    } finally {
+      setContactsLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async (contactId: string) => {
+    if (!user) return;
+
+    const confirmed = await confirm({
+      title: "Aceptar solicitud",
+      message: "¿Quieres añadir a esta persona como contacto? Podrán enviarse mensajes privados entre vosotros."
+    });
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/contacts/${contactId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid, action: "accept" })
+      });
+
+      if (res.ok) {
+        showNotification({
+          type: "success",
+          title: "Contacto añadido",
+          message: "Ahora podéis enviaros mensajes privados"
+        });
+        loadContacts();
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: "error",
+          title: "Error",
+          message: data.error || "No se pudo aceptar la solicitud"
+        });
+      }
+    } catch (error) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo aceptar la solicitud"
+      });
+    }
+  };
+
+  const handleRejectRequest = async (contactId: string) => {
+    if (!user) return;
+
+    const confirmed = await confirm({
+      title: "Rechazar solicitud",
+      message: "¿Seguro que quieres rechazar esta solicitud de contacto?"
+    });
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/contacts/${contactId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid, action: "reject" })
+      });
+
+      if (res.ok) {
+        showNotification({
+          type: "info",
+          title: "Solicitud rechazada",
+          message: "La solicitud ha sido eliminada"
+        });
+        loadContacts();
+      }
+    } catch (error) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo rechazar la solicitud"
+      });
+    }
+  };
+
+  const handleDeleteContact = async (contactId: string) => {
+    if (!user) return;
+
+    const confirmed = await confirm({
+      title: "Eliminar contacto",
+      message: "¿Seguro que quieres eliminar a este contacto? Ya no podréis enviar mensajes privados."
+    });
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/contacts/${contactId}?uid=${user.uid}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        showNotification({
+          type: "info",
+          title: "Contacto eliminado",
+          message: "El contacto ha sido eliminado de tu lista"
+        });
+        loadContacts();
+      }
+    } catch (error) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo eliminar el contacto"
+      });
+    }
+  };
+
+  const handleMessage = async (contactUserId: string) => {
+    if (!user) return;
+
+    try {
+      const res = await fetch("/api/messages/find-or-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId1: user.uid,
+          userId2: contactUserId,
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/messages/${data.conversationId}`);
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: "error",
+          title: "Error",
+          message: data.error || "No se pudo crear la conversación"
+        });
+      }
+    } catch (error) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo crear la conversación"
+      });
+    }
+  };
+
+  const getContactName = (contact: any) => {
+    const profile = contact.user?.profile;
+    if (!profile) return "Usuario";
+    return profile.fullName || profile.companyName || "Usuario";
+  };
+
+  const getContactLocation = (contact: any) => {
+    const profile = contact.user?.profile;
+    return profile?.province || "";
   };
 
   const handleSignOut = async () => {
@@ -238,6 +422,22 @@ export default function UserProfilePage() {
               onClick={() => setActiveTab("contacts")}
               className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
                 activeTab === "contacts" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Contactos
+              {pendingRequests.length > 0 && (
+                <span className="ml-2 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+                activeTab === "messages" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -574,8 +774,134 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {/* Tab Contactos/Mensajes */}
+            {/* Tab Contactos */}
             {activeTab === "contacts" && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <button
+                    onClick={() => setActiveTab("contacts")}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                      activeTab === "contacts" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    Mis contactos ({contacts.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("contacts")}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                      activeTab === "contacts" ? "bg-slate-100 text-slate-600" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    Solicitudes ({pendingRequests.length})
+                  </button>
+                </div>
+
+                {contactsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Solicitudes pendientes */}
+                    {pendingRequests.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-slate-800 mb-3">Solicitudes pendientes</h3>
+                        <div className="space-y-3">
+                          {pendingRequests.map((contact) => (
+                            <div key={contact.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                {contact.profile?.profileImage ? (
+                                  <img
+                                    src={contact.profile.profileImage}
+                                    alt={getContactName(contact)}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xl">👤</span>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-slate-800">{getContactName(contact)}</h4>
+                                <p className="text-sm text-slate-500">{getContactLocation(contact)}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleAcceptRequest(contact.id)}
+                                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-medium"
+                                >
+                                  Aceptar
+                                </button>
+                                <button
+                                  onClick={() => handleRejectRequest(contact.id)}
+                                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm"
+                                >
+                                  Rechazar
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Contactos aceptados */}
+                    <div>
+                      <h3 className="font-semibold text-slate-800 mb-3">Mis contactos</h3>
+                      {contacts.length === 0 ? (
+                        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+                          <p className="text-slate-500">Aún no tienes contactos</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {contacts.map((contact) => (
+                            <div key={contact.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                {contact.user?.profile?.profileImage ? (
+                                  <img
+                                    src={contact.user.profile.profileImage}
+                                    alt={getContactName(contact)}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xl">👤</span>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-slate-800">{getContactName(contact)}</h4>
+                                <p className="text-sm text-slate-500">{getContactLocation(contact)}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleMessage(contact.user.id)}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                  title="Enviar mensaje"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 21h9m-7.538-.483.484-1.369-1.485a3.5 3.5 0 01-5.174 2.804 3.5 3.5 0 015.174 2.804 1.485 1.369.484 1.485 1.369H21M12 17.75V19" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteContact(contact.id)}
+                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Eliminar contacto"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 011-1h1m-1 1l-3 3m5 4l-3 3" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab Mensajes */}
+            {activeTab === "messages" && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                   <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

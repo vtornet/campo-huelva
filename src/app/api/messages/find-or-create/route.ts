@@ -17,38 +17,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Los IDs deben ser diferentes" }, { status: 400 });
     }
 
-    // Verificar roles de los participantes
-    const [user1, user2] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId1 },
-        select: { role: true }
-      }),
-      prisma.user.findUnique({
-        where: { id: userId2 },
-        select: { role: true }
-      })
-    ]);
-
-    // Si alguno es empresa, permitir conversación sin verificar contacto
-    const isCompanyInvolved = user1?.role === "COMPANY" || user2?.role === "COMPANY";
-
-    // Si ninguno es empresa, verificar que sean contactos aceptados
-    if (!isCompanyInvolved) {
-      const contact = await prisma.contact.findFirst({
-        where: {
-          OR: [
-            { requesterId: userId1, recipientId: userId2, status: ContactStatus.ACCEPTED },
-            { requesterId: userId2, recipientId: userId1, status: ContactStatus.ACCEPTED }
-          ]
-        }
-      });
-
-      if (!contact) {
-        return NextResponse.json({
-          error: "Para enviar mensajes, primero debes añadir a esta persona como contacto",
-          errorCode: "NOT_CONTACT"
-        }, { status: 403 });
+    // Verificar que son contactos aceptados (sin excepción para empresas)
+    const contact = await prisma.contact.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId1, recipientId: userId2, status: ContactStatus.ACCEPTED },
+          { requesterId: userId2, recipientId: userId1, status: ContactStatus.ACCEPTED }
+        ]
       }
+    });
+
+    if (!contact) {
+      return NextResponse.json({
+        error: "Para enviar mensajes, primero debes añadir a esta persona como contacto",
+        errorCode: "NOT_CONTACT"
+      }, { status: 403 });
     }
 
     // Buscar si ya existe una conversación entre estos dos usuarios
