@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO, MUNICIPIOS_POR_PROVINCIA, EXPERIENCIA_ALMACEN, EXPERIENCIA_ALMACEN_ENCARGADO, HERRAMIENTAS_MANUALES } from "@/lib/constants";
 import { AddContactButton } from "@/components/AddContactButton";
@@ -50,6 +50,7 @@ interface FilterState {
 export default function SearchPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>(null);
   const [filters, setFilters] = useState<FilterState>({});
   const [results, setResults] = useState<any[]>([]);
@@ -64,6 +65,75 @@ export default function SearchPage() {
       router.push("/login");
     }
   }, [user, authLoading, router]);
+
+  // Cargar perfil de usuario si se pasa userId en la URL
+  useEffect(() => {
+    const userIdParam = searchParams.get("userId");
+    if (userIdParam && user) {
+      fetchUserProfile(userIdParam);
+    }
+  }, [searchParams, user]);
+
+  const fetchUserProfile = async (userId: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/search/user-by-id?id=${userId}`);
+      if (response.ok) {
+        const profileData = await response.json();
+
+        // Determinar la categoría basada en el rol
+        let category: CategoryType = null;
+        switch (profileData.role) {
+          case 'USER':
+            category = 'worker';
+            break;
+          case 'FOREMAN':
+            category = 'foreman';
+            break;
+          case 'ENGINEER':
+            category = 'engineer';
+            break;
+          case 'ENCARGADO':
+            category = 'encargado';
+            break;
+          case 'TRACTORISTA':
+            category = 'tractorista';
+            break;
+          case 'COMPANY':
+            // Las empresas no usan el modal de candidato
+            // Redirigir al perfil de la empresa
+            router.push(`/profile/company?userId=${userId}`);
+            return;
+        }
+
+        // Establecer la categoría y el candidato
+        setSelectedCategory(category);
+
+        // Combinar los datos del usuario con su perfil
+        const candidateData = {
+          ...profileData.profile,
+          userId: profileData.id,
+          email: profileData.email,
+          // Mapear campos según el tipo de perfil
+          fullName: profileData.profile?.fullName || profileData.profile?.companyName,
+          phone: profileData.profile?.phone,
+          province: profileData.profile?.province,
+          city: profileData.profile?.city,
+          bio: profileData.profile?.bio,
+        };
+
+        setSelectedCandidate(candidateData);
+        setShowProfileModal(true);
+      } else {
+        // Si no se encuentra el perfil, redirigir a la búsqueda normal
+        console.error("Perfil no encontrado");
+      }
+    } catch (error) {
+      console.error("Error cargando perfil:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Realizar búsqueda cuando cambia la categoría
   useEffect(() => {
