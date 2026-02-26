@@ -241,17 +241,6 @@ export default function UserProfilePage() {
     }
   };
 
-  const getContactName = (contact: any) => {
-    const profile = contact.user?.profile;
-    if (!profile) return "Usuario";
-    return profile.fullName || profile.companyName || "Usuario";
-  };
-
-  const getContactLocation = (contact: any) => {
-    const profile = contact.user?.profile;
-    return profile?.province || "";
-  };
-
   const handleSignOut = async () => {
     await auth.signOut();
     router.push("/login");
@@ -813,7 +802,7 @@ export default function UserProfilePage() {
                                 {contact.profile?.profileImage ? (
                                   <img
                                     src={contact.profile.profileImage}
-                                    alt={getContactName(contact)}
+                                    alt={contact.profile.fullName || contact.profile.companyName || "Usuario"}
                                     className="w-12 h-12 rounded-full object-cover"
                                   />
                                 ) : (
@@ -821,8 +810,8 @@ export default function UserProfilePage() {
                                 )}
                               </div>
                               <div className="flex-1">
-                                <h4 className="font-semibold text-slate-800">{getContactName(contact)}</h4>
-                                <p className="text-sm text-slate-500">{getContactLocation(contact)}</p>
+                                <h4 className="font-semibold text-slate-800">{contact.profile?.fullName || contact.profile?.companyName || "Usuario"}</h4>
+                                <p className="text-sm text-slate-500">{contact.profile?.province || ""}</p>
                               </div>
                               <div className="flex gap-2">
                                 <button
@@ -859,7 +848,7 @@ export default function UserProfilePage() {
                                 {contact.user?.profile?.profileImage ? (
                                   <img
                                     src={contact.user.profile.profileImage}
-                                    alt={getContactName(contact)}
+                                    alt={contact.user.profile.fullName || contact.user.profile.companyName || "Usuario"}
                                     className="w-12 h-12 rounded-full object-cover"
                                   />
                                 ) : (
@@ -867,8 +856,8 @@ export default function UserProfilePage() {
                                 )}
                               </div>
                               <div className="flex-1">
-                                <h4 className="font-semibold text-slate-800">{getContactName(contact)}</h4>
-                                <p className="text-sm text-slate-500">{getContactLocation(contact)}</p>
+                                <h4 className="font-semibold text-slate-800">{contact.user?.profile?.fullName || contact.user?.profile?.companyName || "Usuario"}</h4>
+                                <p className="text-sm text-slate-500">{contact.user?.profile?.province || ""}</p>
                               </div>
                               <div className="flex gap-2">
                                 <button
