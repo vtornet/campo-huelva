@@ -588,7 +588,7 @@ export default function OfferDetailPage() {
                   </button>
                 )}
                 {/* Para demandas o empresas viendo ofertas: botón de contactar */}
-                {(isDemand || isCompany) && (
+                {isDemand && !isCompany && (
                   <button
                     onClick={handleContact}
                     className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center gap-2 ${
