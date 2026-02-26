@@ -255,15 +255,22 @@ export default function ContactsPage() {
     );
   }
 
-  const displayName = (contact: Contact) => {
-    const profile = contact.user.profile;
+  const displayName = (contact: any) => {
+    // Para solicitudes pendientes, el perfil está en contact.profile
+    // Para contactos aceptados, el perfil está en contact.user.profile
+    const profile = contact.profile || contact.user?.profile;
     if (!profile) return "Usuario";
     return profile.fullName || profile.companyName || "Usuario";
   };
 
-  const getLocation = (contact: Contact) => {
-    const profile = contact.user.profile;
+  const getLocation = (contact: any) => {
+    const profile = contact.profile || contact.user?.profile;
     return profile?.province || "";
+  };
+
+  const getProfileImage = (contact: any) => {
+    const profile = contact.profile || contact.user?.profile;
+    return profile?.profileImage;
   };
 
   return (
@@ -320,9 +327,9 @@ export default function ContactsPage() {
                   <div key={contact.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
                     {/* Avatar */}
                     <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      {contact.user.profile?.profileImage ? (
+                      {getProfileImage(contact) ? (
                         <img
-                          src={contact.user.profile.profileImage}
+                          src={getProfileImage(contact)!}
                           alt={displayName(contact)}
                           className="w-12 h-12 rounded-full object-cover"
                         />
@@ -381,9 +388,9 @@ export default function ContactsPage() {
                   <div key={contact.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
                     {/* Avatar */}
                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      {contact.user.profile?.profileImage ? (
+                      {getProfileImage(contact) ? (
                         <img
-                          src={contact.user.profile.profileImage}
+                          src={getProfileImage(contact)!}
                           alt={displayName(contact)}
                           className="w-12 h-12 rounded-full object-cover"
                         />
