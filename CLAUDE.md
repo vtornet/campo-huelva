@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 25 de febrero de 2026
+**Última actualización**: 26 de febrero de 2026
 
 ## Comandos de Desarrollo
 
@@ -430,6 +430,7 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] **Aviso Legal**
 - [x] **Registro de Actividades de Tratamiento (RAT)** interno
 - [x] **Casillas de aceptación** en registro
+- [x] **Política de privacidad actualizada para empresas** (texto profesional sobre datos de contacto)
 
 #### 2. ✅ Validaciones de Formularios (COMPLETADO)
 - [x] Validación de teléfono (formato español +34 XXX XXX XXX)
@@ -457,11 +458,171 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] Nota legal RGPD sobre tratamiento de datos
 - [x] Enlace desde Footer
 
+#### 5. ✅ Perfiles Mejorados (COMPLETADO - 26/02/2026)
+- [x] **Worker**: Herramientas manuales (desbrozadora, motosierra, etc.) y experiencia en almacén
+- [x] **Foreman**: Carnet de manipulador de alimentos
+- [x] **Encargado**: Experiencia en almacén (checkbox), transformación de fincas, Office, informes
+- [x] **Encargado**: Texto corregido "Disponibilidad para alojarse en finca"
+- [x] **Layouts corregidos**: flex-wrap para evitar desbordamiento de textos largos
+- [x] **Opción "Otros"** añadida en todas las listas de selección (cultivos, herramientas, etc.)
+
+#### 6. ✅ Buscador Actualizado (COMPLETADO - 26/02/2026)
+- [x] Filtros para herramientas manuales y experiencia en almacén (worker)
+- [x] Filtro de carnet manipulador (manijero)
+- [x] Filtros para experiencia en almacén y habilidades de gestión (encargado)
+- [x] Badges en tarjetas de resultados y modal de perfil completo
+
 ### ✅ TODOS LOS BLOQUEANTES PARA BETA COMPLETADOS
 
 ---
 
 ## 🎉 ESTADO ACTUAL: LISTO PARA FASE BETA
+
+Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
+- ✅ Legal y Cumplimiento Normativo (RGPD)
+- ✅ Validaciones de Formularios
+- ✅ Banner de Cookies
+- ✅ Página de Contacto/Soporte
+- ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
+
+### 🔴 CRÍTICAS (Cambio fundamental en el modelo)
+
+#### 1. Sistema de Contactos (NUEVO - PRIORIDAD ALTA)
+> **Restringir mensajería para mejorar privacidad y reducir spam**
+
+**Problema actual**: Cualquiera puede enviar mensajes a cualquier usuario, lo que genera spam y molestias.
+
+**Solución propuesta**: Sistema de contactos con lista de confianza.
+
+- [ ] **Modelo de datos en Prisma**:
+  - Nueva tabla `Contact` con campos: `id`, `requesterId`, `recipientId`, `status` (PENDING, ACCEPTED), `createdAt`
+  - Un usuario puede añadir a otro como contacto (solicitud pendiente)
+  - El destinatario debe aceptar la solicitud de contacto
+  - Una vez aceptados, pueden enviarse mensajes privados
+
+- [ ] **Botón "Añadir como contacto"**:
+  - En publicaciones de DEMANDA (trabajadores, manijeros)
+  - En publicaciones del TABLÓN
+  - En resultados del buscador
+  - Modal de confirmación con explicación
+
+- [ ] **Gestión de solicitudes de contacto**:
+  - Notificación cuando alguien solicita ser contacto
+  - Panel de solicitudes pendientes en `/profile/contacts?requests`
+  - Opciones: Aceptar, Rechazar
+
+- [ ] **Pestaña "Contactos" en el perfil** (`/profile/contacts`):
+  - Lista de contactos aceptados
+  - Opciones por contacto:
+    - Ver perfil completo
+    - Enviar mensaje
+    - Eliminar contacto
+
+- [ ] **Restricción de mensajería**:
+  - Modificar `/api/messages` para verificar que existe relación de contacto
+  - Excepción: Las empresas pueden iniciar conversación con cualquier usuario
+  - Mensaje explicativo cuando se intenta contactar sin ser contacto: "Para enviar mensajes, primero debes añadir a esta persona como contacto"
+
+- [ ] **API endpoints**:
+  - `POST /api/contacts/request` - Enviar solicitud de contacto
+  - `GET /api/contacts` - Listar contactos (con filtro ?requests=pending)
+  - `PUT /api/contacts/[id]/accept` - Aceptar solicitud
+  - `DELETE /api/contacts/[id]` - Eliminar contacto/rechazar solicitud
+
+- [ ] **UI Components**:
+  - `AddContactButton` - Botón reutilizable para añadir contactos
+  - `ContactsList` - Lista de contactos con acciones
+  - `ContactRequestsPanel` - Panel de solicitudes pendientes
+  - Indicador de "n solicitudes pendientes" en navegación
+
+### 🟡 IMPORTANTES (Recomendados para Beta)
+
+#### 2. Testing en Dispositivos Reales
+> **Asegurar que funciona en el entorno real del usuario**
+
+- [ ] Probar PWA en Android (Chrome)
+- [ ] Probar PWA en iOS (Safari)
+- [ ] Probar instalación desde home screen
+- [ ] Probar en diferentes tamaños de pantalla
+- [ ] Probar con conexión lenta/intermitente
+
+#### 3. Mejoras de UX en Chat
+> **La experiencia de mensajería debe ser fluida**
+
+- [ ] Indicador de "escribiendo..."
+- [ ] Confirmación de lectura (✓✓)
+- [ ] Carga de imágenes en el chat
+- [ ] Envío de ubicación
+- [ ] Búsqueda en el historial de mensajes
+
+#### 4. Gestión de Denuncias (Admin)
+> **Panel para moderar contenido reportado**
+
+- [ ] Panel de denuncias pendientes
+- [ ] Vista detallada de publicación/comentario denunciado
+- [ ] Acciones: ignorar, ocultar contenido, sancionar usuario
+- [ ] Historial de denuncias por usuario
+- [ ] Estadísticas de denuncias
+
+#### 5. Sistema de Notificaciones Push
+> **Los usuarios necesitan saber cuando hay actividad relevante**
+
+- [ ] Notificación de nuevos mensajes
+- [ ] Notificación de inscripciones en ofertas (para empresas)
+- [ ] Notificación de cambios de estado (aceptado/rechazado)
+- [ ] Notificación de nuevas ofertas según perfil
+- [ ] Gestión de preferencias de notificación
+- [ ] Configuración de navegador para permisos
+
+### 🟢 DESEABLES (Posponer si es necesario)
+
+#### 6. Internacionalización (i18n)
+> **Temporeros extranjeros necesitan la app en su idioma**
+
+- [ ] Integrar `next-intl`
+- [ ] Traducir interfaz a Francés, Rumano, Inglés
+- [ ] Selector de idioma persistente
+- [ ] Detección automática de idioma
+
+#### 7. Perfil de Empresa Mejorado
+> **Más información para evaluar a las empresas**
+
+- [ ] Galería de fotos (instalaciones, cultivos)
+- [ ] Descripción extendida de la empresa
+- [ ] Valoraciones de trabajadores (cuando haya reputación)
+- [ ] Historial de ofertas publicadas
+
+#### 8. Dashboard de Analytics
+> **Métricas para entender el uso de la plataforma**
+
+- [ ] Usuarios activos diarios/semanales/mensuales
+- [ ] Ofertas publicadas vs. cubiertas
+- [ ] Tiempo medio de contratación
+- [ ] Roles más activos
+- [ ] Provincias con más actividad
+
+### 🔵 DIFERIDOS (Post-Beta)
+
+- Verificación automática de empresas con AEAT
+- Sistema de reputación/valoraciones
+- Matchmaking inteligente avanzado
+- Modelo de monetización (pagos)
+- Video llamadas integradas
+- Integración con redes sociales (login adicional)
+- Geolocalización de ofertas (mapa interactivo)
+
+---
+
+## 🎉 ESTADO ACTUAL: LISTO PARA FASE BETA
+
+Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
+- ✅ Legal y Cumplimiento Normativo (RGPD)
+- ✅ Validaciones de Formularios
+- ✅ Banner de Cookies
+- ✅ Página de Contacto/Soporte
+- ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
+
+**Nota**: El **Sistema de Contactos** es un cambio crítico que modifica el modelo actual de mensajería. Se recomienda implementarlo antes o poco después del lanzamiento de Beta para evitar acumulación de spam y quejas de usuarios.
 
 Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Legal y Cumplimiento Normativo (RGPD)
