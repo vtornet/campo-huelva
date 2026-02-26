@@ -78,7 +78,7 @@ export const CULTIVOS = [
   "Frambuesa", "Fresa", "Fruta de Hueso", "Fruta de Pepita",
   "Hortalizas Aire Libre", "Invernadero General",
   "Mango", "Mandarina", "Mora", "Níspero",
-  "Papaya", "Patata", "Pistacho", "Vid/Uva"
+  "Papaya", "Patata", "Pistacho", "Vid/Uva", "Otros"
 ];
 
 // Tipos de experiencia para trabajadores (usados en filtros de búsqueda)
@@ -88,7 +88,7 @@ export const EXPERIENCIAS_TRABAJADOR = [
   "Embalaje", "Espaldera", "Frambuesa", "Fresa", "Fruta de hueso",
   "Fruta de pepita", "Invernadero", "Limpieza", "Mango", "Mandarina",
   "Mano de obra general", "Mora", "Níspero", "Papaya", "Patata",
-  "Pistacho", "Plantación", "Poda", "Recolección", "Riego", "Vid/Uva"
+  "Pistacho", "Plantación", "Poda", "Recolección", "Riego", "Vid/Uva", "Otros"
 ];
 
 // Especialidades para manijeros (usados en filtros de búsqueda)
@@ -98,12 +98,12 @@ export const ESPECIALIDADES_MANIJERO = [
   "Frambuesa", "Fresa", "Fruta de hueso", "Fruta de pepita",
   "Invernadero", "Limpieza", "Mango", "Mandarina", "Mano de obra general",
   "Mora", "Níspero", "Papaya", "Patata", "Pistacho", "Plantación",
-  "Poda", "Recolección", "Riego", "Vid/Uva"
+  "Poda", "Recolección", "Riego", "Vid/Uva", "Otros"
 ];
 
 // Niveles de carnet fitosanitario
 export const NIVELES_FITOSANITARIO = [
-  "Básico", "Cualificado", "Fumigación aérea"
+  "Básico", "Cualificado", "Fumigación aérea", "Otros"
 ];
 
 // Rangos de tamaño de cuadrilla para manijeros
@@ -180,7 +180,8 @@ export const EXPERIENCIA_ALMACEN = [
   "Operador/a de líneas de envasado",
   "Responsable de línea",
   "Operario/a de limpieza",
-  "Auxiliar de calidad"
+  "Auxiliar de calidad",
+  "Otros"
 ];
 
 // Experiencia en almacén para encargados (incluye roles de responsabilidad)
@@ -205,7 +206,8 @@ export const HERRAMIENTAS_MANUALES = [
   "Pulverizadora manual",
   "Tijeras de poda",
   "Rotovator/Motocultor",
-  "Máquina de atar"
+  "Máquina de atar",
+  "Otros"
 ];
 
 // Tipos de experiencia para encargados
@@ -213,5 +215,5 @@ export const EXPERIENCIAS_ENCARGADO = [
   "Gestión de personal", "Organización de day workers", "Control de calidad",
   "Gestión de almacén", "Coordinación de cuadrillas", "Control de tiempos",
   "Gestión de alojamiento", "Riego y fertilización", "Fitosanitarios",
-  "Recolección", "Poda", "Plantación", "Preparación de suelo"
+  "Recolección", "Poda", "Plantación", "Preparación de suelo", "Otros"
 ];
