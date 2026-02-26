@@ -1017,8 +1017,16 @@ export default function UserProfilePage() {
             <div className="p-6">
               {/* Info básica */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <span className="text-3xl">👤</span>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
+                  {selectedProfile.profileImage ? (
+                    <img
+                      src={selectedProfile.profileImage}
+                      alt={selectedProfile.fullName || selectedProfile.companyName || "Usuario"}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-3xl">👤</span>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">
