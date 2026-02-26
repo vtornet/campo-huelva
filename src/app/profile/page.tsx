@@ -31,6 +31,11 @@ export default function UserProfilePage() {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
 
+  // Estados para el modal de perfil de contacto
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+
   // Cargar datos del usuario
   useEffect(() => {
     if (!authLoading && user) {
@@ -247,6 +252,27 @@ export default function UserProfilePage() {
         title: "Error",
         message: "No se pudo crear la conversación"
       });
+    }
+  };
+
+  const handleViewProfile = async (userId: string) => {
+    setProfileLoading(true);
+    try {
+      const res = await fetch(`/api/search/user-by-id?id=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedProfile({ role: data.role, ...data.profile });
+        setShowProfileModal(true);
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo cargar el perfil"
+      });
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -836,14 +862,19 @@ export default function UserProfilePage() {
                                   Rechazar
                                 </button>
                                 <button
-                                  onClick={() => router.push(`/search?userId=${contact.requester?.id}`)}
-                                  className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                  onClick={() => handleViewProfile(contact.requester?.id)}
+                                  disabled={profileLoading}
+                                  className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                                   title="Ver perfil"
                                 >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
+                                  {profileLoading ? (
+                                    <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-slate-600"></div>
+                                  ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  )}
                                 </button>
                               </div>
                             </div>
@@ -889,14 +920,19 @@ export default function UserProfilePage() {
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => router.push(`/search?userId=${contact.user?.id}`)}
-                                  className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                  onClick={() => handleViewProfile(contact.user?.id)}
+                                  disabled={profileLoading}
+                                  className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                                   title="Ver perfil"
                                 >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
+                                  {profileLoading ? (
+                                    <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-slate-600"></div>
+                                  ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  )}
                                 </button>
                                 <button
                                   onClick={() => handleDeleteContact(contact.id)}
@@ -959,6 +995,115 @@ export default function UserProfilePage() {
         </div>
       </div>
       <ConfirmDialogComponent />
+
+      {/* Modal de Perfil de Contacto */}
+      {showProfileModal && selectedProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-xl font-bold text-slate-800">Perfil Completo</h2>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6">
+              {/* Info básica */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <span className="text-3xl">👤</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">
+                    {selectedProfile.fullName || selectedProfile.companyName || "Sin nombre"}
+                  </h3>
+                  {selectedProfile.province && (
+                    <p className="text-sm text-slate-600">
+                      {selectedProfile.city ? `${selectedProfile.city}, ` : ""}{selectedProfile.province}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Bio */}
+              {selectedProfile.bio && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Sobre mí</h4>
+                  <p className="text-slate-600">{selectedProfile.bio}</p>
+                </div>
+              )}
+
+              {/* Experiencia en cultivos */}
+              {(selectedProfile.experience?.length || selectedProfile.specialties?.length || selectedProfile.cropExperience?.length) ? (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Experiencia en cultivos</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(selectedProfile.experience || selectedProfile.specialties || selectedProfile.cropExperience || []).slice(0, 20).map((exp: string, i: number) => (
+                      <span key={i} className="text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                        {exp}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Detalles adicionales */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {selectedProfile.hasVehicle && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span>🚗 Tiene vehículo</span>
+                  </div>
+                )}
+                {selectedProfile.canRelocate && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span>✈️ Dispuesto a relocarse</span>
+                  </div>
+                )}
+                {selectedProfile.phytosanitaryLevel && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span>🌿 Fitosanitario: {selectedProfile.phytosanitaryLevel}</span>
+                  </div>
+                )}
+                {selectedProfile.foodHandler && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span>🍎 Manipulador de alimentos</span>
+                  </div>
+                )}
+                {selectedProfile.yearsExperience > 0 && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span>📅 {selectedProfile.yearsExperience} años de experiencia</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer del modal */}
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex gap-3 rounded-b-2xl">
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
+              >
+                Cerrar
+              </button>
+              {selectedProfile.phone && (
+                <a
+                  href={`tel:${selectedProfile.phone}`}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-center flex items-center justify-center gap-2"
+                >
+                  📞 Llamar
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
