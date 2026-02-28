@@ -364,7 +364,13 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Checkbox opcional: Comunicaciones comerciales
   - Validación antes de registro (email y Google Auth)
 
-### 19. Verificación de Empresas con AEAT (PENDIENTE)
+### ✅ 19. Carnet de Carretillero (COMPLETADO - 28/02/2026)
+- [x] Campo `hasForkliftLicense` añadido en schema de WorkerProfile
+- [x] Checkbox en formulario de perfil de trabajador
+- [x] Filtro en búsqueda de candidatos
+- [x] Badge en tarjetas de resultados y modal de perfil
+
+### ⏸️ 20. Verificación de Empresas con AEAT (DIFERIDO)
 - [ ] Verificación automática de empresas mediante CIF a través de API de AEAT
 - [ ] Uso de certificado electrónico para autenticación con AEAT
 - [ ] **Estado**: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
@@ -466,9 +472,10 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] **Layouts corregidos**: flex-wrap para evitar desbordamiento de textos largos
 - [x] **Opción "Otros"** añadida en todas las listas de selección (cultivos, herramientas, etc.)
 
-#### 6. ✅ Buscador Actualizado (COMPLETADO - 26/02/2026)
+#### 6. ✅ Buscador Actualizado (COMPLETADO - 28/02/2026)
 - [x] Filtros para herramientas manuales y experiencia en almacén (worker)
 - [x] Filtro de carnet manipulador (manijero)
+- [x] Filtro de carnet de carretillero (worker)
 - [x] Filtros para experiencia en almacén y habilidades de gestión (encargado)
 - [x] Badges en tarjetas de resultados y modal de perfil completo
 
@@ -485,55 +492,27 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Página de Contacto/Soporte
 - ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
 
-### 🔴 CRÍTICAS (Cambio fundamental en el modelo)
-
-#### 1. Sistema de Contactos (NUEVO - PRIORIDAD ALTA)
+### ✅ 1. Sistema de Contactos (COMPLETADO - 28/02/2026)
 > **Restringir mensajería para mejorar privacidad y reducir spam**
 
-**Problema actual**: Cualquiera puede enviar mensajes a cualquier usuario, lo que genera spam y molestias.
-
-**Solución propuesta**: Sistema de contactos con lista de confianza.
-
-- [ ] **Modelo de datos en Prisma**:
-  - Nueva tabla `Contact` con campos: `id`, `requesterId`, `recipientId`, `status` (PENDING, ACCEPTED), `createdAt`
-  - Un usuario puede añadir a otro como contacto (solicitud pendiente)
-  - El destinatario debe aceptar la solicitud de contacto
-  - Una vez aceptados, pueden enviarse mensajes privados
-
-- [ ] **Botón "Añadir como contacto"**:
-  - En publicaciones de DEMANDA (trabajadores, manijeros)
+- [x] **Modelo de datos en Prisma**: Tabla `Contact` con status (PENDING, ACCEPTED)
+- [x] **Botón "Añadir como contacto"** (`AddContactButton`):
   - En publicaciones del TABLÓN
   - En resultados del buscador
-  - Modal de confirmación con explicación
-
-- [ ] **Gestión de solicitudes de contacto**:
-  - Notificación cuando alguien solicita ser contacto
-  - Panel de solicitudes pendientes en `/profile/contacts?requests`
+  - Restringido para empresas (no pueden añadir contactos)
+- [x] **Gestión de solicitudes de contacto**:
+  - Panel de solicitudes pendientes en `/profile/contacts`
   - Opciones: Aceptar, Rechazar
-
-- [ ] **Pestaña "Contactos" en el perfil** (`/profile/contacts`):
+- [x] **Pestaña "Contactos" en el perfil** (`/profile/contacts`):
   - Lista de contactos aceptados
-  - Opciones por contacto:
-    - Ver perfil completo
-    - Enviar mensaje
-    - Eliminar contacto
-
-- [ ] **Restricción de mensajería**:
-  - Modificar `/api/messages` para verificar que existe relación de contacto
-  - Excepción: Las empresas pueden iniciar conversación con cualquier usuario
-  - Mensaje explicativo cuando se intenta contactar sin ser contacto: "Para enviar mensajes, primero debes añadir a esta persona como contacto"
-
-- [ ] **API endpoints**:
-  - `POST /api/contacts/request` - Enviar solicitud de contacto
-  - `GET /api/contacts` - Listar contactos (con filtro ?requests=pending)
+  - Ver perfil completo, enviar mensaje, eliminar contacto
+- [x] **API endpoints implementados**:
+  - `POST /api/contacts` - Enviar solicitud de contacto
+  - `GET /api/contacts` - Listar contactos (con filtro ?requests=true)
   - `PUT /api/contacts/[id]/accept` - Aceptar solicitud
   - `DELETE /api/contacts/[id]` - Eliminar contacto/rechazar solicitud
 
-- [ ] **UI Components**:
-  - `AddContactButton` - Botón reutilizable para añadir contactos
-  - `ContactsList` - Lista de contactos con acciones
-  - `ContactRequestsPanel` - Panel de solicitudes pendientes
-  - Indicador de "n solicitudes pendientes" en navegación
+**PENDIENTE**: Restricción de mensajería - actualmente NO se verifica relación de contacto antes de enviar mensajes
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
@@ -621,14 +600,10 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Banner de Cookies
 - ✅ Página de Contacto/Soporte
 - ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
+- ✅ Sistema de Contactos (modelo de datos, API y UI implementados)
+- ✅ Carnet de carretillero en perfil y buscador
 
-**Nota**: El **Sistema de Contactos** es un cambio crítico que modifica el modelo actual de mensajería. Se recomienda implementarlo antes o poco después del lanzamiento de Beta para evitar acumulación de spam y quejas de usuarios.
-
-Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
-- ✅ Legal y Cumplimiento Normativo (RGPD)
-- ✅ Validaciones de Formularios
-- ✅ Banner de Cookies
-- ✅ Página de Contacto/Soporte
+**PENDIENTE**: Restringir mensajería para verificar relación de contacto antes de enviar mensajes (excepto empresas).
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
