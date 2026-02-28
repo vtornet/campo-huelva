@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "./ConfirmDialog";
@@ -10,26 +10,49 @@ interface AddContactButtonProps {
   className?: string;
   variant?: "button" | "icon" | "text";
   label?: string;
+  userRole?: string; // Rol del usuario actual (opcional, se obtiene de la API si no se proporciona)
 }
 
 export function AddContactButton({
   userId,
   className = "",
   variant = "button",
-  label = "Añadir como contacto"
+  label = "Añadir como contacto",
+  userRole: propUserRole
 }: AddContactButtonProps) {
   const { user } = useAuth();
   const { showNotification } = useNotifications();
   const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const [loading, setLoading] = useState(false);
   const [isContact, setIsContact] = useState<boolean | null>(null);
+  const [fetchedRole, setFetchedRole] = useState<string | null>(null);
+
+  // Obtener rol del usuario si no se proporciona como prop
+  useEffect(() => {
+    if (propUserRole) {
+      setFetchedRole(propUserRole);
+      return;
+    }
+
+    if (user) {
+      fetch(`/api/user/me?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.role) {
+            setFetchedRole(data.role);
+          }
+        })
+        .catch(err => console.error("Error fetching user role:", err));
+    }
+  }, [user, propUserRole]);
 
   if (!user || user.uid === userId) {
     return null; // No mostrar botón si es el propio usuario
   }
 
   // Las empresas no pueden añadir contactos
-  if (user.role === "COMPANY") {
+  const effectiveRole = propUserRole || fetchedRole;
+  if (effectiveRole === "COMPANY") {
     return null;
   }
 
