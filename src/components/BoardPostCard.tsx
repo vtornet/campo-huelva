@@ -477,16 +477,6 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
             </svg>
           </button>
 
-          {/* Añadir como contacto (no para el propio autor) */}
-          {!isOwner && (
-            <AddContactButton
-              userId={post.authorId}
-              variant="icon"
-              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all duration-200 font-medium text-sm text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 bg-slate-50"
-              label="Añadir"
-            />
-          )}
-
           {/* Denunciar (no para el propio autor) */}
           {!isOwner && (
             <button
@@ -501,6 +491,18 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
             </button>
           )}
         </div>
+
+        {/* Botón separado: Añadir como contacto (no para el propio autor) */}
+        {!isOwner && (
+          <div className="mb-3">
+            <AddContactButton
+              userId={post.authorId}
+              variant="button"
+              className="w-full"
+              label="Añadir Contacto"
+            />
+          </div>
+        )}
 
         {/* Sección de comentarios */}
         {showComments && (
