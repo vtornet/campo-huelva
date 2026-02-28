@@ -269,7 +269,7 @@ export default function PostActions({
         } ${isOwner ? 'opacity-40 cursor-not-allowed' : ''} ${animatingLike ? 'scale-110' : ''}`}
       >
         <svg className={iconClass} fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
         </svg>
         <span className={textClass}>{likesCount} Me gusta</span>
       </button>
@@ -281,7 +281,7 @@ export default function PostActions({
         className={`${buttonClass} text-slate-600 hover:text-blue-600 hover:bg-blue-50 bg-slate-50`}
       >
         <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 01-5.367 2.684m0 9.316a3 3 0 105.368 2.684 3 3 0 01-5.367-2.684" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
         </svg>
         <span className={textClass}>{sharesCount} Compartir</span>
       </button>
@@ -296,7 +296,7 @@ export default function PostActions({
         title="Denunciar publicación"
       >
         <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3h13.856c1.54 0 2.502-1.667 1.732-3z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v1.5M3 21v-6m0 0l2.25-.77a2.25 2.25 0 012.5.77l.025.064a48.36 48.36 0 005.937-2.89l.023-.01a2.25 2.25 0 011.94.164l2.25.913a2.25 2.25 0 001.676.03l6.5-2.29V3M3 3l18 9" />
         </svg>
         <span className={textClass}>Denunciar</span>
       </button>

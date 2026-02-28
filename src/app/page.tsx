@@ -890,16 +890,8 @@ export default function Dashboard() {
                         // Ofertas compartidas (publicadas por admin): sin botones de acción
                         <div className="w-24"></div>
                       ) : post.type === 'DEMAND' ? (
-                        // Para demandas: botón de añadir como contacto (SOLO para no empresas)
-                        role !== 'COMPANY' ? (
-                          <AddContactButton
-                            userId={post.publisher?.id || post.company?.userId || ""}
-                            variant="button"
-                            className="text-sm font-semibold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1 shadow-sm bg-white/90 backdrop-blur-sm border border-emerald-100"
-                          />
-                        ) : (
-                          <div className="w-24"></div>
-                        )
+                        // Para demandas: botones sociales (sin añadir contacto)
+                        <div className="w-24"></div>
                       ) : (
                         // Para ofertas OFICIALES: botón de inscribirse
                         <button
