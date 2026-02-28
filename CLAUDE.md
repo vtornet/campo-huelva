@@ -511,8 +511,9 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
   - `GET /api/contacts` - Listar contactos (con filtro ?requests=true)
   - `PUT /api/contacts/[id]/accept` - Aceptar solicitud
   - `DELETE /api/contacts/[id]` - Eliminar contacto/rechazar solicitud
-
-**PENDIENTE**: Restricción de mensajería - actualmente NO se verifica relación de contacto antes de enviar mensajes
+- [x] **Restricción de mensajería implementada** (`/api/messages/find-or-create`)
+  - Verifica relación de contacto aceptado antes de crear conversación
+  - Mensaje explicativo: "Para enviar mensajes, primero debes añadir a esta persona como contacto"
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
@@ -534,14 +535,15 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 
-#### 4. Gestión de Denuncias (Admin)
+#### ✅ 4. Gestión de Denuncias (Admin) (COMPLETADO)
 > **Panel para moderar contenido reportado**
 
-- [ ] Panel de denuncias pendientes
-- [ ] Vista detallada de publicación/comentario denunciado
-- [ ] Acciones: ignorar, ocultar contenido, sancionar usuario
-- [ ] Historial de denuncias por usuario
-- [ ] Estadísticas de denuncias
+- [x] Panel de denuncias pendientes en `/admin` (pestaña "Denuncias")
+- [x] Vista detallada de publicación/comentario denunciado
+- [x] Acciones: Resolver, Desestimar
+- [x] Información del reportante y denunciado
+- [x] Historial de denuncias por usuario
+- [x] Estadísticas de denuncias (contador pendientes)
 
 #### 5. Sistema de Notificaciones Push
 > **Los usuarios necesitan saber cuando hay actividad relevante**
@@ -555,7 +557,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 ### 🟢 DESEABLES (Posponer si es necesario)
 
-#### 6. Internacionalización (i18n)
+#### 4. Internacionalización (i18n)
 > **Temporeros extranjeros necesitan la app en su idioma**
 
 - [ ] Integrar `next-intl`
@@ -563,7 +565,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Selector de idioma persistente
 - [ ] Detección automática de idioma
 
-#### 7. Perfil de Empresa Mejorado
+#### 5. Perfil de Empresa Mejorado
 > **Más información para evaluar a las empresas**
 
 - [ ] Galería de fotos (instalaciones, cultivos)
@@ -571,7 +573,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Valoraciones de trabajadores (cuando haya reputación)
 - [ ] Historial de ofertas publicadas
 
-#### 8. Dashboard de Analytics
+#### 6. Dashboard de Analytics
 > **Métricas para entender el uso de la plataforma**
 
 - [ ] Usuarios activos diarios/semanales/mensuales
@@ -600,10 +602,40 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Banner de Cookies
 - ✅ Página de Contacto/Soporte
 - ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
-- ✅ Sistema de Contactos (modelo de datos, API y UI implementados)
+- ✅ Sistema de Contactos completo (restricción de mensajería implementada)
+- ✅ Panel de Gestión de Denuncias en admin
 - ✅ Carnet de carretillero en perfil y buscador
+- ✅ Iconos profesionales actualizados
 
-**PENDIENTE**: Restringir mensajería para verificar relación de contacto antes de enviar mensajes (excepto empresas).
+### 🟡 IMPORTANTES (Recomendados para Beta)
+
+#### 1. Sistema de Notificaciones Push
+> **Los usuarios necesitan saber cuando hay actividad relevante**
+
+- [ ] Notificación de nuevos mensajes
+- [ ] Notificación de inscripciones en ofertas (para empresas)
+- [ ] Notificación de cambios de estado (aceptado/rechazado)
+- [ ] Notificación de nuevas ofertas según perfil
+- [ ] Gestión de preferencias de notificación
+- [ ] Configuración de navegador para permisos
+
+#### 2. Testing en Dispositivos Reales
+> **Asegurar que funciona en el entorno real del usuario**
+
+- [ ] Probar PWA en Android (Chrome)
+- [ ] Probar PWA en iOS (Safari)
+- [ ] Probar instalación desde home screen
+- [ ] Probar en diferentes tamaños de pantalla
+- [ ] Probar con conexión lenta/intermitente
+
+#### 3. Mejoras de UX en Chat
+> **La experiencia de mensajería debe ser fluida**
+
+- [ ] Indicador de "escribiendo..."
+- [ ] Confirmación de lectura (✓✓)
+- [ ] Carga de imágenes en el chat
+- [ ] Envío de ubicación
+- [ ] Búsqueda en el historial de mensajes
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
