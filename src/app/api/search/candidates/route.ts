@@ -51,6 +51,7 @@ export async function GET(request: Request) {
         const foodHandler = searchParams.get("foodHandler");
         const toolsExperienceStr = searchParams.get("toolsExperience");
         const warehouseExperienceStr = searchParams.get("warehouseExperience");
+        const hasForkliftLicense = searchParams.get("hasForkliftLicense");
 
         if (hasVehicle === "true") workerWhere.hasVehicle = true;
         if (canRelocate === "true") workerWhere.canRelocate = true;
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
           const warehouse = warehouseExperienceStr.split(",");
           workerWhere.warehouseExperience = { hasSome: warehouse };
         }
+        if (hasForkliftLicense === "true") workerWhere.hasForkliftLicense = true;
 
         candidates = await prisma.workerProfile.findMany({
           where: workerWhere,
@@ -82,6 +84,7 @@ export async function GET(request: Request) {
             foodHandler: true,
             toolsExperience: true,
             warehouseExperience: true,
+            hasForkliftLicense: true,
             profileImage: true,
           },
           orderBy: { yearsExperience: "desc" },

@@ -20,6 +20,7 @@ interface FilterState {
   // Worker - Nuevos campos
   toolsExperience?: string[];
   warehouseExperience?: string[];
+  hasForkliftLicense?: boolean;
   // Manijero
   crewSize?: { min: number; max: number } | null;
   hasVan?: boolean;
@@ -163,6 +164,7 @@ export default function SearchPage() {
       if (filters.foodHandler !== undefined) params.append("foodHandler", filters.foodHandler.toString());
       if (filters.toolsExperience?.length) params.append("toolsExperience", filters.toolsExperience.join(","));
       if (filters.warehouseExperience?.length) params.append("warehouseExperience", filters.warehouseExperience.join(","));
+      if (filters.hasForkliftLicense !== undefined) params.append("hasForkliftLicense", filters.hasForkliftLicense.toString());
 
       // Manijero
       if (selectedCategory === "foreman") {
@@ -506,6 +508,17 @@ export default function SearchPage() {
                           className="rounded text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-sm font-medium text-slate-700">Carnet manipulador</span>
+                      </label>
+                    </div>
+                    <div className="mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.hasForkliftLicense || false}
+                          onChange={(e) => handleFilterChange("hasForkliftLicense", e.target.checked || undefined)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Carnet de carretillero</span>
                       </label>
                     </div>
 
@@ -1020,6 +1033,14 @@ export default function SearchPage() {
                       <span>Manipulador de alimentos</span>
                     </div>
                   )}
+                  {selectedCandidate.hasForkliftLicense && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      <span>Carnet de carretillero</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1345,6 +1366,14 @@ function CandidateCard({ candidate, category, categoryInfo, onViewProfile }: {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                 </svg>
                 Almacén
+              </span>
+            )}
+            {candidate.hasForkliftLicense && (
+              <span className="text-xs px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Carretillero
               </span>
             )}
           </div>
