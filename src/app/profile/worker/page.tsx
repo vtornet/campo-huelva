@@ -44,6 +44,7 @@ export default function WorkerProfilePage() {
               hasVehicle: data.hasVehicle || false,
               canRelocate: data.canRelocate || false,
               foodHandler: data.foodHandler || false,
+              hasForkliftLicense: data.hasForkliftLicense || false,
               phytosanitaryLevel: data.phytosanitaryLevel || "",
               experience: data.experience || [],
               toolsExperience: data.toolsExperience || [],
@@ -86,6 +87,7 @@ export default function WorkerProfilePage() {
     hasVehicle: false,
     canRelocate: false,
     foodHandler: false,
+    hasForkliftLicense: false,
     phytosanitaryLevel: "",
     experience: [] as string[],
     toolsExperience: [] as string[],
@@ -419,6 +421,23 @@ export default function WorkerProfilePage() {
                 </label>
               </div>
 
+            </div>
+
+            {/* Carnet de Carretillero */}
+            <div className="mt-4">
+              <label className="flex items-center gap-3 cursor-pointer p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200 shadow-sm">
+                <input type="checkbox" className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 focus:ring-offset-0"
+                  checked={formData.hasForkliftLicense}
+                  onChange={(e) => setFormData({ ...formData, hasForkliftLicense: e.target.checked })}
+                />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm2-13V5a2 2 0 012-2h0a2 2 0 012 2v6h0a2 2 0 110 4h0a2 2 0 110-4h0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9h12m-6 6h12" />
+                  </svg>
+                  <span className="text-slate-800 font-medium">Carnet de carretillero</span>
+                </div>
+              </label>
             </div>
           </div>
           {/* ----------------------------------------------- */}

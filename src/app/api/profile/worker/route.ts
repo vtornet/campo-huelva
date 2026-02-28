@@ -40,6 +40,7 @@ export async function PUT(request: Request) {
       hasVehicle,
       canRelocate,
       foodHandler,
+      hasForkliftLicense,
       phytosanitaryLevel,
       profileImage
     } = body;
@@ -77,6 +78,7 @@ export async function PUT(request: Request) {
         hasVehicle,
         canRelocate,
         foodHandler,
+        hasForkliftLicense,
         phytosanitaryLevel,
         profileImage,
       },
@@ -93,6 +95,7 @@ export async function PUT(request: Request) {
         hasVehicle,
         canRelocate,
         foodHandler,
+        hasForkliftLicense,
         phytosanitaryLevel,
         profileImage,
       }

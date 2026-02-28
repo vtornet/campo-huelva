@@ -95,6 +95,9 @@ model WorkerProfile {
   foodHandler Boolean  @default(false)
   phytosanitaryLevel String?
 
+  // Carnet de carretillero
+  hasForkliftLicense Boolean @default(false)
+
   // Experiencia en maquinaria (tractores, cosechadoras, etc.)
   machineryExperience String[]
   // Experiencia en herramientas manuales
