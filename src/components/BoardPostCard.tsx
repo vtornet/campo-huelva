@@ -461,7 +461,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641l-.417 1.666c-.238.953.766 1.746 1.605 1.265l1.905-1.076c.465-.263.998-.36 1.526-.272 1.18.196 2.425.145 3.522-.204z" />
             </svg>
             <span>{commentsCount}</span>
           </button>
@@ -473,7 +473,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
             className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all duration-200 font-medium text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 bg-slate-50"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 01-5.367 2.684m0 9.316a3 3 0 105.368 2.684 3 3 0 01-5.367-2.684" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
           </button>
 
@@ -486,7 +486,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
               title="Denunciar publicación"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3h13.856c1.54 0 2.502-1.667 1.732-3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v1.5M3 21v-6m0 0l2.25-.77a2.25 2.25 0 012.5.77l.025.064a48.36 48.36 0 005.937-2.89l.023-.01a2.25 2.25 0 011.94.164l2.25.913a2.25 2.25 0 001.676.03l6.5-2.29V3M3 3l18 9" />
               </svg>
             </button>
           )}
