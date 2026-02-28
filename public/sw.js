@@ -1,4 +1,4 @@
-// Service Worker para Red Agro - PWA con soporte offline
+// Service Worker para Agro Red - PWA con soporte offline
 
 const CACHE_NAME = "red-agro-v1";
 const STATIC_CACHE_NAME = "red-agro-static-v1";
@@ -213,7 +213,7 @@ async function networkFirstNavigation(request) {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sin conexión - Red Agro</title>
+        <title>Sin conexión - Agro Red</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {

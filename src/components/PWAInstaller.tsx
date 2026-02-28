@@ -88,7 +88,7 @@ export default function PWAInstaller() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg">Instalar Red Agro</h3>
+            <h3 className="font-bold text-lg">Instalar Agro Red</h3>
             <p className="text-sm text-white/90 mt-1">
               {isIOS ? (
                 <>

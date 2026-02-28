@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Logo y marca */}
           <div className="flex items-center gap-2">
-            <span className="text-emerald-600 font-bold text-lg">Red Agro</span>
+            <span className="text-emerald-600 font-bold text-lg">Agro Red</span>
             <span className="text-slate-400 text-sm">© {currentYear} Appstracta</span>
           </div>
 

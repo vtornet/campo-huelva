@@ -5,7 +5,7 @@ import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Contacto",
-  description: "Contacta con el equipo de Red Agro. Estamos aquí para ayudarte.",
+  description: "Contacta con el equipo de Agro Red. Estamos aquí para ayudarte.",
 };
 
 export default function ContactPage() {

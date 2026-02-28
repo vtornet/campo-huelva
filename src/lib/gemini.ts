@@ -1,5 +1,5 @@
 // src/lib/gemini.ts
-// Cliente de Google Gemini para funciones de IA en Red Agro
+// Cliente de Google Gemini para funciones de IA en Agro Red
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 

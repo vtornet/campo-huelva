@@ -1,4 +1,4 @@
-# Plan de Testing - Red Agro (Campo Huelva)
+# Plan de Testing - Agro Red (Campo Huelva)
 
 **Versión:** 1.0
 **Fecha:** 23 de febrero de 2026

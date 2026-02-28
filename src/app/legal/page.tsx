@@ -4,7 +4,7 @@ import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Aviso Legal",
-  description: "Aviso Legal de Red Agro. Información legal y datos de contacto.",
+  description: "Aviso Legal de Agro Red. Información legal y datos de contacto.",
 };
 
 export default function LegalNotice() {
@@ -75,7 +75,7 @@ export default function LegalNotice() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4">2. Actividad Comercial</h2>
             <p>
-              Appstracta, bajo la marca <strong>Red Agro</strong>, desarrolla una plataforma digital de empleo agrícola
+              Appstracta, bajo la marca <strong>Agro Red</strong>, desarrolla una plataforma digital de empleo agrícola
               que conecta a trabajadores, profesionales y empresas del sector agrario español.
             </p>
             <p className="mt-3 text-sm text-slate-600">

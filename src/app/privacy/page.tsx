@@ -4,7 +4,7 @@ import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad",
-  description: "Política de privacidad de Red Agro. Tratamiento de datos personales according RGPD.",
+  description: "Política de privacidad de Agro Red. Tratamiento de datos personales according RGPD.",
 };
 
 export default function PrivacyPolicy() {
@@ -236,7 +236,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4">9. Menores de Edad</h2>
             <p>
-              Los servicios de Red Agro están dirigidos únicamente a personas mayores de 16 años. No recopilamos
+              Los servicios de Agro Red están dirigidos únicamente a personas mayores de 16 años. No recopilamos
               deliberadamente datos de menores de 16 años. Si detectamos que se ha registrado un menor,
               procederemos a eliminar su cuenta inmediatamente.
             </p>

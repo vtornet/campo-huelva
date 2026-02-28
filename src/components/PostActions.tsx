@@ -96,12 +96,12 @@ export default function PostActions({
 
           // Texto según el tipo de publicación
           const shareText = type === 'DEMAND'
-            ? 'Mira este candidato buscando empleo en Red Agro'
-            : 'Mira esta oferta de empleo en Red Agro';
+            ? 'Mira este candidato buscando empleo en Agro Red'
+            : 'Mira esta oferta de empleo en Agro Red';
 
           const shareTitle = type === 'DEMAND'
-            ? 'Red Agro - Candidato buscando empleo'
-            : 'Red Agro - Oferta de empleo';
+            ? 'Agro Red - Candidato buscando empleo'
+            : 'Agro Red - Oferta de empleo';
 
           const shareUrl = `${window.location.origin}/offer/${postId}`;
 

@@ -19,8 +19,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://agroredjob.com"
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "Red Agro - Empleo Agrícola",
-    template: "%s | Red Agro",
+    default: "Agro Red - Empleo Agrícola",
+    template: "%s | Agro Red",
   },
   description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español. Encuentra trabajo o talento en el campo.",
   keywords: [
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     "recolección",
     "empresas agrícolas",
   ],
-  authors: [{ name: "Red Agro", url: APP_URL }],
-  creator: "Red Agro",
-  publisher: "Red Agro",
+  authors: [{ name: "Agro Red", url: APP_URL }],
+  creator: "Agro Red",
+  publisher: "Agro Red",
   robots: {
     index: true,
     follow: true,
@@ -54,22 +54,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: APP_URL,
-    title: "Red Agro - Empleo Agrícola",
+    title: "Agro Red - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
-    siteName: "Red Agro",
+    siteName: "Agro Red",
     // La imagen OG se genera dinámicamente con Next.js
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Red Agro - Empleo Agrícola",
+        alt: "Agro Red - Empleo Agrícola",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Red Agro - Empleo Agrícola",
+    title: "Agro Red - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
     // La imagen de Twitter se genera dinámicamente con Next.js
     images: ["/twitter-image"],
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Red Agro",
+    title: "Agro Red",
   },
 };
 
@@ -112,11 +112,11 @@ export default function RootLayout({
     <html lang="es">
       <head>
         {/* Meta tags adicionales para PWA */}
-        <meta name="application-name" content="Red Agro" />
+        <meta name="application-name" content="Agro Red" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Red Agro" />
+        <meta name="apple-mobile-web-app-title" content="Agro Red" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="msapplication-TileColor" content="#059669" />
         <meta name="msapplication-config" content="/browserconfig.xml" />

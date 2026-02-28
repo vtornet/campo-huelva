@@ -29,7 +29,7 @@ function createEmailHtml(data: ContactRequest) {
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Red Agro</h1>
+    <h1 style="color: white; margin: 0; font-size: 24px;">Agro Red</h1>
     <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0;">Nuevo mensaje de contacto</p>
   </div>
 
@@ -74,7 +74,7 @@ function createEmailHtml(data: ContactRequest) {
   </div>
 
   <div style="background: #1f2937; color: rgba(255,255,255,0.7); padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px;">
-    <p style="margin: 0;">Enviado desde el formulario de contacto de Red Agro</p>
+    <p style="margin: 0;">Enviado desde el formulario de contacto de Agro Red</p>
     <p style="margin: 5px 0 0 0;">agroredjob.com</p>
   </div>
 </body>
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     if (resend) {
       try {
         const emailData = {
-          from: 'Red Agro <noreply@appstracta.app>',
+          from: 'Agro Red <noreply@appstracta.app>',
           to: [SUPPORT_EMAIL],
           replyTo: sanitizedEmail,
           subject: `📧 Nuevo contacto: ${sanitizedSubject}`,

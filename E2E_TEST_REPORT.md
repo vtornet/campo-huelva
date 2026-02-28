@@ -1,4 +1,4 @@
-# Reporte de Tests E2E - Red Agro
+# Reporte de Tests E2E - Agro Red
 
 **Fecha:** 23 de febrero de 2026
 **URL:** http://localhost:3000

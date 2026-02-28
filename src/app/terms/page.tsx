@@ -4,7 +4,7 @@ import { PageBackButton } from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones",
-  description: "Términos y Condiciones de uso de Red Agro.",
+  description: "Términos y Condiciones de uso de Agro Red.",
 };
 
 export default function TermsAndConditions() {
@@ -28,7 +28,7 @@ export default function TermsAndConditions() {
           {/* Preámbulo */}
           <section>
             <p className="mb-4">
-              Estos Términos y Condiciones regulan el acceso y uso de la plataforma <strong>Red Agro</strong>
+              Estos Términos y Condiciones regulan el acceso y uso de la plataforma <strong>Agro Red</strong>
               (también conocida como <strong>Campo Huelva</strong>), propiedad de <strong>Víctor José Tornet García</strong>
               (NIF 77534989B), que actúa bajo la marca <strong>Appstracta</strong>.
             </p>
@@ -42,7 +42,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4">1. Objeto de la Plataforma</h2>
             <p className="mb-3">
-              <strong>Red Agro</strong> es una plataforma digital de empleo agrícola que facilita la conexión
+              <strong>Agro Red</strong> es una plataforma digital de empleo agrícola que facilita la conexión
               entre:
             </p>
             <ul className="list-disc ml-6 mb-3 space-y-1">
@@ -60,7 +60,7 @@ export default function TermsAndConditions() {
           {/* 2. Requisitos de acceso */}
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4">2. Requisitos de Acceso</h2>
-            <p className="mb-3">Para usar Red Agro debes:</p>
+            <p className="mb-3">Para usar Agro Red debes:</p>
             <ul className="list-disc ml-6 mb-3 space-y-1">
               <li>Ser mayor de <strong>16 años</strong></li>
               <li>Facilitar datos verídicos y actualizados durante el registro</li>
@@ -92,12 +92,12 @@ export default function TermsAndConditions() {
             <p className="mb-3">
               Las empresas deben pasar un proceso de verificación para poder publicar ofertas. Este proceso
               incluye la validación de datos fiscales y de contacto. La verificación no implica respaldo
-              ni garantía por parte de Red Agro.
+              ni garantía por parte de Agro Red.
             </p>
 
             <h3 className="font-semibold text-slate-800 mb-2">3.3. Compromiso de veracidad</h3>
             <p>
-              El usuario se compromete a mantener la veracidad de la información proporcionada. Red Agro no se
+              El usuario se compromete a mantener la veracidad de la información proporcionada. Agro Red no se
               hace responsable de la inexactitud o falsedad de los datos proporcionados por los usuarios.
             </p>
           </section>
@@ -127,7 +127,7 @@ export default function TermsAndConditions() {
 
             <h3 className="font-semibold text-slate-800 mb-2">4.3. Moderación</h3>
             <p>
-              Red Agro se reserva el derecho de moderar, eliminar o suspender cualquier contenido o usuario
+              Agro Red se reserva el derecho de moderar, eliminar o suspender cualquier contenido o usuario
               que incumpla estos Términos, sin previo aviso y sin derecho a indemnización.
             </p>
           </section>
@@ -144,20 +144,20 @@ export default function TermsAndConditions() {
 
             <h3 className="font-semibold text-slate-800 mb-2">5.2. Relación contractual</h3>
             <p className="mb-3">
-              La contratación se realiza <strong>directamente entre empresa y trabajador</strong>. Red Agro
+              La contratación se realiza <strong>directamente entre empresa y trabajador</strong>. Agro Red
               no interviene en la relación laboral, no paga salarios ni cotiza a la Seguridad Social.
             </p>
 
             <h3 className="font-semibold text-slate-800 mb-2">5.3. Condiciones laborales</h3>
             <p className="mb-3">
               Las condiciones de trabajo (salario, horario, convenio aplicable) se pactan directamente entre
-              las partes. Red Agro recomienda formalizar siempre un contrato por escrito y respetar el
+              las partes. Agro Red recomienda formalizar siempre un contrato por escrito y respetar el
               convenio colectivo del sector.
             </p>
 
             <h3 className="font-semibold text-slate-800 mb-2">5.4. Garantías</h3>
             <p>
-              Red Agro no garantiza la consecución de empleo ni la idoneidad de los candidatos. Las empresas
+              Agro Red no garantiza la consecución de empleo ni la idoneidad de los candidatos. Las empresas
               son responsables de realizar las verificaciones que consideren oportunas.
             </p>
           </section>
@@ -176,7 +176,7 @@ export default function TermsAndConditions() {
               <li>Respetar la privacidad de las conversaciones</li>
             </ul>
             <p className="text-sm text-slate-600">
-              Red Agro no accede al contenido de los mensajes salvo por requerimiento legal o para investigar
+              Agro Red no accede al contenido de los mensajes salvo por requerimiento legal o para investigar
               denuncias.
             </p>
           </section>
@@ -235,7 +235,7 @@ export default function TermsAndConditions() {
             <h3 className="font-semibold text-slate-800 mb-2">9.4. Efectos del cierre</h3>
             <p>
               Tras el cierre de la cuenta, el usuario pierde acceso a sus publicaciones, mensajes y demás
-              contenido. Red Agro conservará los datos necesarios para cumplir obligaciones legales durante
+              contenido. Agro Red conservará los datos necesarios para cumplir obligaciones legales durante
               los plazos establecidos.
             </p>
           </section>
@@ -246,14 +246,14 @@ export default function TermsAndConditions() {
 
             <h3 className="font-semibold text-slate-800 mb-2">10.1. Contenido de la plataforma</h3>
             <p className="mb-3">
-              Red Agro y todos sus elementos (diseño, logotipos, textos, gráficos, código, funcionalidades)
+              Agro Red y todos sus elementos (diseño, logotipos, textos, gráficos, código, funcionalidades)
               son propiedad de Appstracta o de terceros que han autorizado su uso.
             </p>
 
             <h3 className="font-semibold text-slate-800 mb-2">10.2. Contenido del usuario</h3>
             <p className="mb-3">
               Al publicar contenido en la plataforma, el usuario garantiza que tiene derechos sobre él y
-              autoriza a Red Agro a utilizarlo para los fines previstos en la plataforma.
+              autoriza a Agro Red a utilizarlo para los fines previstos en la plataforma.
             </p>
 
             <h3 className="font-semibold text-slate-800 mb-2">10.3. Licencia de uso</h3>
@@ -270,7 +270,7 @@ export default function TermsAndConditions() {
 
             <h3 className="font-semibold text-slate-800 mb-2">11.1. Exclusiones</h3>
             <p className="mb-3">
-              Red Agro no responde de:
+              Agro Red no responde de:
             </p>
             <ul className="list-disc ml-6 mb-3 space-y-1">
               <li>La calidad o veracidad del contenido publicado por los usuarios</li>
@@ -291,7 +291,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4">12. Modificaciones del Servicio</h2>
             <p>
-              Red Agro se reserva el derecho a modificar, suspender o discontinuar temporal o permanentemente
+              Agro Red se reserva el derecho a modificar, suspender o discontinuar temporal o permanentemente
               cualquier aspecto de la plataforma, previa notificación a los usuarios cuando sea posible.
             </p>
           </section>

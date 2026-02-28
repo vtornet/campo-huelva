@@ -10,7 +10,7 @@
 ### 2. Obtener API Key
 1. Ve a https://resend.com/api-keys
 2. Haz clic en "Create API Key"
-3. Dale un nombre (ej: "Red Agro Contact")
+3. Dale un nombre (ej: "Agro Red Contact")
 4. Copia la API key generada
 
 ### 3. Configurar dominio remitente
@@ -49,12 +49,12 @@ Si no quieres configurar DNS, usa el dominio por defecto de Resend:
 
 Cambia en `src/app/api/contact/route.ts`:
 ```typescript
-from: 'Red Agro <noreply@agroredjob.com>',
+from: 'Agro Red <noreply@agroredjob.com>',
 ```
 
 Por:
 ```typescript
-from: 'Red Agro <onboarding@resend.dev>',
+from: 'Agro Red <onboarding@resend.dev>',
 ```
 
 Esto funciona inmediatamente sin configurar DNS.

@@ -1,4 +1,4 @@
-# Iconos PWA para Red Agro
+# Iconos PWA para Agro Red
 
 ## Instrucciones para generar los iconos
 
@@ -7,7 +7,7 @@ Los iconos deben ser imágenes cuadradas en formato PNG con transparencia.
 ### Opción 1: Usar herramientas online
 
 1. Ve a [https://realfavicongenerator.net/](https://realfavicongenerator.net/)
-2. Sube el logo de Red Agro (el archivo `logo.png` de la carpeta `public/`)
+2. Sube el logo de Agro Red (el archivo `logo.png` de la carpeta `public/`)
 3. Selecciona las opciones:
    - iOS: Yes
    - Android: Yes

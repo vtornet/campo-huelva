@@ -1,10 +1,10 @@
-# CLAUDE.md - Guía del Proyecto Red Agro / Campo Huelva
+# CLAUDE.md - Guía del Proyecto Agro Red / Campo Huelva
 
 Este archivo proporciona orientación a Claude Code (o cualquier desarrollador) que trabaje en este repositorio. Contiene tanto las directrices técnicas como la visión estratégica del producto.
 
 ## Descripción General del Proyecto
 
-**Red Agro (nombre técnico: Campo Huelva)** es una plataforma de empleo agrícola que conecta a trabajadores, jefes de cuadrilla (manijeros), ingenieros y empresas del sector agrario español. Es una mezcla de Infojobs y red social vertical, construida como una PWA (Progressive Web App) para garantizar el acceso desde cualquier dispositivo móvil, incluso en zonas con baja cobertura.
+**Agro Red (nombre técnico: Campo Huelva)** es una plataforma de empleo agrícola que conecta a trabajadores, jefes de cuadrilla (manijeros), ingenieros y empresas del sector agrario español. Es una mezcla de Infojobs y red social vertical, construida como una PWA (Progressive Web App) para garantizar el acceso desde cualquier dispositivo móvil, incluso en zonas con baja cobertura.
 
 El proyecto nace de un grupo de Facebook con más de **34.000 usuarios activos en Huelva**, lo que proporciona una validación real y una tracción inicial inigualable.
 
@@ -17,7 +17,7 @@ Construir una red profesional y de empleo fiable, centrada exclusivamente en el 
 - Simplicidad y usabilidad por encima de funciones sociales genéricas.
 - Escalabilidad para convertirse en la herramienta de referencia a nivel nacional.
 
-**Diferenciador clave**: El fundador tiene una dilatada experiencia como director de zona en importantes ETT del sector agroalimentario. Este conocimiento profundo de la legislación, las necesidades reales y los puntos de dolor del sector es el verdadero producto. Red Agro **no es una ETT ni una empresa de servicios**, sino un marketplace de conexión que respeta la legalidad (pago directo, convenios colectivos) y empodera a los profesionales del campo.
+**Diferenciador clave**: El fundador tiene una dilatada experiencia como director de zona en importantes ETT del sector agroalimentario. Este conocimiento profundo de la legislación, las necesidades reales y los puntos de dolor del sector es el verdadero producto. Agro Red **no es una ETT ni una empresa de servicios**, sino un marketplace de conexión que respeta la legalidad (pago directo, convenios colectivos) y empodera a los profesionales del campo.
 
 ## Estado del Proyecto
 

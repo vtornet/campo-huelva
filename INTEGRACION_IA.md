@@ -1,6 +1,6 @@
 # Integración de IA con Google Gemini
 
-Esta documentación describe la integración de Google Gemini en Red Agro para proporcionar funciones de inteligencia artificial.
+Esta documentación describe la integración de Google Gemini en Agro Red para proporcionar funciones de inteligencia artificial.
 
 ## Configuración
 

@@ -4,7 +4,7 @@ import { MetadataRoute } from 'next'
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://agroredjob.com'
 
 /**
- * Sitemap dinámico para Red Agro
+ * Sitemap dinámico para Agro Red
  * Genera automáticamente las URLs principales del sitio
  */
 export default function sitemap(): MetadataRoute.Sitemap {

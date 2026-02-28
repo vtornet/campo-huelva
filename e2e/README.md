@@ -1,6 +1,6 @@
 # E2E Testing con Playwright
 
-Esta carpeta contiene los tests End-to-End para la aplicación Red Agro (Campo Huelva).
+Esta carpeta contiene los tests End-to-End para la aplicación Agro Red (Campo Huelva).
 
 ## 🚀 Uso Rápido
 

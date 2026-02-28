@@ -4,7 +4,7 @@ import { MetadataRoute } from 'next'
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://agroredjob.com'
 
 /**
- * Robots.txt para Red Agro
+ * Robots.txt para Agro Red
  * Instrucciones para los crawlers de los buscadores
  */
 export default function robots(): MetadataRoute.Robots {

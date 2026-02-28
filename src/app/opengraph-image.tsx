@@ -48,7 +48,7 @@ export default async function Image() {
             textAlign: 'center',
           }}
         >
-          Red Agro
+          Agro Red
         </div>
 
         {/* Subtítulo */}

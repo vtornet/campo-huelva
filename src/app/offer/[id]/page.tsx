@@ -513,7 +513,7 @@ export default function OfferDetailPage() {
                   {offer.company?.companyName || offer.publisher?.workerProfile?.fullName || offer.publisher?.foremanProfile?.fullName || 'Usuario'}
                 </p>
                 <p className="text-sm text-slate-500">
-                  {isDemand ? 'Candidato' : offer.type === 'OFFICIAL' ? 'Empresa' : 'Usuario de Red Agro'}
+                  {isDemand ? 'Candidato' : offer.type === 'OFFICIAL' ? 'Empresa' : 'Usuario de Agro Red'}
                 </p>
               </div>
             </div>

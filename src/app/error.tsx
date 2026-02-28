@@ -28,7 +28,7 @@ export default function Error({
         <div className="mb-8 flex justify-center">
           <Image
             src="/logo.png"
-            alt="Red Agro"
+            alt="Agro Red"
             width={140}
             height={40}
             priority

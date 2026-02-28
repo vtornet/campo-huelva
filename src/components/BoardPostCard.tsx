@@ -156,12 +156,12 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
     }
 
     const shareUrl = `${window.location.origin}/board`;
-    const shareText = 'Mira esta publicación en Red Agro';
+    const shareText = 'Mira esta publicación en Agro Red';
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Red Agro - Tablón',
+          title: 'Agro Red - Tablón',
           text: shareText,
           url: shareUrl
         });

@@ -1,4 +1,4 @@
-# Resultados de Tests E2E - Red Agro
+# Resultados de Tests E2E - Agro Red
 
 **Fecha:** 23 de febrero de 2026
 **Tests Ejecutados:** Chromium (Desktop)

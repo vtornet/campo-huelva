@@ -189,7 +189,7 @@ a la AEPD. Este registro interno sustituye a la antigua notificación de fichero
 
 | Fecha | Modificación | Motivo |
 |-------|--------------|--------|
-| 25/02/2026 | Creación del registro | Inicio de actividad de Red Agro |
+| 25/02/2026 | Creación del registro | Inicio de actividad de Agro Red |
 
 ---
 

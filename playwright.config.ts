@@ -6,7 +6,7 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.test') });
 
 /**
- * Configuración de Playwright para Red Agro (Campo Huelva)
+ * Configuración de Playwright para Agro Red (Campo Huelva)
  *
  * Para ejecutar los tests:
  * - npm run test:e2e           (modo headless)

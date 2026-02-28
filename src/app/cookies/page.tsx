@@ -14,8 +14,8 @@ export default function CookiePolicy() {
   return (
     <>
       {/* Meta tags para cliente */}
-      <title>Política de Cookies | Red Agro</title>
-      <meta name="description" content="Política de Cookies de Red Agro. Información sobre las cookies que utilizamos." />
+      <title>Política de Cookies | Agro Red</title>
+      <meta name="description" content="Política de Cookies de Agro Red. Información sobre las cookies que utilizamos." />
 
       <div className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">
@@ -152,7 +152,7 @@ export default function CookiePolicy() {
             <section>
               <h2 className="text-xl font-bold text-slate-800 mb-4">5. Cookies de Terceros</h2>
               <p className="mb-3">
-                Red Agro puede incluir enlaces a sitios web de terceros o integrar servicios de terceros
+                Agro Red puede incluir enlaces a sitios web de terceros o integrar servicios de terceros
                 que utilizan sus propias cookies. Estas incluyen:
               </p>
               <ul className="list-disc ml-6 mb-3 space-y-1">

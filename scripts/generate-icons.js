@@ -10,7 +10,7 @@ const INPUT_PATH = path.join(__dirname, "../public/logo.png");
 const OUTPUT_DIR = path.join(__dirname, "../public/icons");
 
 async function generateIcons() {
-  console.log("🎨 Generando iconos PWA para Red Agro...\n");
+  console.log("🎨 Generando iconos PWA para Agro Red...\n");
 
   // Crear directorio si no existe
   if (!fs.existsSync(OUTPUT_DIR)) {
