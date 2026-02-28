@@ -7,8 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 
-type TabType = "profile" | "posts" | "contacts" | "messages" | "search";
+type TabType = "profile" | "posts" | "contacts" | "messages" | "search" | "settings";
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -59,7 +60,7 @@ export default function UserProfilePage() {
   // Leer parámetro 'tab' de la URL para cambiar de pestaña
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["profile", "posts", "contacts", "messages", "search"].includes(tabParam)) {
+    if (tabParam && ["profile", "posts", "contacts", "messages", "search", "settings"].includes(tabParam)) {
       setActiveTab(tabParam as TabType);
     }
   }, [searchParams]);
@@ -468,6 +469,18 @@ export default function UserProfilePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8c0 1.574-.512 3.042-1.395 3.72L21 12z" />
               </svg>
               Mensajes
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+                activeTab === "settings" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Ajustes
             </button>
             {/* Solo para empresas */}
             {role === 'COMPANY' && (
@@ -989,6 +1002,60 @@ export default function UserProfilePage() {
                 >
                   Abrir Buscador
                 </button>
+              </div>
+            )}
+
+            {/* Tab Ajustes */}
+            {activeTab === "settings" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-1">Notificaciones</h3>
+                  <p className="text-sm text-slate-500 mb-4">Configura cómo quieres recibir las notificaciones de la aplicación.</p>
+                  <PushNotificationSettings />
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <h4 className="font-medium text-slate-700 mb-3">Información de la cuenta</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Email:</span>
+                      <span className="text-slate-700">{user?.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Rol:</span>
+                      <span className="text-slate-700 capitalize">
+                        {role === 'USER' ? 'Trabajador' :
+                         role === 'FOREMAN' ? 'Manijero' :
+                         role === 'ENGINEER' ? 'Ingeniero' :
+                         role === 'COMPANY' ? 'Empresa' :
+                         role === 'ENCARGADO' ? 'Encargado' :
+                         role === 'TRACTORISTA' ? 'Tractorista' : role}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <button
+                    onClick={() => {
+                      confirm({
+                        title: "¿Cerrar sesión?",
+                        message: "Deberás volver a iniciar sesión para acceder a tu cuenta.",
+                        confirmText: "Cerrar",
+                        cancelText: "Cancelar"
+                      }).then(() => {
+                        auth.signOut();
+                        router.push("/login");
+                      });
+                    }}
+                    className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Cerrar sesión
+                  </button>
+                </div>
               </div>
             )}
           </div>
