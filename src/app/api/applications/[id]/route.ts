@@ -1,6 +1,7 @@
 // API para gestionar una inscripción específica
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, ApplicationStatus } from "@prisma/client";
+import { notifyApplicationStatus } from "@/lib/push-notifications";
 
 const prisma = new PrismaClient();
 
@@ -107,6 +108,9 @@ export async function PUT(
           relatedPostId: application.postId
         }
       });
+
+      // Enviar notificación push
+      await notifyApplicationStatus(application.userId, applicationStatus, post?.title || "una oferta");
     }
 
     return NextResponse.json({ success: true, application: updated });

@@ -755,3 +755,16 @@ enum NotificationType {
   CONTACT_REQUEST   // Nueva solicitud de contacto
   CONTACT_ACCEPTED  // Solicitud de contacto aceptada
 }
+
+// === NOTIFICACIONES PUSH (Web Push API) ===
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique // Un usuario tiene una sola suscripción activa
+  endpoint  String   // URL del endpoint de push
+  p256dh    String   // Clave pública del cliente (para encriptación)
+  auth      String   // Secreto de autenticación
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

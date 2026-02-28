@@ -1,4 +1,4 @@
-// Service Worker para Agro Red - PWA con soporte offline
+// Service Worker para Agro Red - PWA con soporte offline y notificaciones push
 
 const CACHE_NAME = "red-agro-v1";
 const STATIC_CACHE_NAME = "red-agro-static-v1";
@@ -74,6 +74,50 @@ self.addEventListener("activate", (event) => {
     })()
   );
 });
+
+// ============================================
+// NOTIFICACIONES PUSH
+// ============================================
+
+self.addEventListener("push", (event) => {
+  console.log("[SW] Push notification recibida:", event);
+
+  const data = event.data?.json();
+  if (!data) return;
+
+  const options = {
+    body: data.body || "Tienes una nueva notificación de Agro Red",
+    icon: "/logo.png",
+    badge: "/logo.png",
+    vibrate: [200, 100, 200],
+    tag: data.tag || "general",
+    requireInteraction: data.requireInteraction || false,
+    data: {
+      url: data.url || "/",
+      notificationId: data.notificationId
+    }
+  };
+
+  // Mostrar notificación
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Agro Red", options)
+  );
+});
+
+// Click en notificación
+self.addEventListener("notificationclick", (event) => {
+  console.log("[SW] Notification click:", event);
+
+  event.notification.close();
+
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || "/", "_blank")
+  );
+});
+
+// ============================================
+// FETCH STRATEGIES
+// ============================================
 
 // Estrategia de fetch: Network First con fallback a Cache
 self.addEventListener("fetch", (event) => {

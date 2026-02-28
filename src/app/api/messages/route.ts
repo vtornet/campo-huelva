@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { notifyNewContact } from "@/lib/notifications";
+import { notifyNewMessage } from "@/lib/push-notifications";
 import { rateLimitMiddleware, RateLimitPresets } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient();
@@ -216,6 +217,9 @@ export async function POST(request: Request) {
         }
 
         await notifyNewContact(receiverId, senderName, postId, postTitle, conversation.id);
+
+        // Enviar notificación push
+        await notifyNewMessage(receiverId, senderName, conversation.id);
       }
     }
 

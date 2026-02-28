@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, ApplicationStatus } from "@prisma/client";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import { rateLimitMiddleware, RateLimitPresets } from "@/lib/rate-limit";
+import { notifyNewApplication } from "@/lib/push-notifications";
 
 const prisma = new PrismaClient();
 
@@ -131,6 +132,9 @@ export async function POST(
           relatedPostId: postId
         }
       });
+
+      // Enviar notificación push
+      await notifyNewApplication(companyId, applicantName, post.title);
     }
 
     return NextResponse.json({ success: true, application });

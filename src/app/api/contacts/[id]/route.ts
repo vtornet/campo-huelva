@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, ContactStatus } from "@prisma/client";
+import { notifyContactAccepted } from "@/lib/push-notifications";
 
 const prisma = new PrismaClient();
 
@@ -41,16 +42,41 @@ export async function PUT(
         }
       });
 
+      // Obtener nombre del destinatario que aceptó
+      const recipient = await prisma.user.findUnique({
+        where: { id: contact.recipientId },
+        include: {
+          workerProfile: { select: { fullName: true } },
+          foremanProfile: { select: { fullName: true } },
+          engineerProfile: { select: { fullName: true } },
+          encargadoProfile: { select: { fullName: true } },
+          tractoristProfile: { select: { fullName: true } },
+          companyProfile: { select: { companyName: true } }
+        }
+      });
+
+      const recipientName = recipient?.workerProfile?.fullName ||
+                           recipient?.foremanProfile?.fullName ||
+                           recipient?.engineerProfile?.fullName ||
+                           recipient?.encargadoProfile?.fullName ||
+                           recipient?.tractoristProfile?.fullName ||
+                           recipient?.companyProfile?.companyName ||
+                           "Alguien";
+
       // Crear notificación al solicitante
       await prisma.notification.create({
         data: {
           userId: contact.requesterId,
           type: "CONTACT_ACCEPTED",
           title: "Solicitud de contacto aceptada",
-          message: "Han aceptado tu solicitud de contacto",
-          link: `/profile/contacts`
+          message: `${recipientName} ha aceptado tu solicitud de contacto`,
+          link: `/profile/contacts`,
+          relatedUserId: contact.recipientId
         }
       });
+
+      // Enviar notificación push
+      await notifyContactAccepted(contact.requesterId, recipientName);
 
       return NextResponse.json(updated);
     } else if (action === "reject") {

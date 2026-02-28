@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, ContactStatus } from "@prisma/client";
+import { notifyContactRequest } from "@/lib/push-notifications";
 
 const prisma = new PrismaClient();
 
@@ -249,16 +250,41 @@ export async function POST(request: Request) {
       }
     });
 
+    // Obtener nombre del solicitante
+    const requester = await prisma.user.findUnique({
+      where: { id: requesterId },
+      include: {
+        workerProfile: { select: { fullName: true } },
+        foremanProfile: { select: { fullName: true } },
+        engineerProfile: { select: { fullName: true } },
+        encargadoProfile: { select: { fullName: true } },
+        tractoristProfile: { select: { fullName: true } },
+        companyProfile: { select: { companyName: true } }
+      }
+    });
+
+    const requesterName = requester?.workerProfile?.fullName ||
+                         requester?.foremanProfile?.fullName ||
+                         requester?.engineerProfile?.fullName ||
+                         requester?.encargadoProfile?.fullName ||
+                         requester?.tractoristProfile?.fullName ||
+                         requester?.companyProfile?.companyName ||
+                         "Alguien";
+
     // Crear notificación al destinatario
     await prisma.notification.create({
       data: {
         userId: recipientId,
         type: "CONTACT_REQUEST",
         title: "Nueva solicitud de contacto",
-        message: "Alguien quiere añadirte como contacto",
-        link: `/profile?tab=contacts`
+        message: `${requesterName} quiere añadirte como contacto`,
+        link: `/profile?tab=contacts`,
+        relatedUserId: requesterId
       }
     });
+
+    // Enviar notificación push
+    await notifyContactRequest(recipientId, requesterName);
 
     return NextResponse.json(newContact, { status: 201 });
   } catch (error) {
