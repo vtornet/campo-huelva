@@ -28,6 +28,11 @@ export function AddContactButton({
     return null; // No mostrar botón si es el propio usuario
   }
 
+  // Las empresas no pueden añadir contactos
+  if (user.role === "COMPANY") {
+    return null;
+  }
+
   const handleAddContact = async () => {
     const confirmed = await confirm({
       title: "Añadir como contacto",
@@ -89,10 +94,12 @@ export function AddContactButton({
     }
   };
 
-  // Icono de usuario más
-  const UserIcon = () => (
+  // Icono de usuario con signo + (UserPlus)
+  const UserPlusIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 9h3m-6 0h6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5a2 2 0 012 2v2a2 2 0 01-2 2H9a2 2 0 01-2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2zm-2-2h.01M6 20v1a2 2 0 002 2h2a2 2 0 002-2v-1m0 0V5a2 2 0 012-2h2a2 2 0 012 2v5a2 2 0 01-2 2H10a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2v5m-6 9h12" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 9h6m-6 0h-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
     </svg>
   );
 
@@ -124,7 +131,7 @@ export function AddContactButton({
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 0 4 0v8h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           ) : (
-            <UserIcon />
+            <UserPlusIcon />
           )}
         </button>
       </>
@@ -165,7 +172,7 @@ export function AddContactButton({
           </>
         ) : (
           <>
-            <UserIcon />
+            <UserPlusIcon />
             {label}
           </>
         )}
