@@ -56,6 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://agroredjob.com';
   const imageUrl = `${appUrl}/board/${id}/opengraph-image`;
+  const twitterImageUrl = `${appUrl}/board/${id}/twitter-image`;
 
   return {
     title: `${authorName} - Tablón Social - Agro Red`,
@@ -74,13 +75,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         }
       ],
       locale: "es_ES",
-      type: "website",
+      type: "article",
     },
     twitter: {
       card: "summary_large_image",
       title: `${authorName} - Tablón Social`,
       description: truncatedContent,
-      images: [imageUrl],
+      images: [twitterImageUrl],
     },
   };
 }

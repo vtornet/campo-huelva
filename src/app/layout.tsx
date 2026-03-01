@@ -58,10 +58,10 @@ export const metadata: Metadata = {
     title: "Agro Red - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
     siteName: "Agro Red",
-    // La imagen OG se genera dinámicamente con Next.js
+    // La imagen OG se genera dinámicamente con Next.js - URL absoluta para WhatsApp
     images: [
       {
-        url: "/opengraph-image",
+        url: `${APP_URL}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: "Agro Red - Empleo Agrícola",
@@ -72,8 +72,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Agro Red - Empleo Agrícola",
     description: "Plataforma de empleo agrícola que conecta trabajadores, manijeros, ingenieros y empresas del sector agrario español.",
-    // La imagen de Twitter se genera dinámicamente con Next.js
-    images: ["/twitter-image"],
+    // La imagen de Twitter se genera dinámicamente con Next.js - URL absoluta
+    images: [`${APP_URL}/twitter-image`],
   },
   icons: {
     icon: [
