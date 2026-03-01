@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationsProvider } from "@/components/Notifications";
 import { CookieProvider } from "@/context/CookieContext";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
 import Footer from "@/components/Footer";
@@ -141,6 +142,7 @@ export default function RootLayout({
                 <Footer />
               </div>
               <ServiceWorkerProvider />
+              <ServiceWorkerRegister />
               <PWAInstaller />
               <CookieBannerWrapper />
               <CookieSettings />
