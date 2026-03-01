@@ -265,6 +265,7 @@ export default function ApplicationsPage() {
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [modalUser, setModalUser] = useState<Application['user'] | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<any>(null);
 
   // Estados para filtros (NO modifican la lógica existente)
   const [showFilters, setShowFilters] = useState(false);
@@ -431,6 +432,20 @@ export default function ApplicationsPage() {
     }
   }, [user]);
 
+  // Cargar perfil de la empresa
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/user/me?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error && data.companyProfile) {
+            setCompanyProfile(data.companyProfile);
+          }
+        })
+        .catch(err => console.error("Error loading company profile:", err));
+    }
+  }, [user]);
+
   // Cargar inscritos cuando se selecciona un post
   useEffect(() => {
     if (selectedPost && user) {
@@ -537,6 +552,9 @@ export default function ApplicationsPage() {
 
   // Contactar por WhatsApp
   const handleWhatsAppContact = (phone: string, fullName: string) => {
+    // Obtener nombre de la empresa
+    const companyName = companyProfile?.companyName || 'Agro Red';
+
     // Limpiar el número de teléfono: eliminar espacios, guiones, paréntesis, etc.
     const cleanPhone = phone.replace(/\s/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
 
@@ -550,8 +568,8 @@ export default function ApplicationsPage() {
       whatsappPhone = cleanPhone;
     }
 
-    // Crear mensaje predefinido
-    const message = encodeURIComponent(`Hola ${fullName}, te contacto desde Agro Red respecto a tu inscripción en una oferta.`);
+    // Crear mensaje predefinido con nombre de la empresa
+    const message = encodeURIComponent(`Hola ${fullName}, te contacto desde ${companyName} respecto a tu inscripción en una oferta en Agro Red.`);
     const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
 
     // Abrir en nueva pestaña
