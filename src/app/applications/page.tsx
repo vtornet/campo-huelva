@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
+import { formatPostDate } from "@/lib/utils";
 
 interface Application {
   id: string;
@@ -267,6 +268,9 @@ export default function ApplicationsPage() {
   const [modalUser, setModalUser] = useState<Application['user'] | null>(null);
   const [companyProfile, setCompanyProfile] = useState<any>(null);
 
+  // Estado para la pestaña activa (PENDING | ACCEPTED | REJECTED | CONTACTED)
+  const [activeTab, setActiveTab] = useState<'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CONTACTED'>('PENDING');
+
   // Estados para filtros (NO modifican la lógica existente)
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<CandidateFilters>({
@@ -303,6 +307,9 @@ export default function ApplicationsPage() {
   // Aplicar filtros usando useMemo (no modifica el estado original)
   const filteredApplications = useMemo(() => {
     let result = [...applications];
+
+    // Primero filtrar por estado (pestaña activa)
+    result = result.filter(app => app.status === activeTab);
 
     // Filtrar por experiencia mínima
     if (filters.minYearsExperience !== null) {
@@ -375,7 +382,7 @@ export default function ApplicationsPage() {
     });
 
     return result;
-  }, [applications, filters]);
+  }, [applications, filters, activeTab]);
 
   // Contador de filtros activos
   const activeFiltersCount = useMemo(() => {
@@ -413,6 +420,22 @@ export default function ApplicationsPage() {
     });
     return Array.from(provinces).sort();
   }, [applications]);
+
+  // Contar aplicaciones por estado para los tabs
+  const statusCounts = useMemo(() => ({
+    PENDING: applications.filter(a => a.status === 'PENDING').length,
+    ACCEPTED: applications.filter(a => a.status === 'ACCEPTED').length,
+    REJECTED: applications.filter(a => a.status === 'REJECTED').length,
+    CONTACTED: applications.filter(a => a.status === 'CONTACTED').length,
+  }), [applications]);
+
+  // Configuración de los tabs
+  const tabs = [
+    { id: 'PENDING' as const, label: '📥 Inscritos', color: 'blue', bgColor: 'bg-blue-50', textColor: 'text-blue-700', borderActive: 'border-blue-500' },
+    { id: 'ACCEPTED' as const, label: '✅ Aceptados', color: 'emerald', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', borderActive: 'border-emerald-500' },
+    { id: 'REJECTED' as const, label: '❌ Rechazados', color: 'red', bgColor: 'bg-red-50', textColor: 'text-red-700', borderActive: 'border-red-500' },
+    { id: 'CONTACTED' as const, label: '💬 Contactados', color: 'indigo', bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', borderActive: 'border-indigo-500' },
+  ];
 
   // Cargar posts de la empresa
   useEffect(() => {
@@ -667,11 +690,9 @@ export default function ApplicationsPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {activeFiltersCount > 0 && (
-                  <span className="text-sm text-slate-500">
-                    {filteredApplications.length} de {applications.length} candidatos
-                  </span>
-                )}
+                <span className="text-sm text-slate-500">
+                  {filteredApplications.length} {activeFiltersCount > 0 ? `de ${statusCounts[activeTab]}` : ''} {filteredApplications.length === 1 ? 'candidato' : 'candidatos'}
+                </span>
                 <svg
                   className={`w-5 h-5 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`}
                   fill="none"
@@ -826,6 +847,40 @@ export default function ApplicationsPage() {
           </div>
         )}
 
+        {/* Tabs de estado - Solo mostrar si hay candidatos */}
+        {applications.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-1 bg-white rounded-xl p-1.5 shadow-sm border border-slate-200 overflow-x-auto">
+              {tabs.map(tab => {
+                const count = statusCounts[tab.id];
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200
+                      ${isActive
+                        ? `${tab.bgColor} ${tab.textColor} shadow-sm`
+                        : 'text-slate-600 hover:bg-slate-50'
+                      }
+                    `}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      isActive
+                        ? 'bg-white/70'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Lista de candidatos */}
         {loadingApps ? (
           <div className="flex justify-center py-12">
@@ -843,24 +898,104 @@ export default function ApplicationsPage() {
               Aún no hay inscritos en esta oferta.
             </p>
           </div>
-        ) : filteredApplications.length === 0 && activeFiltersCount > 0 ? (
+        ) : filteredApplications.length === 0 ? (
+          // Mensaje específico según la pestaña activa
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${tabs.find(t => t.id === activeTab)?.bgColor || 'bg-slate-100'} flex items-center justify-center`}>
+              {activeTab === 'PENDING' && (
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              )}
+              {activeTab === 'ACCEPTED' && (
+                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {activeTab === 'REJECTED' && (
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              {activeTab === 'CONTACTED' && (
+                <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              )}
             </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">Sin resultados</h3>
-            <p className="text-slate-500 text-sm mb-4">
-              Ningún candidato coincide con los filtros aplicados.
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">
+              {activeTab === 'PENDING' && 'No hay inscritos'}
+              {activeTab === 'ACCEPTED' && 'No has aceptado candidatos'}
+              {activeTab === 'REJECTED' && 'No has rechazado candidatos'}
+              {activeTab === 'CONTACTED' && 'No has contactado a ningún candidato'}
+            </h3>
+            <p className="text-slate-500 text-sm">
+              {activeTab === 'PENDING' && 'No hay nuevos inscritos en esta sección.'}
+              {activeTab === 'ACCEPTED' && 'Acepta candidatos desde la sección de Inscritos.'}
+              {activeTab === 'REJECTED' && 'Los candidatos rechazados aparecerán aquí.'}
+              {activeTab === 'CONTACTED' && 'Marca como contactados a los candidatos aceptados.'}
             </p>
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-medium text-sm"
-            >
-              Limpiar filtros
-            </button>
           </div>
+        ) : filteredApplications.length === 0 ? (
+          // Determinar si es por filtros o porque no hay candidatos en este estado
+          statusCounts[activeTab] > 0 ? (
+            // Hay candidatos en este estado pero no coinciden con los filtros
+            <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Sin resultados</h3>
+              <p className="text-slate-500 text-sm mb-4">
+                Ningún candidato coincide con los filtros aplicados.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-medium text-sm"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : (
+            // No hay candidatos en este estado - mensaje específico
+            <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/60 border-dashed">
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${tabs.find(t => t.id === activeTab)?.bgColor || 'bg-slate-100'} flex items-center justify-center`}>
+                {activeTab === 'PENDING' && (
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                )}
+                {activeTab === 'ACCEPTED' && (
+                  <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {activeTab === 'REJECTED' && (
+                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                {activeTab === 'CONTACTED' && (
+                  <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                {activeTab === 'PENDING' && 'No hay inscritos'}
+                {activeTab === 'ACCEPTED' && 'No has aceptado candidatos'}
+                {activeTab === 'REJECTED' && 'No has rechazado candidatos'}
+                {activeTab === 'CONTACTED' && 'No has contactado a ningún candidato'}
+              </h3>
+              <p className="text-slate-500 text-sm">
+                {activeTab === 'PENDING' && 'No hay nuevos inscritos en esta sección.'}
+                {activeTab === 'ACCEPTED' && 'Acepta candidatos desde la sección de Inscritos.'}
+                {activeTab === 'REJECTED' && 'Los candidatos rechazados aparecerán aquí.'}
+                {activeTab === 'CONTACTED' && 'Marca como contactados a los candidatos aceptados.'}
+              </p>
+            </div>
+          )
         ) : (
           <div className="space-y-4">
             {filteredApplications.map(app => {
@@ -869,7 +1004,12 @@ export default function ApplicationsPage() {
               const isForeman = !!app.user.foremanProfile;
 
               return (
-                <div key={app.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60">
+                <div key={app.id} className={`bg-white p-5 rounded-2xl shadow-sm border-l-4 ${
+                  app.status === 'PENDING' ? 'border-l-blue-400 border border-slate-200/60' :
+                  app.status === 'ACCEPTED' ? 'border-l-emerald-400 border border-slate-200/60' :
+                  app.status === 'REJECTED' ? 'border-l-red-400 border border-slate-200/60' :
+                  'border-l-indigo-400 border border-slate-200/60'
+                }`}>
                   <div className="flex flex-col gap-4">
                     {/* Header con avatar y nombre */}
                     <div className="flex items-center gap-4">
@@ -909,7 +1049,7 @@ export default function ApplicationsPage() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Inscrito el {new Date(app.createdAt).toLocaleDateString('es-ES')}
+                          {formatPostDate(app.createdAt)}
                         </p>
                       </div>
                     </div>
@@ -966,12 +1106,13 @@ export default function ApplicationsPage() {
                     {/* Acciones */}
                     <div className="flex flex-wrap gap-2 items-center justify-between">
                       <div className="flex flex-wrap gap-2">
+                        {/* Botones de cambio de estado - contextuales según la pestaña actual */}
                         {app.status === "PENDING" && (
                           <>
                             <button
                               onClick={() => handleUpdateStatus(app.id, "ACCEPTED")}
                               disabled={updating[app.id]}
-                              className="flex items-center gap-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all text-sm font-medium disabled:opacity-50"
+                              className="flex items-center gap-1 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-all text-sm font-medium disabled:opacity-50"
                             >
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -986,24 +1127,84 @@ export default function ApplicationsPage() {
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
-                              Descartar
+                              Rechazar
                             </button>
                           </>
                         )}
                         {app.status === "ACCEPTED" && (
-                          <button
-                            onClick={() => handleUpdateStatus(app.id, "CONTACTED")}
-                            disabled={updating[app.id]}
-                            className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all text-sm font-medium disabled:opacity-50"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            Marcar contactado
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "CONTACTED")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              Marcar contactado
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "REJECTED")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Rechazar
+                            </button>
+                          </>
+                        )}
+                        {app.status === "REJECTED" && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "PENDING")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                              Recuperar
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "ACCEPTED")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Aceptar
+                            </button>
+                          </>
+                        )}
+                        {app.status === "CONTACTED" && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "ACCEPTED")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                              Volver a aceptados
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(app.id, "REJECTED")}
+                              disabled={updating[app.id]}
+                              className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all text-sm font-medium disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Rechazar
+                            </button>
+                          </>
                         )}
 
-                        {/* Botones de contacto */}
+                        {/* Botones de contacto - siempre visibles */}
                         <button
                           onClick={() => handleChatContact(app.user.id)}
                           className="flex items-center gap-1 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-all text-sm font-medium"
