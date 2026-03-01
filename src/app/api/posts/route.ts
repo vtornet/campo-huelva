@@ -272,6 +272,38 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
+    // 2.3. Limitar publicaciones de DEMAND a 1 cada 7 días (para evitar spam)
+    // Esta restricción NO aplica a empresas ni admins
+    const isCompanyOrAdmin = user.role === Role.COMPANY || user.role === Role.ADMIN;
+
+    if (isDemand && !isCompanyOrAdmin) {
+      // Buscar la última demanda del usuario
+      const lastDemand = await prisma.post.findFirst({
+        where: {
+          publisherId: user.id,
+          type: PostType.DEMAND
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      if (lastDemand) {
+        const daysSinceLastDemand = Math.floor(
+          (Date.now() - new Date(lastDemand.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        const DAYS_BETWEEN_DEMANDS = 7;
+
+        if (daysSinceLastDemand < DAYS_BETWEEN_DEMANDS) {
+          const daysRemaining = DAYS_BETWEEN_DEMANDS - daysSinceLastDemand;
+          return NextResponse.json({
+            error: `Solo puedes publicar una demanda cada ${DAYS_BETWEEN_DEMANDS} días. Debes esperar ${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} para publicar otra.`
+          }, { status: 429 }); // 429 = Too Many Requests
+        }
+      }
+    }
+
     if (user.isSilenced) {
       // Verificar si el silencio es temporal y ha expirado
       if (user.silencedUntil && user.silencedUntil < new Date()) {
