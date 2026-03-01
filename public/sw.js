@@ -38,8 +38,9 @@ self.addEventListener("install", (event) => {
           console.warn("[SW] No se pudieron cachear todos los recursos estáticos:", err);
         }
 
-        // Forzar activación inmediata
-        await self.skipWaiting();
+        // NO forzar activación inmediata para evitar bucles de recarga
+        // El service worker se activará cuando todos los clientes se cierren
+        // await self.skipWaiting();
       } catch (err) {
         console.error("[SW] Error durante la instalación:", err);
       }

@@ -43,9 +43,12 @@ export function ServiceWorkerRegister() {
         });
 
       // Escuchar cuando el service worker toma control
+      // Solo recargar si realmente cambió (evita bucles)
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         console.log("[SW] Nuevo service worker activo");
-        window.location.reload();
+        // NO recargar automáticamente para evitar bucles infinitos
+        // El usuario puede recargar manualmente si lo desea
+        // window.location.reload();
       });
     }
   }, []);
