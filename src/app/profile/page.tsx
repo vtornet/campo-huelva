@@ -9,7 +9,7 @@ import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 
-type TabType = "profile" | "posts" | "contacts" | "messages" | "search" | "settings";
+type TabType = "profile" | "posts" | "contacts" | "search" | "settings";
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -415,85 +415,75 @@ export default function UserProfilePage() {
 
         {/* Pestañas de navegación */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 shadow-black/5">
-          <div className="flex border-b border-slate-200/60">
+          {/* Contenedor con scroll horizontal en móvil */}
+          <div className="flex border-b border-slate-200/60 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+              className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
                 activeTab === "profile" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Perfil
+              <span className="hidden sm:inline">Perfil</span>
             </button>
             <button
               onClick={() => setActiveTab("posts")}
-              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+              className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
                 activeTab === "posts" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Mis Publicaciones
+              <span className="hidden sm:inline">Mis Publicaciones</span>
               {userPosts.length > 0 && (
-                <span className="ml-2 bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                <span className="ml-1 sm:ml-2 bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">
                   {userPosts.length}
                 </span>
               )}
             </button>
             <button
               onClick={() => setActiveTab("contacts")}
-              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+              className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
                 activeTab === "contacts" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              Contactos
+              <span className="hidden sm:inline">Contactos</span>
               {pendingRequests.length > 0 && (
-                <span className="ml-2 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                <span className="ml-1 sm:ml-2 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
                   {pendingRequests.length}
                 </span>
               )}
             </button>
             <button
-              onClick={() => setActiveTab("messages")}
-              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
-                activeTab === "messages" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8c0 1.574-.512 3.042-1.395 3.72L21 12z" />
-              </svg>
-              Mensajes
-            </button>
-            <button
               onClick={() => setActiveTab("settings")}
-              className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+              className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
                 activeTab === "settings" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Ajustes
+              <span className="hidden sm:inline">Ajustes</span>
             </button>
             {/* Solo para empresas */}
             {role === 'COMPANY' && (
               <button
                 onClick={() => setActiveTab("search")}
-                className={`flex-1 py-4 px-4 font-medium text-center transition-all duration-200 relative ${
+                className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
                   activeTab === "search" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                Buscar Perfiles
+                <span className="hidden sm:inline">Buscar Perfiles</span>
               </button>
             )}
           </div>
@@ -964,25 +954,6 @@ export default function UserProfilePage() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Tab Mensajes */}
-            {activeTab === "messages" && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8c0 1.574-.512 3.042-1.395 3.72L21 12z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">Mensajes</h3>
-                <p className="text-slate-500 text-sm mb-4">Gestiona tus conversaciones desde la página de mensajes.</p>
-                <button
-                  onClick={() => router.push("/messages")}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-xl font-medium transition-all duration-200"
-                >
-                  Ir a Mensajes
-                </button>
               </div>
             )}
 
