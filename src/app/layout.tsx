@@ -112,6 +112,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        {/* Meta tags adicionales para WhatsApp/Open Graph */}
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:alt" content="Agro Red - Empleo Agrícola" />
+
         {/* Meta tags adicionales para PWA */}
         <meta name="application-name" content="Agro Red" />
         <meta name="mobile-web-app-capable" content="yes" />
