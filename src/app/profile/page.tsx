@@ -84,11 +84,37 @@ export default function UserProfilePage() {
     if (!user) return;
     setPostsLoading(true);
     try {
-      const res = await fetch(`/api/posts?userId=${user.uid}`);
-      if (res.ok) {
-        const posts = await res.json();
-        setUserPosts(Array.isArray(posts) ? posts : []);
+      // Obtener posts normales (ofertas y demandas)
+      const postsRes = await fetch(`/api/posts?userId=${user.uid}`);
+      let allPosts: any[] = [];
+
+      if (postsRes.ok) {
+        const posts = await postsRes.json();
+        allPosts = Array.isArray(posts) ? posts : [];
       }
+
+      // Obtener posts del tablón
+      const boardRes = await fetch(`/api/board?userId=${user.uid}`);
+      if (boardRes.ok) {
+        const boardPosts = await boardRes.json();
+        if (Array.isArray(boardPosts)) {
+          // Convertir posts del tablón al mismo formato que los posts normales
+          const formattedBoardPosts = boardPosts.map((bp: any) => ({
+            ...bp,
+            type: 'BOARD', // Tipo especial para identificar posts del tablón
+            title: bp.content?.substring(0, 60) + (bp.content?.length > 60 ? '...' : ''),
+            description: bp.content,
+            location: null,
+            province: bp.author?.workerProfile?.province || bp.author?.foremanProfile?.province || null,
+          }));
+          allPosts = [...allPosts, ...formattedBoardPosts];
+        }
+      }
+
+      // Ordenar por fecha de creación (más recientes primero)
+      allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setUserPosts(allPosts);
     } catch (error) {
       console.error("Error cargando publicaciones:", error);
     } finally {
@@ -298,7 +324,7 @@ export default function UserProfilePage() {
   const profile = userData.profile;
   const role = userData.role;
 
-  const handleDeletePost = async (postId: string) => {
+  const handleDeletePost = async (postId: string, isBoardPost = false) => {
     const confirmed = await confirm({
       title: "Eliminar publicación",
       message: "¿Eliminar esta publicación? Esta acción no se puede deshacer.",
@@ -306,7 +332,12 @@ export default function UserProfilePage() {
     });
     if (!confirmed) return;
 
-    fetch(`/api/posts/${postId}?userId=${user.uid}&action=delete`, { method: "DELETE" })
+    // Usar endpoint diferente según el tipo de post
+    const deleteUrl = isBoardPost
+      ? `/api/board-posts/${postId}`
+      : `/api/posts/${postId}?userId=${user.uid}&action=delete`;
+
+    fetch(deleteUrl, { method: "DELETE" })
       .then(res => {
         if (res.ok) {
           setUserPosts(prev => prev.filter(p => p.id !== postId));
@@ -749,54 +780,80 @@ export default function UserProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {userPosts.map((post) => (
-                      <div key={post.id} className={`bg-white p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
-                        post.type === "OFFICIAL" ? "border-emerald-200/80" :
-                        post.type === "DEMAND" ? "border-orange-200/80" :
-                        "border-slate-200/60"
-                      }`}>
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                post.type === "OFFICIAL" ? "bg-emerald-100 text-emerald-700" :
-                                post.type === "DEMAND" ? "bg-orange-100 text-orange-700" :
-                                "bg-slate-100 text-slate-600"
+                    {userPosts.map((post) => {
+                      const isBoardPost = post.type === 'BOARD';
+                      return (
+                        <div key={post.id} className={`bg-white p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                          post.type === "OFFICIAL" ? "border-emerald-200/80" :
+                          post.type === "DEMAND" ? "border-orange-200/80" :
+                          isBoardPost ? "border-blue-200/80" :
+                          "border-slate-200/60"
+                        }`}>
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  post.type === "OFFICIAL" ? "bg-emerald-100 text-emerald-700" :
+                                  post.type === "DEMAND" ? "bg-orange-100 text-orange-700" :
+                                  isBoardPost ? "bg-blue-100 text-blue-700" :
+                                  "bg-slate-100 text-slate-600"
+                                }`}>
+                                  {post.type === "OFFICIAL" ? "Oferta" :
+                                   post.type === "DEMAND" ? "Demanda" :
+                                   isBoardPost ? "Tablón" :
+                                   "Compartida"}
+                                </span>
+                                <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
+                              </div>
+                              <h4 className={`font-bold ${
+                                post.type === 'DEMAND' ? 'text-orange-900' :
+                                isBoardPost ? 'text-blue-900' :
+                                'text-slate-800'
                               }`}>
-                                {post.type === "OFFICIAL" ? "Oficial" :
-                                 post.type === "DEMAND" ? "Demanda" :
-                                 "Compartida"}
-                              </span>
-                              <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
+                                {isBoardPost ? (
+                                  <span className="whitespace-pre-wrap">{post.description}</span>
+                                ) : (
+                                  post.title
+                                )}
+                              </h4>
+                              {!isBoardPost && (
+                                <p className="text-sm text-slate-600 mt-1">{post.location}{post.province && `, ${post.province}`}</p>
+                              )}
+                              {isBoardPost && post.province && (
+                                <p className="text-sm text-slate-500 mt-1">
+                                  <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  </svg>
+                                  {post.province}
+                                </p>
+                              )}
                             </div>
-                            <h4 className={`font-bold ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'}`}>
-                              {post.title}
-                            </h4>
-                            <p className="text-sm text-slate-600 mt-1">{post.location}{post.province && `, ${post.province}`}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => router.push(`/publish?edit=${post.id}`)}
-                              className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-medium"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => handleDeletePost(post.id)}
-                              className="inline-flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition text-sm font-medium"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Eliminar
-                            </button>
+                            <div className="flex gap-2">
+                              {!isBoardPost && (
+                                <button
+                                  onClick={() => router.push(`/publish?edit=${post.id}`)}
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-medium"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  Editar
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeletePost(post.id, isBoardPost)}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition text-sm font-medium"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Eliminar
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -105,3 +105,58 @@ export async function GET(
     );
   }
 }
+
+// DELETE: Eliminar una publicación del tablón
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Verificar autenticación
+    let userId: string;
+    try {
+      userId = await authenticateRequest(request);
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: error.message || "No autenticado" },
+        { status: 401 }
+      );
+    }
+
+    // Buscar la publicación
+    const post = await prisma.boardPost.findUnique({
+      where: { id },
+      select: { authorId: true }
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "Publicación no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que el usuario es el autor
+    if (post.authorId !== userId) {
+      return NextResponse.json(
+        { error: "No tienes permiso para eliminar esta publicación" },
+        { status: 403 }
+      );
+    }
+
+    // Eliminar la publicación (en cascada se eliminarán likes y comentarios)
+    await prisma.boardPost.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true, message: "Publicación eliminada" });
+  } catch (error) {
+    console.error("Error eliminando publicación del tablón:", error);
+    return NextResponse.json(
+      { error: "Error al eliminar la publicación" },
+      { status: 500 }
+    );
+  }
+}
