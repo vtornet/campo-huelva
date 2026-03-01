@@ -188,39 +188,39 @@ export async function POST(request: Request) {
     // Verificar si es el primer mensaje en esta conversación
     // Si la conversación se acaba de crear (createdAt == updatedAt), es el primer mensaje
     const isFirstMessage = conversation.createdAt.getTime() === conversation.updatedAt.getTime();
-    if (!isFirstMessage) {
-      // Obtener nombre del remitente para la notificación
-      const sender = await prisma.user.findUnique({
-        where: { id: senderId },
-        include: {
-          workerProfile: { select: { fullName: true } },
-          foremanProfile: { select: { fullName: true } },
-          companyProfile: { select: { companyName: true } }
-        }
-      });
 
-      if (sender) {
-        const senderName = sender.workerProfile?.fullName ||
-                          sender.foremanProfile?.fullName ||
-                          sender.companyProfile?.companyName ||
-                          sender.email?.split("@")[0] ||
-                          "Alguien";
-
-        // Obtener título del post si existe
-        let postTitle = "";
-        if (postId) {
-          const post = await prisma.post.findUnique({
-            where: { id: postId },
-            select: { title: true }
-          });
-          postTitle = post?.title || "";
-        }
-
-        await notifyNewContact(receiverId, senderName, postId, postTitle, conversation.id);
-
-        // Enviar notificación push
-        await notifyNewMessage(receiverId, senderName, conversation.id);
+    // Obtener nombre del remitente para la notificación
+    const sender = await prisma.user.findUnique({
+      where: { id: senderId },
+      include: {
+        workerProfile: { select: { fullName: true } },
+        foremanProfile: { select: { fullName: true } },
+        companyProfile: { select: { companyName: true } }
       }
+    });
+
+    if (sender) {
+      const senderName = sender.workerProfile?.fullName ||
+                        sender.foremanProfile?.fullName ||
+                        sender.companyProfile?.companyName ||
+                        sender.email?.split("@")[0] ||
+                        "Alguien";
+
+      // Obtener título del post si existe
+      let postTitle = "";
+      if (postId) {
+        const post = await prisma.post.findUnique({
+          where: { id: postId },
+          select: { title: true }
+        });
+        postTitle = post?.title || "";
+      }
+
+      await notifyNewContact(receiverId, senderName, postId, postTitle, conversation.id);
+
+      // Enviar notificación push (tanto para primer mensaje como siguientes)
+      console.log(`[Messages] Enviando notificación push a ${receiverId} de ${senderName}`);
+      await notifyNewMessage(receiverId, senderName, conversation.id);
     }
 
     return NextResponse.json({
