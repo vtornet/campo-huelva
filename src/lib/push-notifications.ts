@@ -34,15 +34,19 @@ export async function sendPushNotification(options: PushNotificationOptions): Pr
   const { userId, title, body, url, tag, requireInteraction } = options;
 
   try {
+    console.log(`[Push] Enviando notificación a usuario ${userId}: "${title}"`);
+
     // Obtener suscripción del usuario
     const subscription = await prisma.pushSubscription.findUnique({
       where: { userId }
     });
 
     if (!subscription) {
-      console.log(`Usuario ${userId} no tiene suscripción push activa`);
+      console.log(`[Push] Usuario ${userId} no tiene suscripción push activa`);
       return false;
     }
+
+    console.log(`[Push] Suscripción encontrada, endpoint: ${subscription.endpoint.substring(0, 50)}...`);
 
     // Construir la suscripción en formato web-push
     const pushSubscription = {
@@ -53,20 +57,25 @@ export async function sendPushNotification(options: PushNotificationOptions): Pr
       }
     };
 
-    // Enviar notificación
+    // Enviar notificación con timestamp para tag único
+    const uniqueTag = `${tag || "general"}-${Date.now()}`;
     const payload = JSON.stringify({
       title,
       body: body || "",
       url: url || "/",
-      tag: tag || "general",
+      tag: uniqueTag,
       requireInteraction: requireInteraction || false,
+      timestamp: Date.now(),
     });
 
-    await webpush.sendNotification(pushSubscription, payload)
+    console.log(`[Push] Enviando a web-push...`);
+
+    const result = await webpush.sendNotification(pushSubscription, payload)
       .catch((error: any) => {
+        console.error(`[Push] Error de web-push:`, error);
         // Si la suscripción ya no es válida, eliminarla
         if (error.statusCode === 410 || error.statusCode === 404) {
-          console.log(`Suscripción inválida para usuario ${userId}, eliminando...`);
+          console.log(`[Push] Suscripción inválida (410/404) para usuario ${userId}, eliminando...`);
           prisma.pushSubscription.delete({
             where: { userId }
           }).catch(console.error);
@@ -74,9 +83,10 @@ export async function sendPushNotification(options: PushNotificationOptions): Pr
         throw error;
       });
 
+    console.log(`[Push] ✓ Notificación enviada correctamente a ${userId}`);
     return true;
   } catch (error) {
-    console.error(`Error enviando notificación push a usuario ${userId}:`, error);
+    console.error(`[Push] Error enviando notificación push a usuario ${userId}:`, error);
     return false;
   }
 }

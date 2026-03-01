@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/components/Notifications";
 
 interface NotificationPreferences {
   messages: boolean;
@@ -12,10 +13,12 @@ interface NotificationPreferences {
 
 export function PushNotificationSettings() {
   const { user } = useAuth();
+  const { showNotification } = useNotifications();
   const [supported, setSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     messages: true,
     applications: true,
@@ -23,6 +26,7 @@ export function PushNotificationSettings() {
     newOffers: false,
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   // Cargar estado y preferencias al montar
   useEffect(() => {
@@ -136,6 +140,41 @@ export function PushNotificationSettings() {
     const updated = { ...preferences, [key]: value };
     setPreferences(updated);
     localStorage.setItem("notificationPreferences", JSON.stringify(updated));
+  };
+
+  // Probar notificación
+  const testNotification = async () => {
+    if (!user) return;
+
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      const response = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setTestResult("✓ Notificación enviada. Si no la ves, verifica que el navegador tenga permisos.");
+        showNotification({ type: "success", title: "Notificación de prueba enviada" });
+      } else {
+        setTestResult(`✗ Error: ${result.error || "Desconocido"}`);
+        if (result.logs) {
+          console.log("[Test Push] Logs:", result.logs);
+        }
+        showNotification({ type: "error", title: result.error || "Error al enviar notificación" });
+      }
+    } catch (error) {
+      setTestResult(`✗ Error de red: ${error}`);
+      showNotification({ type: "error", title: "Error al conectar con el servidor" });
+    } finally {
+      setTesting(false);
+      setTimeout(() => setTestResult(null), 10000);
+    }
   };
 
   // Helper para convertir VAPID key
@@ -265,6 +304,37 @@ export function PushNotificationSettings() {
               <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${preferences.newOffers ? "translate-x-5" : ""}`} />
             </button>
           </label>
+
+          {/* Botón de prueba */}
+          <div className="pt-3 border-t border-slate-200">
+            <button
+              onClick={testNotification}
+              disabled={testing}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {testing ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Probar notificación
+                </>
+              )}
+            </button>
+            {testResult && (
+              <p className={`text-xs mt-2 ${testResult.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>
+                {testResult}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
