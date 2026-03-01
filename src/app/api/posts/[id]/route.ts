@@ -196,7 +196,23 @@ export async function PUT(
     const updateData: any = {};
     for (const field of allowedUpdates) {
       if (body[field] !== undefined) {
-        updateData[field] = body[field];
+        const value = body[field];
+
+        // Convertir strings vacías a null para campos que no son string
+        if (field === 'hoursPerWeek') {
+          // Campo numérico: convertir string vacío a null, o string a número
+          updateData[field] = value === '' || value === null || value === undefined
+            ? null
+            : typeof value === 'string'
+              ? parseInt(value, 10) || null
+              : value;
+        } else if (field === 'providesAccommodation') {
+          // Campo booleano: manejar explícitamente
+          updateData[field] = value === true || value === 'true' || value === 1;
+        } else {
+          // Campos string: convertir string vacío a null
+          updateData[field] = value === '' ? null : value;
+        }
       }
     }
 
