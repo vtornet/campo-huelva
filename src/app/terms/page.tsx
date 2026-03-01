@@ -114,7 +114,17 @@ export default function TermsAndConditions() {
               <li><strong>Tablón social:</strong> Publicaciones de índole social (compartir coche, buscar compañeros, etc.)</li>
             </ul>
 
-            <h3 className="font-semibold text-slate-800 mb-2">4.2. Obligaciones del usuario sobre el contenido</h3>
+            <h3 className="font-semibold text-slate-800 mb-2">4.2. Limitaciones de publicaciones</h3>
+            <p className="mb-2">Para garantizar la igualdad de oportunidades y evitar el spam, se establecen las siguientes limitaciones:</p>
+            <ul className="list-disc ml-6 mb-3 space-y-1">
+              <li><strong>Demandas de empleo:</strong> Los trabajadores y manijeros pueden publicar <strong>una demanda cada 7 días</strong>. Esta restricción no aplica a empresas ni administradores.</li>
+              <li><strong>Tablón social:</strong> No está permitido publicar ofertas o demandas de empleo en este espacio.</li>
+            </ul>
+            <p className="text-sm text-slate-600 mb-3">
+              Estas limitaciones pueden modificarse en el futuro. Agro Red notificará cualquier cambio relevante a los usuarios.
+            </p>
+
+            <h3 className="font-semibold text-slate-800 mb-2">4.3. Obligaciones del usuario sobre el contenido</h3>
             <p className="mb-3">El usuario se compromete a NO publicar contenido que:</p>
             <ul className="list-disc ml-6 mb-3 space-y-1">
               <li>Sea falso, inexacto o engañoso</li>
@@ -125,7 +135,7 @@ export default function TermsAndConditions() {
               <li>Promueva actividades ilegales</li>
             </ul>
 
-            <h3 className="font-semibold text-slate-800 mb-2">4.3. Moderación</h3>
+            <h3 className="font-semibold text-slate-800 mb-2">4.4. Moderación</h3>
             <p>
               Agro Red se reserva el derecho de moderar, eliminar o suspender cualquier contenido o usuario
               que incumpla estos Términos, sin previo aviso y sin derecho a indemnización.
