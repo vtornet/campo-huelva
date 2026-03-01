@@ -7,6 +7,7 @@ import { CookieProvider } from "@/context/CookieContext";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 import PWAInstaller from "@/components/PWAInstaller";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 import Footer from "@/components/Footer";
 import { CookieBannerWrapper } from "@/components/CookieBannerWrapper";
 import { CookieSettings } from "@/components/CookieSettings";
@@ -149,6 +150,7 @@ export default function RootLayout({
               </div>
               <ServiceWorkerProvider />
               <ServiceWorkerRegister />
+              <PushNotificationManager />
               <PWAInstaller />
               <CookieBannerWrapper />
               <CookieSettings />

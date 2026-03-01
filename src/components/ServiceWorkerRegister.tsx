@@ -10,8 +10,7 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      process.env.NEXT_PUBLIC_ENABLE_PWA === "true"
+      "serviceWorker" in navigator
     ) {
       // Registrar el service worker
       navigator.serviceWorker
