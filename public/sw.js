@@ -1,8 +1,9 @@
 // Service Worker para Agro Red - PWA con soporte offline y notificaciones push
+// Versión 2 - Actualización de caché para forzar recarga
 
-const CACHE_NAME = "red-agro-v1";
-const STATIC_CACHE_NAME = "red-agro-static-v1";
-const API_CACHE_NAME = "red-agro-api-v1";
+const CACHE_NAME = "agro-red-v2";
+const STATIC_CACHE_NAME = "agro-red-static-v2";
+const API_CACHE_NAME = "agro-red-api-v2";
 
 // URLs que se cachearán estáticamente (recursos críticos)
 const STATIC_ASSETS = [
