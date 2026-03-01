@@ -72,7 +72,6 @@ export default function LegalCheckboxes({ onConsentChange, disabled = false }: L
             setPrivacy(e.target.checked);
             handleChange("privacy", e.target.checked);
           }}
-          required
           className="mt-0.5 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
         />
         <div className="flex-1 text-sm text-gray-700">
@@ -99,7 +98,6 @@ export default function LegalCheckboxes({ onConsentChange, disabled = false }: L
             setTerms(e.target.checked);
             handleChange("terms", e.target.checked);
           }}
-          required
           className="mt-0.5 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
         />
         <div className="flex-1 text-sm text-gray-700">
@@ -126,7 +124,6 @@ export default function LegalCheckboxes({ onConsentChange, disabled = false }: L
             setAge(e.target.checked);
             handleChange("age", e.target.checked);
           }}
-          required
           className="mt-0.5 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
         />
         <div className="flex-1 text-sm text-gray-700">
