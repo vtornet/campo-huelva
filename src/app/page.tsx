@@ -792,7 +792,8 @@ export default function Dashboard() {
                     className="cursor-pointer pb-4 border-b border-slate-100"
                     onClick={() => handleViewOffer(post.id)}
                   >
-                    <div className="pr-20">
+                    {/* En móvil, la etiqueta puede superponerse, así que añadimos espacio adicional */}
+                    <div className="pr-28 sm:pr-20">
                         <h3 className={`font-bold text-lg tracking-tight ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'} group-hover:text-emerald-600 transition-colors`}>
                           {post.title}
                         </h3>
