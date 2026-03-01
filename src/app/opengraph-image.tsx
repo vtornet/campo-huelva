@@ -76,7 +76,7 @@ export default async function Image() {
             backdropFilter: 'blur(10px)',
           }}
         >
-          Trabajadores · Manijeros · Empresas
+          Conectando a trabajadores agrícolas y empresas
         </div>
       </div>
     ),
