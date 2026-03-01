@@ -106,6 +106,74 @@ export async function GET(
   }
 }
 
+// PUT: Editar una publicación del tablón
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { content, userId } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No autenticado" },
+        { status: 401 }
+      );
+    }
+
+    if (!content || content.trim().length === 0) {
+      return NextResponse.json(
+        { error: "El contenido no puede estar vacío" },
+        { status: 400 }
+      );
+    }
+
+    if (content.length > 2000) {
+      return NextResponse.json(
+        { error: "El contenido no puede exceder 2000 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar la publicación
+    const post = await prisma.boardPost.findUnique({
+      where: { id },
+      select: { authorId: true }
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "Publicación no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que el usuario es el autor
+    if (post.authorId !== userId) {
+      return NextResponse.json(
+        { error: "No tienes permiso para editar esta publicación" },
+        { status: 403 }
+      );
+    }
+
+    // Actualizar la publicación
+    const updatedPost = await prisma.boardPost.update({
+      where: { id },
+      data: { content: content.trim() }
+    });
+
+    return NextResponse.json(updatedPost);
+  } catch (error) {
+    console.error("Error editando publicación del tablón:", error);
+    return NextResponse.json(
+      { error: "Error al editar la publicación" },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE: Eliminar una publicación del tablón
 export async function DELETE(
   request: Request,

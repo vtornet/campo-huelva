@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
+import { usePromptDialog } from "@/components/PromptDialog";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { formatPostDate } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ export default function UserProfilePage() {
   const searchParams = useSearchParams();
   const { showNotification } = useNotifications();
   const { confirm, ConfirmDialogComponent } = useConfirmDialog();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
   const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
@@ -323,6 +325,64 @@ export default function UserProfilePage() {
 
   const profile = userData.profile;
   const role = userData.role;
+
+  const handleEditBoardPost = async (postId: string, currentContent: string) => {
+    const newContent = await prompt({
+      title: "Editar publicación del tablón",
+      message: "Modifica el contenido de tu publicación:",
+      placeholder: "Escribe aquí...",
+      defaultValue: currentContent,
+      multiline: true,
+      required: true,
+    });
+
+    if (!newContent || newContent === currentContent) return;
+
+    // Validar longitud
+    if (newContent.length > 2000) {
+      showNotification({
+        type: "error",
+        title: "Contenido demasiado largo",
+        message: "El contenido no puede exceder 2000 caracteres.",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/board-posts/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newContent, userId: user.uid }),
+      });
+
+      if (res.ok) {
+        // Actualizar el post en la lista local
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, description: newContent, title: newContent.substring(0, 60) + (newContent.length > 60 ? '...' : '') }
+            : p
+        ));
+        showNotification({
+          type: "success",
+          title: "Publicación actualizada",
+          message: "Tu publicación del tablón ha sido actualizada.",
+        });
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: "error",
+          title: "No se pudo actualizar",
+          message: data.error || "Inténtalo de nuevo más tarde.",
+        });
+      }
+    } catch {
+      showNotification({
+        type: "error",
+        title: "Error de conexión",
+        message: "Verifica tu internet e inténtalo de nuevo.",
+      });
+    }
+  };
 
   const handleDeletePost = async (postId: string, isBoardPost = false) => {
     const confirmed = await confirm({
@@ -829,7 +889,17 @@ export default function UserProfilePage() {
                               )}
                             </div>
                             <div className="flex gap-2">
-                              {!isBoardPost && (
+                              {isBoardPost ? (
+                                <button
+                                  onClick={() => handleEditBoardPost(post.id, post.description)}
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-medium"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  Editar
+                                </button>
+                              ) : (
                                 <button
                                   onClick={() => router.push(`/publish?edit=${post.id}`)}
                                   className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-medium"
@@ -1091,6 +1161,7 @@ export default function UserProfilePage() {
         </div>
       </div>
       <ConfirmDialogComponent />
+      <PromptDialogComponent />
 
       {/* Modal de Perfil de Contacto */}
       {showProfileModal && selectedProfile && (
