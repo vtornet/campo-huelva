@@ -155,13 +155,14 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
       return;
     }
 
-    const shareUrl = `${window.location.origin}/board?post=${post.id}`;
+    // Usar la nueva URL dedicada para OG
+    const shareUrl = `${window.location.origin}/board/${post.id}`;
     const shareText = `Mira esta publicación de ${getAuthorName()} en Agro Red`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Agro Red - Tablón',
+          title: `Agro Red - Publicación de ${getAuthorName()}`,
           text: shareText,
           url: shareUrl
         });
