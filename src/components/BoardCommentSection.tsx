@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/components/Notifications';
 import { usePromptDialog } from '@/components/PromptDialog';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
+import { formatPostDate } from '@/lib/utils';
 
 interface Profile {
   fullName?: string;
@@ -338,16 +339,7 @@ export default function BoardCommentSection({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-
-    if (diffMins < 1) return 'Ahora mismo';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours} h`;
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    return formatPostDate(dateString);
   };
 
   const renderComment = (comment: Comment, isReply = false) => {

@@ -371,22 +371,25 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
     }
   };
 
-  // Formatear fecha
+  // Formatear fecha en formato: "Publicado el 01/02/26 a las 17:23"
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Ahora mismo';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours} h`;
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 7) return `Hace ${diffDays} días`;
+    // Verificar que la fecha sea válida
+    if (isNaN(date.getTime())) {
+      return '';
+    }
 
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    // Formatear fecha: DD/MM/YY
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2); // Últimos 2 dígitos
+
+    // Formatear hora: HH:mm
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `Publicado el ${day}/${month}/${year} a las ${hours}:${minutes}`;
   };
 
   return (

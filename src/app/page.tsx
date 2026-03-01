@@ -35,6 +35,7 @@ const RecommendedOffers = dynamic(
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import PostActions from "@/components/PostActions";
 import { AddContactButton } from "@/components/AddContactButton";
+import { formatPostDate } from "@/lib/utils";
 
 // Componentes del Tablón Social
 import CreateBoardPost from "@/components/CreateBoardPost";
@@ -810,6 +811,12 @@ export default function Dashboard() {
                           </svg>
                           {post.location}{post.province && `, ${post.province}`}
                         </p>
+                        {/* Fecha de publicación */}
+                        {post.createdAt && (
+                          <p className="text-xs text-slate-400 mt-1">
+                            {formatPostDate(post.createdAt)}
+                          </p>
+                        )}
                     </div>
 
                     <p className="mt-4 text-slate-600 text-sm line-clamp-3 bg-slate-50 p-4 rounded-xl italic border border-slate-100">

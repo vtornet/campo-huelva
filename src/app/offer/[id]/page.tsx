@@ -10,6 +10,7 @@ import { useNotifications } from '@/components/Notifications';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import RecommendedWorkers from '@/components/RecommendedWorkers';
 import PostActions from '@/components/PostActions';
+import { formatPostDate } from '@/lib/utils';
 
 export default function OfferDetailPage() {
   const { user } = useAuth();
@@ -349,6 +350,11 @@ export default function OfferDetailPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-slate-800 mb-2">{offer.title}</h1>
+
+          {/* Fecha de publicación */}
+          {offer.createdAt && (
+            <p className="text-sm text-slate-500 mb-3">{formatPostDate(offer.createdAt)}</p>
+          )}
 
           {/* Acciones sociales */}
           <div className="mb-3">

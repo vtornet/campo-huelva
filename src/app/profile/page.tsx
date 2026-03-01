@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
+import { formatPostDate } from "@/lib/utils";
 
 type TabType = "profile" | "posts" | "contacts" | "search" | "settings";
 
@@ -766,7 +767,7 @@ export default function UserProfilePage() {
                                  post.type === "DEMAND" ? "Demanda" :
                                  "Compartida"}
                               </span>
-                              <span className="text-xs text-slate-500">{new Date(post.createdAt).toLocaleDateString()}</span>
+                              <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
                             </div>
                             <h4 className={`font-bold ${post.type === 'DEMAND' ? 'text-orange-900' : 'text-slate-800'}`}>
                               {post.title}
