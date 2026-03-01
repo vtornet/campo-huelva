@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 26 de febrero de 2026
+**Última actualización**: 1 de marzo de 2026
 
 ## Comandos de Desarrollo
 
@@ -421,6 +421,42 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Tractorista (`profile/tractorista/page.tsx`)
   - Empresa (`profile/company/page.tsx`)
 
+### ✅ 23. Fechas y Horas en Publicaciones (COMPLETADO - 01/03/2026)
+- [x] **Formato consistente**: "Publicado el 01/03/26 a las 16:08"
+- [x] **Función `formatPostDate`** en `src/lib/utils.ts`
+- [x] Aplicado en dashboard principal (ofertas y demandas)
+- [x] Aplicado en detalle de oferta
+- [x] Aplicado en "Mis Publicaciones" del perfil
+- [x] Aplicado en tablón social y comentarios
+- [x] Todas las publicaciones muestran ahora fecha y hora
+
+### ✅ 24. Secciones de Inscritos con Reversión de Estados (COMPLETADO - 01/03/2026)
+- [x] **Tabs en `/applications`** para dividir candidatos:
+  - 📥 Inscritos (PENDING) - borde azul
+  - ✅ Aceptados (ACCEPTED) - borde verde
+  - ❌ Rechazados (REJECTED) - borde rojo
+  - 💬 Contactados (CONTACTED) - borde índigo
+- [x] **Contadores visuales** en cada pestaña
+- [x] **Botones de acción reversibles** entre cualquier estado:
+  - Inscritos → Aceptar / Rechazar
+  - Aceptados → Contactar / Rechazar
+  - Rechazados → Recuperar / Aceptar
+  - Contactados → Volver a aceptados / Rechazar
+- [x] **Mensajes específicos** por pestaña cuando no hay candidatos
+- [x] Filtros avanzados se aplican dentro de cada pestaña
+
+### ✅ 25. Corrección de Errores (COMPLETADO - 01/03/2026)
+- [x] **Error al editar demandas**: Conversión de strings vacías a `null` en campos numéricos
+- [x] **Service Worker bucle infinito**: Eliminado `self.skipWaiting()` y `window.location.reload()`
+- [x] **Error CSP con Firebase**: Añadido `blob:` a directiva `script-src`
+
+### ✅ 26. Publicaciones del Tablón en Mis Publicaciones (COMPLETADO - 01/03/2026)
+- [x] Las publicaciones del tablón ahora aparecen en "Mis Publicaciones"
+- [x] Etiqueta "Tablón" con color azul para diferenciarlas
+- [x] Botón "Editar" con modal PromptDialog para editar contenido
+- [x] Endpoint DELETE `/api/board-posts/[id]` para eliminar
+- [x] Endpoint PUT `/api/board-posts/[id]` para editar
+
 ---
 
 ## 🎯 Roadmap a Fase Beta
@@ -618,6 +654,12 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Notificación de nuevas ofertas según perfil
 - [ ] Gestión de preferencias de notificación
 - [ ] Configuración de navegador para permisos
+
+**⚠️ Problemas detectados (01/03/2026):**
+- ✅ Móvil: Las notificaciones SÍ funcionan
+- ⚠️ Chrome desktop: Solo funcionan con el botón de prueba, no con mensajes reales
+- ❌ PWA escritorio: No deja activar las notificaciones
+- ❌ Brave: No deja activar las notificaciones
 
 #### 2. Testing en Dispositivos Reales
 > **Asegurar que funciona en el entorno real del usuario**
