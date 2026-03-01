@@ -68,7 +68,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    // Validar consentimientos obligatorios
+    // Validar consentimientos obligatorios solo en registro
     if (!consents.privacy || !consents.terms || !consents.age) {
       setError("Debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
       return;
@@ -102,12 +102,14 @@ export default function LoginPage() {
     }
   };
 
-  // Login con Google (también requiere aceptación de políticas)
+  // Login con Google
   const handleGoogleLogin = async () => {
-    // Validar consentimientos obligatorios antes de continuar con Google
-    if (!consents.privacy || !consents.terms || !consents.age) {
-      setError("Para continuar con Google, debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
-      return;
+    // Solo validar consentimientos en registro (usuarios nuevos)
+    if (activeTab === "register") {
+      if (!consents.privacy || !consents.terms || !consents.age) {
+        setError("Para registrarte con Google, debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
+        return;
+      }
     }
 
     try {
@@ -207,15 +209,6 @@ export default function LoginPage() {
             >
               Entrar con Email
             </button>
-
-            {/* Casillas de aceptación legal (requeridas para Google Auth) */}
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Antes de continuar con Google, debes aceptar:</p>
-              <LegalCheckboxes
-                onConsentChange={setConsents}
-                disabled={false}
-              />
-            </div>
           </form>
         )}
 
@@ -319,6 +312,17 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Casillas legales solo para registro con Google */}
+          {activeTab === "register" && (
+            <div className="mt-4">
+              <p className="text-xs text-gray-500 mb-2">Antes de registrarte con Google, debes aceptar:</p>
+              <LegalCheckboxes
+                onConsentChange={setConsents}
+                disabled={false}
+              />
+            </div>
+          )}
+
           <button
             onClick={handleGoogleLogin}
             className="mt-4 w-full flex justify-center items-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition"
@@ -341,7 +345,7 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            Google
+            {activeTab === "login" ? "Iniciar sesión con Google" : "Registrarse con Google"}
           </button>
         </div>
       </div>
