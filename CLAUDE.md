@@ -468,13 +468,20 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Subida de imágenes a ImgBB o Base64 como fallback
   - Componente `CompanyPhotoGallery` reutilizable
   - Vista previa y eliminación de fotos
+  - Texto de ayuda solo visible al editar (no en perfil público)
+- [x] **Logo de empresa**: Subida de logo usando `ProfileImageUpload`
+  - Logo visible en header del perfil público
+  - Logo visible en ofertas y lista de mensajes
 - [x] **Descripción extendida**: Campo adicional para información detallada sobre la empresa
   - Historia, valores, tipos de cultivos, certificaciones, beneficios, etc.
 - [x] **Página pública de empresa** (`/company/[id]`):
-  - Información completa de la empresa (logo, descripción, contacto)
-  - Galería de fotos visual
+  - Logo y nombre de empresa
+  - Descripción y ubicación
+  - Galería de fotos visual (sin datos de contacto)
+  - Descripción extendida
   - Historial de ofertas publicadas con conteo de inscritos
   - Links a cada oferta para ver detalles e inscribirse
+- [x] **Enlace desde ofertas**: Click en nombre de empresa lleva a perfil público
 - [x] **Nuevos campos en Prisma**: `photos[]`, `extendedDescription`
 - [x] **API endpoints**:
   - `GET /api/companies/[id]` - Obtener perfil público de empresa
