@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA, TIPOS_CONTRATO, PERIODOS_SALARIALES, TIPOS_JORNADA } from "@/lib/constants";
 import AIImprovedTextarea from "@/components/AIImprovedTextarea";
+import { PageBackButton } from "@/components/BackButton";
 
 
 // Componente interno que lee los parámetros
@@ -212,8 +213,11 @@ function PublishForm() {
   }
 
   return (
-    <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-6 md:p-8 shadow-black/5">
-      <div className="mb-6">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-2xl mx-auto">
+        <PageBackButton />
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 shadow-black/5">
+          <div className="mb-6">
         <div className={`w-14 h-14 rounded-2xl ${postType === 'DEMAND' ? 'bg-orange-100' : 'bg-emerald-100'} flex items-center justify-center mb-4`}>
           <svg className={`w-7 h-7 ${postType === 'DEMAND' ? 'text-orange-600' : 'text-emerald-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {postType === 'DEMAND' ? (
@@ -487,13 +491,14 @@ function PublishForm() {
         </div>
       </form>
     </div>
+  </div>
   );
 }
 
 // Componente Principal (Wrapper)
 export default function PublishPage() {
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex justify-center">
+    <div className="min-h-screen bg-slate-50">
       <Suspense fallback={
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>

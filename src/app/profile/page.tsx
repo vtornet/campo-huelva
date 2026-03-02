@@ -9,6 +9,7 @@ import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { usePromptDialog } from "@/components/PromptDialog";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
+import { BackButton } from "@/components/BackButton";
 import { formatPostDate } from "@/lib/utils";
 
 type TabType = "profile" | "posts" | "contacts" | "search" | "settings";
@@ -427,18 +428,21 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-slate-50">
       {/* Navbar simplificado */}
       <nav className="bg-white text-slate-800 px-4 py-3 shadow-sm border-b border-slate-200/60">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div
-            className="cursor-pointer transition-opacity hover:opacity-80"
-            onClick={() => router.push("/")}
-          >
-            <Image
-              src="/logo.png"
-              alt="Agro Red"
-              width={140}
-              height={40}
-              priority
-            />
+        <div className="max-w-5xl mx-auto flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <BackButton label="Inicio" />
+            <div
+              className="cursor-pointer transition-opacity hover:opacity-80"
+              onClick={() => router.push("/")}
+            >
+              <Image
+                src="/logo.png"
+                alt="Agro Red"
+                width={120}
+                height={34}
+                priority
+              />
+            </div>
           </div>
           <button
             onClick={handleSignOut}
