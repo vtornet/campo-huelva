@@ -364,7 +364,13 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - Checkbox opcional: Comunicaciones comerciales
   - Validación antes de registro (email y Google Auth)
 
-### ✅ 19. Carnet de Carretillero (COMPLETADO - 28/02/2026)
+### ✅ 19. Envío de Documentos PDF en Chat (COMPLETADO - 02/03/2026)
+- [x] Campo `DOCUMENT` añadido al enum `MessageType` en Prisma
+- [x] Carga y envío de archivos PDF en la mensajería interna
+- [x] Visualización de documentos con icono de PDF
+- [x] Descarga de documentos adjuntos
+
+### ✅ 20. Carnet de Carretillero (COMPLETADO - 28/02/2026)
 - [x] Campo `hasForkliftLicense` añadido en schema de WorkerProfile
 - [x] Checkbox en formulario de perfil de trabajador
 - [x] Filtro en búsqueda de candidatos
@@ -562,12 +568,13 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Probar en diferentes tamaños de pantalla
 - [ ] Probar con conexión lenta/intermitente
 
-#### 3. Mejoras de UX en Chat
+#### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
 > **La experiencia de mensajería debe ser fluida**
 
+- [x] Carga de imágenes en el chat (Firebase Storage)
+- [x] Envío de documentos PDF en el chat
 - [ ] Indicador de "escribiendo..."
 - [ ] Confirmación de lectura (✓✓)
-- [ ] Carga de imágenes en el chat
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 
@@ -670,12 +677,13 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Probar en diferentes tamaños de pantalla
 - [ ] Probar con conexión lenta/intermitente
 
-#### 3. Mejoras de UX en Chat
+#### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
 > **La experiencia de mensajería debe ser fluida**
 
+- [x] Carga de imágenes en el chat (Firebase Storage)
+- [x] Envío de documentos PDF en el chat
 - [ ] Indicador de "escribiendo..."
 - [ ] Confirmación de lectura (✓✓)
-- [ ] Carga de imágenes en el chat
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 

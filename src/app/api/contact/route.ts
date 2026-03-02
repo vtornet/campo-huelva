@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     if (resend) {
       try {
         const emailData = {
-          from: 'Agro Red <noreply@appstracta.app>',
+          from: 'Agro Red <noreply@agroredjob.com>',
           to: [SUPPORT_EMAIL],
           replyTo: sanitizedEmail,
           subject: `📧 Nuevo contacto: ${sanitizedSubject}`,
