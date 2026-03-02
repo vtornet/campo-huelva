@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useNotifications } from "@/components/Notifications";
 import CompanyPhotoGallery from "@/components/CompanyPhotoGallery";
-import { PageBackButton } from "@/components/BackButton";
+import { BackButton } from "@/components/BackButton";
 
 interface CompanyProfile {
   id: string;
@@ -126,7 +126,7 @@ export default function CompanyPublicProfilePage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <PageBackButton className="text-white hover:text-indigo-100" />
+          <BackButton className="text-white hover:text-indigo-100" />
           <div className="flex items-start gap-4 mt-4">
             {company.profileImage ? (
               <img
