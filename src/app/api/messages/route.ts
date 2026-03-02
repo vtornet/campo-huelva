@@ -114,7 +114,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { senderId, receiverId, content, postId, messageType, attachmentUrl } = body;
+    const { senderId, receiverId, content, postId, messageType, attachmentUrl, attachmentMetadata } = body;
 
     if (!senderId || !receiverId) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
@@ -196,7 +196,8 @@ export async function POST(request: Request) {
         receiverId,
         content: content || "", // Para imágenes puede estar vacío
         messageType: finalMessageType,
-        attachmentUrl: attachmentUrl || null
+        attachmentUrl: attachmentUrl || null,
+        attachmentMetadata: attachmentMetadata || null
       }
     });
 
