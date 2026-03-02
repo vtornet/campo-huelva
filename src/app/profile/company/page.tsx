@@ -9,6 +9,7 @@ import CifInput from "@/components/CifInput";
 import CompanyVerification from "@/components/CompanyVerification";
 import PhoneInput from "@/components/PhoneInput";
 import CompanyPhotoGallery from "@/components/CompanyPhotoGallery";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
 import { PageBackButton } from "@/components/BackButton";
 
 export default function CompanyProfilePage() {
@@ -42,6 +43,7 @@ export default function CompanyProfilePage() {
     description: "",
     extendedDescription: "",
     photos: [] as string[],
+    profileImage: "",
   });
 
   // Proteger la página: si no hay usuario, ir a login
@@ -70,6 +72,7 @@ export default function CompanyProfilePage() {
               description: data.description || "",
               extendedDescription: data.extendedDescription || "",
               photos: data.photos || [],
+              profileImage: data.profileImage || "",
             });
             setIsUpdate(true);
             setProfileLoaded(true);
@@ -237,6 +240,15 @@ export default function CompanyProfilePage() {
           <span className="text-sm text-indigo-800">
             <strong>Política de privacidad:</strong> Los datos de contacto que proporcionas no serán públicos y solo serán utilizados por el equipo de <strong>Agro Red</strong> para contactarte en caso de necesidad. El nombre de tu empresa será público únicamente en las ofertas que publiques.
           </span>
+        </div>
+
+        {/* Subida de logo de empresa */}
+        <div className="flex justify-center">
+          <ProfileImageUpload
+            currentImage={formData.profileImage}
+            onImageUploaded={(url) => setFormData({ ...formData, profileImage: url })}
+            label="Logo de la empresa"
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

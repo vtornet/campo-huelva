@@ -178,47 +178,6 @@ export default function CompanyPublicProfilePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Información de contacto */}
-        {(company.phone || company.website || company.contactPerson) && (
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Información de contacto
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {company.contactPerson && (
-                <div>
-                  <span className="text-sm text-slate-500">Persona de contacto</span>
-                  <p className="font-medium text-slate-800">{company.contactPerson}</p>
-                </div>
-              )}
-              {company.phone && (
-                <div>
-                  <span className="text-sm text-slate-500">Teléfono</span>
-                  <p className="font-medium text-slate-800">{company.phone}</p>
-                </div>
-              )}
-              {company.website && (
-                <div className="md:col-span-2">
-                  <span className="text-sm text-slate-500">Sitio web</span>
-                  <p className="font-medium text-slate-800">
-                    <a
-                      href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline"
-                    >
-                      {company.website.replace(/^https?:\/\//, "")}
-                    </a>
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Galería de fotos */}
         {company.photos && company.photos.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm p-6">
