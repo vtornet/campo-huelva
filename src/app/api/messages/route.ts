@@ -135,8 +135,15 @@ export async function POST(request: Request) {
     }
 
     // Validar messageType
-    const validMessageTypes = ["TEXT", "IMAGE", "LOCATION"];
-    const finalMessageType = messageType || (attachmentUrl ? "IMAGE" : "TEXT");
+    const validMessageTypes = ["TEXT", "IMAGE", "DOCUMENT", "LOCATION"];
+    // Si no se especifica messageType, inferirlo del attachmentUrl
+    let finalMessageType = messageType;
+    if (!finalMessageType && attachmentUrl) {
+      finalMessageType = "IMAGE"; // Por defecto es IMAGE, pero se puede sobrescribir
+    }
+    if (!finalMessageType) {
+      finalMessageType = "TEXT";
+    }
     if (!validMessageTypes.includes(finalMessageType)) {
       return NextResponse.json({ error: "Tipo de mensaje inválido" }, { status: 400 });
     }
