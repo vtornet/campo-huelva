@@ -253,31 +253,39 @@ export default function ChatPage() {
     setUploadingImage(true);
 
     try {
-      // Subir directamente a Firebase Storage desde el cliente
-      const storage = getStorage();
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(7);
-      const extension = selectedImage.type.split("/")[1] || "jpg";
-      const fileName = `${timestamp}-${random}.${extension}`;
-      const storagePath = `chat-images/${user.uid}/${fileName}`;
-
-      const storageRef = ref(storage, storagePath);
-
-      // Convertir File a ArrayBuffer y subir
-      const bytes = await selectedImage.arrayBuffer();
-      await uploadBytes(storageRef, bytes, {
-        contentType: selectedImage.type
+      // Subir usando Base64 para evitar problemas CORS
+      const reader = new FileReader();
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedImage);
       });
 
-      // Obtener URL de descarga
-      const downloadUrl = await getDownloadURL(storageRef);
-      return downloadUrl;
+      // El dataURL incluye la imagen completa, no necesitamos subirla a Storage
+      // En su lugar, la subimos a través de nuestro servidor
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+      formData.append("userId", user.uid);
+      formData.append("dataUrl", dataUrl);
+
+      const res = await fetch(`/api/messages/${conversationId}/upload-image`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al subir imagen");
+      }
+
+      const data = await res.json();
+      return data.url;
     } catch (error) {
       console.error("Error uploading image:", error);
       showNotification({
         type: "error",
         title: "Error al subir imagen",
-        message: "Inténtalo de nuevo más tarde.",
+        message: error instanceof Error ? error.message : "Inténtalo de nuevo más tarde.",
       });
       return null;
     } finally {
