@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { auth } from "@/lib/firebase";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { MessageStatusTick } from "@/components/chat/MessageStatusTick";
 import { CompactTypingIndicator } from "@/components/chat/TypingIndicator";
 import { ImagePreview } from "@/components/chat/ImagePreview";
@@ -252,21 +253,25 @@ export default function ChatPage() {
     setUploadingImage(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", selectedImage);
-      formData.append("userId", user.uid);
+      // Subir directamente a Firebase Storage desde el cliente
+      const storage = getStorage();
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const extension = selectedImage.type.split("/")[1] || "jpg";
+      const fileName = `${timestamp}-${random}.${extension}`;
+      const storagePath = `chat-images/${user.uid}/${fileName}`;
 
-      const res = await fetch(`/api/messages/${conversationId}/upload-image`, {
-        method: "POST",
-        body: formData
+      const storageRef = ref(storage, storagePath);
+
+      // Convertir File a ArrayBuffer y subir
+      const bytes = await selectedImage.arrayBuffer();
+      await uploadBytes(storageRef, bytes, {
+        contentType: selectedImage.type
       });
 
-      if (!res.ok) {
-        throw new Error("Error al subir imagen");
-      }
-
-      const data = await res.json();
-      return data.url;
+      // Obtener URL de descarga
+      const downloadUrl = await getDownloadURL(storageRef);
+      return downloadUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
       showNotification({
