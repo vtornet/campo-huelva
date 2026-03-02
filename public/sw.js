@@ -177,7 +177,8 @@ async function cacheFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Solo cachear solicitudes GET exitosas
+    if (response.ok && request.method === "GET") {
       cache.put(request, response.clone());
     }
     return response;
@@ -203,7 +204,8 @@ async function networkFirstAPI(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Solo cachear solicitudes GET exitosas (API responses)
+    if (response.ok && request.method === "GET") {
       // Cachear respuesta por 5 minutos
       cache.put(request, response.clone());
     }
@@ -234,7 +236,8 @@ async function networkFirstNavigation(request) {
 
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    // Solo cachear solicitudes GET exitosas (navegación)
+    if (networkResponse.ok && request.method === "GET") {
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
@@ -328,7 +331,8 @@ async function networkFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Solo cachear solicitudes GET exitosas (no POST, PUT, DELETE, etc.)
+    if (response.ok && request.method === "GET") {
       cache.put(request, response.clone());
     }
     return response;
