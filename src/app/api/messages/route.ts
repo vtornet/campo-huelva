@@ -114,19 +114,31 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { senderId, receiverId, content, postId } = body;
+    const { senderId, receiverId, content, postId, messageType, attachmentUrl } = body;
 
-    if (!senderId || !receiverId || !content) {
+    if (!senderId || !receiverId) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
+    }
+
+    // Validar que haya contenido o attachment
+    if (!content && !attachmentUrl) {
+      return NextResponse.json({ error: "El mensaje debe tener contenido o una imagen" }, { status: 400 });
     }
 
     if (senderId === receiverId) {
       return NextResponse.json({ error: "No puedes enviarte mensajes a ti mismo" }, { status: 400 });
     }
 
-    // Validar longitud del mensaje
-    if (content.length > 5000) {
+    // Validar longitud del mensaje (solo si es texto)
+    if (content && content.length > 5000) {
       return NextResponse.json({ error: "El mensaje es demasiado largo (máximo 5000 caracteres)" }, { status: 400 });
+    }
+
+    // Validar messageType
+    const validMessageTypes = ["TEXT", "IMAGE", "LOCATION"];
+    const finalMessageType = messageType || (attachmentUrl ? "IMAGE" : "TEXT");
+    if (!validMessageTypes.includes(finalMessageType)) {
+      return NextResponse.json({ error: "Tipo de mensaje inválido" }, { status: 400 });
     }
 
     // Buscar si ya existe una conversación entre estos dos usuarios
@@ -175,7 +187,9 @@ export async function POST(request: Request) {
         conversationId: conversation.id,
         senderId,
         receiverId,
-        content
+        content: content || "", // Para imágenes puede estar vacío
+        messageType: finalMessageType,
+        attachmentUrl: attachmentUrl || null
       }
     });
 

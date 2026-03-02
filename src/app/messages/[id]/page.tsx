@@ -7,6 +7,7 @@ import { useNotifications } from "@/components/Notifications";
 import { auth } from "@/lib/firebase";
 import { MessageStatusTick } from "@/components/chat/MessageStatusTick";
 import { CompactTypingIndicator } from "@/components/chat/TypingIndicator";
+import { ImagePreview } from "@/components/chat/ImagePreview";
 
 type Message = {
   id: string;
@@ -48,13 +49,17 @@ export default function ChatPage() {
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [relatedPost, setRelatedPost] = useState<{ id: string; title: string; type: string } | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [isPageVisible, setIsPageVisible] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
 
@@ -199,14 +204,94 @@ export default function ChatPage() {
     }, TYPING_TIMEOUT);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith("image/")) {
+      showNotification({
+        type: "error",
+        title: "Archivo no válido",
+        message: "Solo se permiten imágenes.",
+      });
+      return;
+    }
+
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification({
+        type: "error",
+        title: "Archivo demasiado grande",
+        message: "La imagen no puede exceder 5MB.",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Crear preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage || !user) return null;
+
+    setUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+      formData.append("userId", user.uid);
+
+      const res = await fetch(`/api/messages/${conversationId}/upload-image`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al subir imagen");
+      }
+
+      const data = await res.json();
+      return data.url;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      showNotification({
+        type: "error",
+        title: "Error al subir imagen",
+        message: "Inténtalo de nuevo más tarde.",
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !otherUser || sending) return;
+
+    // Validar: debe haber texto o imagen
+    if (!newMessage.trim() && !selectedImage) return;
+    if (!user || !otherUser || sending) return;
 
     setSending(true);
     const content = newMessage.trim();
     setNewMessage("");
 
+    // Limpiar estado de escritura
     isTypingRef.current = false;
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -214,18 +299,37 @@ export default function ChatPage() {
     clearTypingIndicator();
 
     try {
+      // Subir imagen si hay una seleccionada
+      let attachmentUrl = null;
+      let messageType = "TEXT";
+
+      if (selectedImage) {
+        attachmentUrl = await uploadImage();
+        if (!attachmentUrl) {
+          // Error al subir, restaurar estado
+          setNewMessage(content);
+          setSending(false);
+          return;
+        }
+        messageType = "IMAGE";
+      }
+
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderId: user.uid,
           receiverId: otherUser.id,
-          content,
-          postId: relatedPost?.id
+          content: content || (selectedImage ? "📷 Foto" : ""),
+          postId: relatedPost?.id,
+          messageType,
+          attachmentUrl
         })
       });
 
       if (res.ok) {
+        // Limpiar imagen seleccionada
+        removeSelectedImage();
         await loadMessages();
       } else {
         showNotification({
@@ -345,28 +449,42 @@ export default function ChatPage() {
           <div className="space-y-4">
             {messages.map((msg) => {
               const isMine = msg.senderId === user.uid;
+              const isImage = msg.messageType === "IMAGE";
+
               return (
                 <div
                   key={msg.id}
                   className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                 >
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                  <div className={`max-w-[75%] rounded-2xl shadow-sm overflow-hidden ${
                     isMine
                       ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-br-md"
                       : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
                   }`}>
-                    <p className="break-words text-sm leading-relaxed">{msg.content}</p>
-                    <p className={`text-xs mt-1.5 flex items-center gap-1 ${isMine ? "text-emerald-100" : "text-slate-400"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString("es-ES", {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}
-                      <MessageStatusTick
-                        status={msg.status}
-                        isMine={isMine}
-                        className="ml-1"
+                    {isImage && msg.attachmentUrl ? (
+                      <img
+                        src={msg.attachmentUrl}
+                        alt="Imagen enviada"
+                        className="w-full max-w-sm rounded-t-2xl"
+                        loading="lazy"
                       />
-                    </p>
+                    ) : null}
+                    <div className={`px-4 py-3 ${isImage ? "pt-2" : ""}`}>
+                      {msg.content && msg.content !== "📷 Foto" && (
+                        <p className="break-words text-sm leading-relaxed">{msg.content}</p>
+                      )}
+                      <p className={`text-xs mt-1.5 flex items-center gap-1 ${isMine ? "text-emerald-100" : "text-slate-400"}`}>
+                        {new Date(msg.createdAt).toLocaleTimeString("es-ES", {
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
+                        <MessageStatusTick
+                          status={msg.status}
+                          isMine={isMine}
+                          className="ml-1"
+                        />
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
@@ -386,7 +504,34 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="bg-white border-t border-slate-200/60 p-4 shadow-lg">
+        {/* Previsualización de imagen */}
+        {imagePreviewUrl && (
+          <div className="max-w-4xl mx-auto mb-3">
+            <ImagePreview url={imagePreviewUrl} onRemove={removeSelectedImage} />
+          </div>
+        )}
+
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-3">
+          {/* Botón de imagen */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || uploadingImage}
+            className="p-3.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Enviar imagen"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+
           <div className="flex-1 relative">
             <input
               ref={inputRef}
@@ -415,10 +560,10 @@ export default function ChatPage() {
           </div>
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && !selectedImage) || sending || uploadingImage}
             className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3.5 rounded-2xl font-semibold hover:from-emerald-700 hover:to-emerald-600 transition-all duration-200 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20 flex items-center gap-2"
           >
-            {sending ? (
+            {sending || uploadingImage ? (
               <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
