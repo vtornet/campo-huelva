@@ -490,8 +490,9 @@ function PublishForm() {
           </button>
         </div>
       </form>
+        </div>
+      </div>
     </div>
-  </div>
   );
 }
 
