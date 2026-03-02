@@ -1,24 +1,42 @@
 import { NextResponse } from "next/server";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { initializeApp, getApps } from "firebase/app";
-
-// Firebase config - usamos NEXT_PUBLIC_* que están disponibles en Railway
-// Nota: En Next.js las variables NEXT_PUBLIC_* están disponibles en ambos lados
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-// Inicializar Firebase app
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const storage = getStorage(app);
+import admin from "firebase-admin";
+import { getApps } from "firebase/app";
 
 // Tamaño máximo: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Inicializar Firebase Admin si no está inicializado
+if (!admin.apps.length) {
+  // Usar las variables de entorno
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  // Si no hay credenciales de servicio, usar el método simplificado (para development)
+  if (!clientEmail || !privateKey) {
+    console.log("[Upload] Inicializando Firebase Admin sin credenciales de servicio");
+    try {
+      admin.initializeApp({
+        projectId: projectId,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      });
+    } catch (e) {
+      console.log("[Upload] Error en inicialización simple:", e);
+    }
+  } else {
+    console.log("[Upload] Inicializando Firebase Admin con credenciales de servicio");
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: projectId,
+        clientEmail: clientEmail,
+        privateKey: privateKey,
+      }),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+  }
+}
+
+const bucket = admin.storage().bucket();
 
 export async function POST(request: Request) {
   try {
@@ -54,39 +72,44 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generar nombre único: chat-images/{userId}/{timestamp}-{random}.jpg
+    // Generar nombre único
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
-    const fileName = `${timestamp}-${random}.${file.type.split("/")[1]}`;
+    const extension = file.type.split("/")[1] || "jpg";
+    const fileName = `${timestamp}-${random}.${extension}`;
     const storagePath = `chat-images/${userId}/${fileName}`;
 
     console.log("[Upload] Storage path:", storagePath);
-    console.log("[Upload] Firebase config:", {
-      hasApiKey: !!firebaseConfig.apiKey,
-      hasProjectId: !!firebaseConfig.projectId,
-      hasStorageBucket: !!firebaseConfig.storageBucket,
-    });
 
-    // Subir a Firebase Storage
-    const storageRef = ref(storage, storagePath);
-    console.log("[Upload] Storage ref creado, iniciando uploadBytes...");
-    await uploadBytes(storageRef, buffer, {
-      contentType: file.type
-    });
-    console.log("[Upload] Upload completado, obteniendo URL...");
+    // Subir a Firebase Storage usando Admin SDK
+    const fileRef = bucket.file(storagePath);
 
-    // Obtener URL pública
-    const downloadUrl = await getDownloadURL(storageRef);
-    console.log("[Upload] URL obtenida:", downloadUrl);
+    console.log("[Upload] Iniciando upload a bucket...");
+    await fileRef.save(buffer, {
+      contentType: file.type,
+      metadata: { contentType: file.type }
+    });
+    console.log("[Upload] Upload completado");
+
+    // Hacer el archivo público
+    await fileRef.makePublic();
+    console.log("[Upload] Archivo hecho público");
+
+    // Generar URL pública
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+    console.log("[Upload] URL pública:", publicUrl);
 
     return NextResponse.json({
       success: true,
-      url: downloadUrl,
+      url: publicUrl,
       path: storagePath
     });
 
   } catch (error) {
-    console.error("Error uploading image:", error);
-    return NextResponse.json({ error: "Error al subir la imagen" }, { status: 500 });
+    console.error("[Upload] Error:", error);
+    return NextResponse.json({
+      error: "Error al subir la imagen",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
 }
