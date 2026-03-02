@@ -44,11 +44,6 @@ export default function ChatPage() {
   const params = useParams();
   const conversationId = params.id as string;
 
-  // Log de depuración al inicio
-  useEffect(() => {
-    console.log("[ChatPage] Componente montado. conversationId:", conversationId, "user:", user?.uid);
-  }, [conversationId, user?.uid]);
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +100,6 @@ export default function ChatPage() {
       const res = await fetch(`/api/messages/${conversationId}/typing?currentUserId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
-        console.log("[Typing] Status:", data.typing);
         setTypingUsers(data.typing || []);
       }
     } catch (error) {
@@ -117,13 +111,11 @@ export default function ChatPage() {
     if (!user || !conversationId) return;
 
     try {
-      console.log("[Typing] Registrando typing para", user.uid);
-      const res = await fetch(`/api/messages/${conversationId}/typing`, {
+      await fetch(`/api/messages/${conversationId}/typing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.uid })
       });
-      console.log("[Typing] Respuesta:", res.status);
     } catch (error) {
       console.error("Error registering typing:", error);
     }
@@ -192,10 +184,7 @@ export default function ChatPage() {
     const value = e.target.value;
     setNewMessage(value);
 
-    console.log("[Chat] Input change. value:", value, "isTypingRef:", isTypingRef.current);
-
     if (!isTypingRef.current && value.trim()) {
-      console.log("[Chat] Registrando typing...");
       isTypingRef.current = true;
       registerTyping();
     }
@@ -205,7 +194,6 @@ export default function ChatPage() {
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      console.log("[Chat] Timeout - limpiando typing");
       isTypingRef.current = false;
       clearTypingIndicator();
     }, TYPING_TIMEOUT);

@@ -81,8 +81,6 @@ export async function POST(
       return NextResponse.json({ error: "Falta userId" }, { status: 400 });
     }
 
-    console.log("[Typing API] POST request - conversationId:", id, "userId:", userId);
-
     // Verificar que el usuario es participante de la conversación
     const conversation = await prisma.conversation.findUnique({
       where: { id },
@@ -90,13 +88,11 @@ export async function POST(
     });
 
     if (!conversation) {
-      console.log("[Typing API] Conversación no encontrada");
       return NextResponse.json({ error: "Conversación no encontrada" }, { status: 404 });
     }
 
     const isParticipant = conversation.participants.some(p => p.userId === userId);
     if (!isParticipant) {
-      console.log("[Typing API] Usuario no es participante");
       return NextResponse.json({ error: "No eres participante de esta conversación" }, { status: 403 });
     }
 
@@ -116,7 +112,6 @@ export async function POST(
         where: { id: existing.id },
         data: { createdAt: new Date() }
       });
-      console.log("[Typing API] Actualizado indicador existente");
     } else {
       // Crear nuevo
       await prisma.typingIndicator.create({
@@ -125,13 +120,12 @@ export async function POST(
           userId: userId
         }
       });
-      console.log("[Typing API] Creado nuevo indicador");
     }
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error("[Typing API] Error:", error);
+    console.error("Error creating typing indicator:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
