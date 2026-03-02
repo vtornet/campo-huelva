@@ -573,11 +573,45 @@ model Message {
   isRead         Boolean      @default(false)
   readAt         DateTime?
 
+  // NUEVOS CAMPOS PARA ESTADO DE MENSAJE
+  messageType    MessageType  @default(TEXT)
+  attachmentUrl  String?      // URL de imagen o link de ubicación
+  attachmentMetadata Json?    // {width,height} o {lat,lng,address}
+  status         MessageStatus @default(SENT)
+  deliveredAt    DateTime?
+  updatedAt      DateTime     @default(now()) @updatedAt
+
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])
   @@index([senderId])
   @@index([receiverId])
+  @@index([status])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  LOCATION
+}
+
+enum MessageStatus {
+  SENT       // Enviado al servidor
+  DELIVERED  // Recibido por el destinatario
+  READ       // Leído por el destinatario
+  FAILED     // Error al enviar
+}
+
+// === INDICADOR DE ESCRITURA ===
+model TypingIndicator {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([createdAt])
 }
 
 // === TABLÓN SOCIAL ===

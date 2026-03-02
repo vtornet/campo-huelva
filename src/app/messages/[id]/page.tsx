@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { auth } from "@/lib/firebase";
+import { MessageStatusTick } from "@/components/chat/MessageStatusTick";
+import { CompactTypingIndicator } from "@/components/chat/TypingIndicator";
 
 type Message = {
   id: string;
@@ -12,7 +14,13 @@ type Message = {
   senderId: string;
   receiverId: string;
   isRead: boolean;
+  readAt: string | null;
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED";
+  deliveredAt: string | null;
+  messageType: "TEXT" | "IMAGE" | "LOCATION";
+  attachmentUrl: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 type OtherUser = {
@@ -24,6 +32,11 @@ type OtherUser = {
   companyProfile?: { companyName?: string; city?: string | null; province?: string | null };
 };
 
+// Intervalo de polling: 3 segundos
+const POLLING_INTERVAL = 3000;
+// Tiempo después del cual se considera que el usuario dejó de escribir
+const TYPING_TIMEOUT = 3000;
+
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -31,47 +44,46 @@ export default function ChatPage() {
   const params = useParams();
   const conversationId = params.id as string;
 
+  // Log de depuración al inicio
+  useEffect(() => {
+    console.log("[ChatPage] Componente montado. conversationId:", conversationId, "user:", user?.uid);
+  }, [conversationId, user?.uid]);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [relatedPost, setRelatedPost] = useState<{ id: string; title: string; type: string } | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
-    if (user && conversationId) {
-      loadMessages();
-      // Recargar mensajes cada 5 segundos
-      const interval = setInterval(loadMessages, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [user, conversationId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const loadMessages = async () => {
+  // Funciones definidas con useCallback para evitar problemas de closure
+  const loadMessages = useCallback(async () => {
     if (!user || !conversationId) return;
 
     try {
       const res = await fetch(`/api/messages/${conversationId}?userId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.messages || []);
+
+        setMessages(prev => {
+          const newMessages = data.messages || [];
+          if (newMessages.length !== prev.length ||
+              newMessages.some((m: Message, i: number) => m.id !== prev[i]?.id || m.status !== prev[i]?.status)) {
+            return newMessages;
+          }
+          return prev;
+        });
+
         setRelatedPost(data.relatedPost || null);
 
-        // Obtener info del otro usuario
-        if (data.otherParticipants && data.otherParticipants.length > 0) {
+        if (data.otherParticipants && data.otherParticipants.length > 0 && !otherUser) {
           const otherUserId = data.otherParticipants[0];
           const userRes = await fetch(`/api/user/by-id?id=${otherUserId}`);
           if (userRes.ok) {
@@ -84,10 +96,119 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, conversationId, otherUser]);
 
-  const scrollToBottom = () => {
+  const checkTypingStatus = useCallback(async () => {
+    if (!user || !conversationId) return;
+
+    try {
+      const res = await fetch(`/api/messages/${conversationId}/typing?currentUserId=${user.uid}`);
+      if (res.ok) {
+        const data = await res.json();
+        console.log("[Typing] Status:", data.typing);
+        setTypingUsers(data.typing || []);
+      }
+    } catch (error) {
+      console.error("Error checking typing status:", error);
+    }
+  }, [user, conversationId]);
+
+  const registerTyping = useCallback(async () => {
+    if (!user || !conversationId) return;
+
+    try {
+      console.log("[Typing] Registrando typing para", user.uid);
+      const res = await fetch(`/api/messages/${conversationId}/typing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid })
+      });
+      console.log("[Typing] Respuesta:", res.status);
+    } catch (error) {
+      console.error("Error registering typing:", error);
+    }
+  }, [user, conversationId]);
+
+  const clearTypingIndicator = useCallback(async () => {
+    if (!user || !conversationId) return;
+
+    try {
+      await fetch(`/api/messages/${conversationId}/typing?userId=${user.uid}`, {
+        method: "DELETE"
+      });
+    } catch (error) {
+      console.error("Error clearing typing indicator:", error);
+    }
+  }, [user, conversationId]);
+
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // Redirección si no autenticado
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  // Detectar visibilidad de la página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  // Polling de mensajes y estado de escritura
+  useEffect(() => {
+    if (user && conversationId) {
+      loadMessages();
+      const interval = setInterval(() => {
+        if (isPageVisible) {
+          loadMessages();
+          checkTypingStatus();
+        }
+      }, POLLING_INTERVAL);
+      return () => clearInterval(interval);
+    }
+  }, [user, conversationId, isPageVisible, loadMessages, checkTypingStatus]);
+
+  // Scroll al final cuando hay nuevos mensajes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Limpiar indicador de escritura al desmontar
+  useEffect(() => {
+    return () => {
+      clearTypingIndicator();
+    };
+  }, [clearTypingIndicator]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    console.log("[Chat] Input change. value:", value, "isTypingRef:", isTypingRef.current);
+
+    if (!isTypingRef.current && value.trim()) {
+      console.log("[Chat] Registrando typing...");
+      isTypingRef.current = true;
+      registerTyping();
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      console.log("[Chat] Timeout - limpiando typing");
+      isTypingRef.current = false;
+      clearTypingIndicator();
+    }, TYPING_TIMEOUT);
   };
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -97,6 +218,12 @@ export default function ChatPage() {
     setSending(true);
     const content = newMessage.trim();
     setNewMessage("");
+
+    isTypingRef.current = false;
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    clearTypingIndicator();
 
     try {
       const res = await fetch("/api/messages", {
@@ -180,7 +307,18 @@ export default function ChatPage() {
                 {getUserName().charAt(0).toUpperCase()}
               </div>
               <div>
-                <h1 className="font-semibold text-slate-800 tracking-tight">{getUserName()}</h1>
+                <h1 className="font-semibold text-slate-800 tracking-tight flex items-center gap-2">
+                  {getUserName()}
+                  {typingUsers.length > 0 && (
+                    <span className="text-xs font-normal text-emerald-600 flex items-center gap-0.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      escribiendo...
+                    </span>
+                  )}
+                </h1>
                 <p className="text-xs text-slate-500 flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -230,24 +368,29 @@ export default function ChatPage() {
                       : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
                   }`}>
                     <p className="break-words text-sm leading-relaxed">{msg.content}</p>
-                    <p className={`text-xs mt-1.5 ${isMine ? "text-emerald-100" : "text-slate-400"}`}>
+                    <p className={`text-xs mt-1.5 flex items-center gap-1 ${isMine ? "text-emerald-100" : "text-slate-400"}`}>
                       {new Date(msg.createdAt).toLocaleTimeString("es-ES", {
                         hour: "2-digit",
                         minute: "2-digit"
                       })}
-                      {isMine && msg.isRead && (
-                        <span className="ml-1 flex items-center gap-0.5">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                          </svg>
-                          Leído
-                        </span>
-                      )}
+                      <MessageStatusTick
+                        status={msg.status}
+                        isMine={isMine}
+                        className="ml-1"
+                      />
                     </p>
                   </div>
                 </div>
               );
             })}
+
+            {/* Indicador de escritura */}
+            {typingUsers.length > 0 && (
+              <div className="flex justify-start">
+                <CompactTypingIndicator />
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -263,13 +406,17 @@ export default function ChatPage() {
               placeholder="Escribe un mensaje..."
               className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-slate-50 transition-all duration-200 pr-12"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleInputChange}
               disabled={sending}
             />
             {newMessage && (
               <button
                 type="button"
-                onClick={() => setNewMessage("")}
+                onClick={() => {
+                  setNewMessage("");
+                  isTypingRef.current = false;
+                  clearTypingIndicator();
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

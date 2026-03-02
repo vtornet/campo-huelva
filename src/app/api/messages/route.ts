@@ -216,9 +216,13 @@ export async function POST(request: Request) {
         postTitle = post?.title || "";
       }
 
-      await notifyNewContact(receiverId, senderName, postId, postTitle, conversation.id);
+      // NOTA: Solo creamos notificación en el panel cuando es una NUEVA conversación
+      // Para mensajes siguientes, el usuario ya verá el contador en el icono de mensajes
+      if (isFirstMessage) {
+        await notifyNewContact(receiverId, senderName, postId, postTitle, conversation.id);
+      }
 
-      // Enviar notificación push (tanto para primer mensaje como siguientes)
+      // Enviar notificación push para TODOS los mensajes (para notificación en tiempo real)
       console.log(`[Messages] Enviando notificación push a ${receiverId} de ${senderName}`);
       await notifyNewMessage(receiverId, senderName, conversation.id);
     }

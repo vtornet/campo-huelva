@@ -34,7 +34,20 @@ export async function GET(
       return NextResponse.json({ error: "No tienes acceso a esta conversación" }, { status: 403 });
     }
 
-    // Marcar mensajes como leídos
+    // Marcar mensajes del otro usuario como DELIVERED si aún están en SENT
+    await prisma.message.updateMany({
+      where: {
+        conversationId: id,
+        receiverId: userId,
+        status: "SENT"
+      },
+      data: {
+        status: "DELIVERED",
+        deliveredAt: new Date()
+      }
+    });
+
+    // Marcar mensajes como leídos (actualizar lastReadAt)
     await prisma.conversationParticipant.updateMany({
       where: {
         conversationId: id,
@@ -45,7 +58,7 @@ export async function GET(
       }
     });
 
-    // Marcar mensajes recibidos como leídos
+    // Marcar mensajes recibidos como leídos (actualizar isRead, readAt y status)
     await prisma.message.updateMany({
       where: {
         conversationId: id,
@@ -54,7 +67,8 @@ export async function GET(
       },
       data: {
         isRead: true,
-        readAt: new Date()
+        readAt: new Date(),
+        status: "READ"
       }
     });
 
