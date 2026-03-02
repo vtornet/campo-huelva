@@ -590,14 +590,14 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 #### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
 > **La experiencia de mensajería debe ser fluida**
 
-- [x] Carga de imágenes en el chat (Firebase Storage)
+- [x] Carga de imágenes en el chat
 - [x] Envío de documentos PDF en el chat
 - [ ] Indicador de "escribiendo..."
 - [ ] Confirmación de lectura (✓✓)
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 
-#### ✅ 4. Gestión de Denuncias (Admin) (COMPLETADO)
+#### 4. ✅ Gestión de Denuncias (Admin) (COMPLETADO - 01/03/2026)
 > **Panel para moderar contenido reportado**
 
 - [x] Panel de denuncias pendientes en `/admin` (pestaña "Denuncias")
@@ -616,6 +616,12 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Notificación de nuevas ofertas según perfil
 - [ ] Gestión de preferencias de notificación
 - [ ] Configuración de navegador para permisos
+
+**⚠️ Problemas detectados (01/03/2026):**
+- ✅ Móvil: Las notificaciones SÍ funcionan
+- ⚠️ Chrome desktop: Solo funcionan con el botón de prueba, no con mensajes reales
+- ❌ PWA escritorio: No deja activar las notificaciones
+- ❌ Brave: No deja activar las notificaciones
 
 ### 🟢 DESEABLES (Posponer si es necesario)
 
@@ -668,119 +674,6 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Panel de Gestión de Denuncias en admin
 - ✅ Carnet de carretillero en perfil y buscador
 - ✅ Iconos profesionales actualizados
-
-### 🟡 IMPORTANTES (Recomendados para Beta)
-
-#### 1. Sistema de Notificaciones Push
-> **Los usuarios necesitan saber cuando hay actividad relevante**
-
-- [ ] Notificación de nuevos mensajes
-- [ ] Notificación de inscripciones en ofertas (para empresas)
-- [ ] Notificación de cambios de estado (aceptado/rechazado)
-- [ ] Notificación de nuevas ofertas según perfil
-- [ ] Gestión de preferencias de notificación
-- [ ] Configuración de navegador para permisos
-
-**⚠️ Problemas detectados (01/03/2026):**
-- ✅ Móvil: Las notificaciones SÍ funcionan
-- ⚠️ Chrome desktop: Solo funcionan con el botón de prueba, no con mensajes reales
-- ❌ PWA escritorio: No deja activar las notificaciones
-- ❌ Brave: No deja activar las notificaciones
-
-#### 2. Testing en Dispositivos Reales
-> **Asegurar que funciona en el entorno real del usuario**
-
-- [ ] Probar PWA en Android (Chrome)
-- [ ] Probar PWA en iOS (Safari)
-- [ ] Probar instalación desde home screen
-- [ ] Probar en diferentes tamaños de pantalla
-- [ ] Probar con conexión lenta/intermitente
-
-#### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
-> **La experiencia de mensajería debe ser fluida**
-
-- [x] Carga de imágenes en el chat (Firebase Storage)
-- [x] Envío de documentos PDF en el chat
-- [ ] Indicador de "escribiendo..."
-- [ ] Confirmación de lectura (✓✓)
-- [ ] Envío de ubicación
-- [ ] Búsqueda en el historial de mensajes
-
-### 🟡 IMPORTANTES (Recomendados para Beta)
-
-#### 5. Sistema de Notificaciones Push
-> **Los usuarios necesitan saber cuando hay actividad relevante**
-
-- [ ] Notificación de nuevos mensajes
-- [ ] Notificación de inscripciones en ofertas (para empresas)
-- [ ] Notificación de cambios de estado (aceptado/rechazado)
-- [ ] Notificación de nuevas ofertas según perfil
-- [ ] Gestión de preferencias de notificación
-- [ ] Configuración de navegador para permisos
-
-#### 6. Testing en Dispositivos Reales
-> **Asegurar que funciona en el entorno real del usuario**
-
-- [ ] Probar PWA en Android (Chrome)
-- [ ] Probar PWA en iOS (Safari)
-- [ ] Probar instalación desde home screen
-- [ ] Probar en diferentes tamaños de pantalla
-- [ ] Probar con conexión lenta/intermitente
-
-#### 7. Mejoras de UX en Chat
-> **La experiencia de mensajería debe ser fluida**
-
-- [ ] Indicador de "escribiendo..."
-- [ ] Confirmación de lectura (✓✓)
-- [ ] Carga de imágenes en el chat
-- [ ] Envío de ubicación
-- [ ] Búsqueda en el historial de mensajes
-
-#### 8. Gestión de Denuncias (Admin)
-> **Panel para moderar contenido reportado**
-
-- [ ] Panel de denuncias pendientes
-- [ ] Vista detallada de publicación/comentario denunciado
-- [ ] Acciones: ignorar, ocultar contenido, sancionar usuario
-- [ ] Historial de denuncias por usuario
-- [ ] Estadísticas de denuncias
-
-### 🟢 DESEABLES (Posponer si es necesario)
-
-#### 9. Internacionalización (i18n)
-> **Temporeros extranjeros necesitan la app en su idioma**
-
-- [ ] Integrar `next-intl`
-- [ ] Traducir interfaz a Francés, Rumano, Inglés
-- [ ] Selector de idioma persistente
-- [ ] Detección automática de idioma
-
-#### 10. ✅ Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
-> **Más información para evaluar a las empresas**
-
-- [x] Galería de fotos (instalaciones, cultivos)
-- [x] Descripción extendida de la empresa
-- [ ] Valoraciones de trabajadores (cuando haya reputación)
-- [x] Historial de ofertas publicadas
-
-#### 11. Dashboard de Analytics
-> **Métricas para entender el uso de la plataforma**
-
-- [ ] Usuarios activos diarios/semanales/mensuales
-- [ ] Ofertas publicadas vs. cubiertas
-- [ ] Tiempo medio de contratación
-- [ ] Roles más activos
-- [ ] Provincias con más actividad
-
-### 🔵 DIFERIDOS (Post-Beta)
-
-- Verificación automática de empresas con AEAT
-- Sistema de reputación/valoraciones
-- Matchmaking inteligente avanzado
-- Modelo de monetización (pagos)
-- Video llamadas integradas
-- Integración con redes sociales (login adicional)
-- Geolocalización de ofertas (mapa interactivo)
 
 ## Funcionalidades Ya Implementadas
 

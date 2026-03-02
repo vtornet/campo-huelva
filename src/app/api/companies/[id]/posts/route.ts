@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 // GET: Obtener todas las ofertas de una empresa
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const companyId = params.id;
+    const { id: companyId } = await params;
 
     if (!companyId) {
       return NextResponse.json({ error: "Falta ID de empresa" }, { status: 400 });
