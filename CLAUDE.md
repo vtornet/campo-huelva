@@ -659,13 +659,55 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 ### 🔵 DIFERIDOS (Post-Beta)
 
-- Verificación automática de empresas con AEAT
-- Sistema de reputación/valoraciones
-- Matchmaking inteligente avanzado
-- Modelo de monetización (pagos)
-- Video llamadas integradas
-- Integración con redes sociales (login adicional)
-- Geolocalización de ofertas (mapa interactivo)
+#### 1. Verificación Automática de Empresas con AEAT
+> **Validar empresas usando el CIF a través de la API de AEAT**
+
+- [ ] Integración con API de AEAT usando certificado electrónico
+- [ ] Obtención automática de: razón social, dirección, localidad, provincia, situación
+- [ ] Estado: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
+- [ ] **Nota**: Actualmente la verificación de empresas es manual por admin.
+
+#### 2. Sistema de Validación de Email
+> **Confirmar que los emails son reales y pertenecen al usuario**
+
+- [ ] Envío de email de verificación al registro
+- [ ] Límite de tiempo para verificar (24-48h)
+- [ ] Bloquear funcionalidades hasta verificar email (publicar ofertas, contactar, etc.)
+- [ ] Reenviar email de verificación
+- [ ] Usar Firebase Auth Email Verification
+
+#### 3. Recuperación de Contraseña
+> **Permitir a usuarios recuperar acceso a su cuenta**
+
+- [ ] Flujo de recuperación por email (Firebase Password Reset)
+- [ ] Página `/reset-password` para introducir nueva contraseña
+- [ ] Validación de nueva contraseña (longitud, complejidad)
+- [ ] Confirmación de contraseña
+- [ ] Email de notificación cuando se cambia la contraseña
+
+#### 4. Sistema de Reputación/Valoraciones
+- [ ] Valoraciones mutuas post-contratación
+- [ ] Badge de "perfil verificado" por valoraciones positivas
+- [ ] Filtros por reputación en búsquedas
+
+#### 5. Matchmaking Inteligente Avanzado
+- [ ] Algoritmo de compatibilidad candidato-oferta
+- [ ] Recomendaciones basadas en historial
+
+#### 6. Modelo de Monetización
+- [ ] Pagos para empresas por publicación de ofertas
+- [ ] Suscripción mensual/anual
+- [ ] Acceso a BBDD de candidatos
+
+#### 7. Video Llamadas Integradas
+- [ ] Videollamadas dentro de la plataforma
+- [ ] Agenda de entrevistas
+
+#### 8. Integración con Redes Sociales
+- [ ] Login adicional con LinkedIn, Facebook
+
+#### 9. Geolocalización de Ofertas
+- [ ] Mapa interactivo con ofertas geolocalizadas
 
 ---
 
