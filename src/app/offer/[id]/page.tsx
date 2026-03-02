@@ -516,13 +516,32 @@ export default function OfferDetailPage() {
               )}
               <div>
                 <p className="font-semibold text-slate-800">
-                  {offer.company?.companyName || offer.publisher?.workerProfile?.fullName || offer.publisher?.foremanProfile?.fullName || 'Usuario'}
+                  {offer.company ? (
+                    <button
+                      onClick={() => router.push(`/company/${offer.company.id}`)}
+                      className="hover:text-indigo-600 transition-colors"
+                    >
+                      {offer.company.companyName}
+                    </button>
+                  ) : (
+                    <span>{offer.publisher?.workerProfile?.fullName || offer.publisher?.foremanProfile?.fullName || 'Usuario'}</span>
+                  )}
                 </p>
                 <p className="text-sm text-slate-500">
                   {isDemand ? 'Candidato' : offer.type === 'OFFICIAL' ? 'Empresa' : 'Usuario de Agro Red'}
                 </p>
               </div>
             </div>
+
+            {/* Botón para ver perfil de empresa */}
+            {offer.company && (
+              <button
+                onClick={() => router.push(`/company/${offer.company.id}`)}
+                className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-sm font-medium transition-colors"
+              >
+                Ver perfil de la empresa
+              </button>
+            )}
 
             {!isOwner && !isSharedOffer && (
               <>

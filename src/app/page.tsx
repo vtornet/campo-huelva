@@ -888,9 +888,21 @@ export default function Dashboard() {
                                 {post.company?.companyName?.[0] || post.publisher?.workerProfile?.fullName?.[0] || post.publisher?.foremanProfile?.fullName?.[0] || "?"}
                             </div>
                           )}
-                          <span className="text-sm text-slate-700 font-medium">
-                              {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
-                          </span>
+                          {post.company ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/company/${post.company.id}`);
+                              }}
+                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 transition-colors"
+                            >
+                              {post.company.companyName}
+                            </button>
+                          ) : (
+                            <span className="text-sm text-slate-700 font-medium">
+                              {post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
+                            </span>
+                          )}
                       </div>
 
                       {/* Botón de acción según tipo y rol */}
