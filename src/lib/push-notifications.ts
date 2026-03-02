@@ -57,13 +57,12 @@ export async function sendPushNotification(options: PushNotificationOptions): Pr
       }
     };
 
-    // Enviar notificación con timestamp para tag único
-    const uniqueTag = `${tag || "general"}-${Date.now()}`;
+    // Enviar notificación. El tag permite reemplazar notificaciones anteriores del mismo tipo
     const payload = JSON.stringify({
       title,
       body: body || "",
       url: url || "/",
-      tag: uniqueTag,
+      tag: tag || "general",
       requireInteraction: requireInteraction || false,
       timestamp: Date.now(),
     });
@@ -115,6 +114,7 @@ export async function sendBulkPushNotifications(
 
 /**
  * Envía notificación de nuevo mensaje.
+ * Usa un tag específico por conversación para que se reemplacen notificaciones anteriores del mismo chat.
  */
 export async function notifyNewMessage(recipientId: string, senderName: string, conversationId: string): Promise<void> {
   await sendPushNotification({
@@ -122,7 +122,7 @@ export async function notifyNewMessage(recipientId: string, senderName: string, 
     title: `Nuevo mensaje de ${senderName}`,
     body: "Tienes un nuevo mensaje sin leer",
     url: `/messages?id=${conversationId}`,
-    tag: "new-message",
+    tag: `chat-${conversationId}`,
   });
 }
 

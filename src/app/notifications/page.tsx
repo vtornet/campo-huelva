@@ -55,6 +55,11 @@ export default function NotificationsPage() {
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
+        // Marcar todas como leídas automáticamente al entrar
+        const unreadIds = data.filter((n: Notification) => !n.isRead).map((n: Notification) => n.id);
+        if (unreadIds.length > 0) {
+          markAllAsRead();
+        }
       }
     } catch (error) {
       console.error("Error cargando notificaciones:", error);
