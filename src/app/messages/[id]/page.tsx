@@ -19,8 +19,9 @@ type Message = {
   readAt: string | null;
   status: "SENT" | "DELIVERED" | "READ" | "FAILED";
   deliveredAt: string | null;
-  messageType: "TEXT" | "IMAGE" | "LOCATION";
+  messageType: "TEXT" | "IMAGE" | "DOCUMENT" | "LOCATION";
   attachmentUrl: string | null;
+  attachmentMetadata: any;
   createdAt: string;
   updatedAt: string;
 };
@@ -51,16 +52,19 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [relatedPost, setRelatedPost] = useState<{ id: string; title: string; type: string } | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
 
@@ -247,6 +251,83 @@ export default function ChatPage() {
     }
   };
 
+  const handleDocumentSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo - solo PDF
+    if (file.type !== "application/pdf") {
+      showNotification({
+        type: "error",
+        title: "Archivo no válido",
+        message: "Solo se permiten archivos PDF.",
+      });
+      return;
+    }
+
+    // Validar tamaño (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      showNotification({
+        type: "error",
+        title: "Archivo demasiado grande",
+        message: "El PDF no puede exceder 2MB.",
+      });
+      return;
+    }
+
+    setSelectedDocument(file);
+    showNotification({
+      type: "info",
+      title: "Documento seleccionado",
+      message: file.name,
+    });
+  };
+
+  const removeSelectedDocument = () => {
+    setSelectedDocument(null);
+    if (documentInputRef.current) {
+      documentInputRef.current.value = "";
+    }
+  };
+
+  const uploadDocument = async (): Promise<{ url: string; fileName: string } | null> => {
+    if (!selectedDocument || !user) return null;
+
+    setUploadingDocument(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedDocument);
+      formData.append("userId", user.uid);
+
+      const res = await fetch(`/api/messages/${conversationId}/upload-document`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al subir documento");
+      }
+
+      const data = await res.json();
+      return {
+        url: data.url,
+        fileName: selectedDocument.name
+      };
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      showNotification({
+        type: "error",
+        title: "Error al subir documento",
+        message: error instanceof Error ? error.message : "Inténtalo de nuevo más tarde.",
+      });
+      return null;
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
   const uploadImage = async (): Promise<string | null> => {
     if (!selectedImage || !user) return null;
 
@@ -296,8 +377,8 @@ export default function ChatPage() {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar: debe haber texto o imagen
-    if (!newMessage.trim() && !selectedImage) return;
+    // Validar: debe haber texto, imagen o documento
+    if (!newMessage.trim() && !selectedImage && !selectedDocument) return;
     if (!user || !otherUser || sending) return;
 
     setSending(true);
@@ -312,19 +393,32 @@ export default function ChatPage() {
     clearTypingIndicator();
 
     try {
-      // Subir imagen si hay una seleccionada
       let attachmentUrl = null;
+      let attachmentMetadata = null;
       let messageType = "TEXT";
 
+      // Subir imagen si hay una seleccionada
       if (selectedImage) {
         attachmentUrl = await uploadImage();
         if (!attachmentUrl) {
-          // Error al subir, restaurar estado
           setNewMessage(content);
           setSending(false);
           return;
         }
         messageType = "IMAGE";
+      }
+
+      // Subir documento si hay uno seleccionado
+      if (selectedDocument) {
+        const docResult = await uploadDocument();
+        if (!docResult) {
+          setNewMessage(content);
+          setSending(false);
+          return;
+        }
+        attachmentUrl = docResult.url;
+        attachmentMetadata = { fileName: docResult.fileName };
+        messageType = "DOCUMENT";
       }
 
       const res = await fetch("/api/messages", {
@@ -333,16 +427,17 @@ export default function ChatPage() {
         body: JSON.stringify({
           senderId: user.uid,
           receiverId: otherUser.id,
-          content: content || (selectedImage ? "📷 Foto" : ""),
+          content: content || (selectedImage ? "📷 Foto" : selectedDocument ? "📄 Documento" : ""),
           postId: relatedPost?.id,
           messageType,
-          attachmentUrl
+          attachmentUrl,
+          attachmentMetadata
         })
       });
 
       if (res.ok) {
-        // Limpiar imagen seleccionada
         removeSelectedImage();
+        removeSelectedDocument();
         await loadMessages();
       } else {
         showNotification({
@@ -463,6 +558,8 @@ export default function ChatPage() {
             {messages.map((msg) => {
               const isMine = msg.senderId === user.uid;
               const isImage = msg.messageType === "IMAGE";
+              const isDocument = msg.messageType === "DOCUMENT";
+              const fileName = msg.attachmentMetadata?.fileName || "documento.pdf";
 
               return (
                 <div
@@ -482,8 +579,32 @@ export default function ChatPage() {
                         loading="lazy"
                       />
                     ) : null}
-                    <div className={`px-4 py-3 ${isImage ? "pt-2" : ""}`}>
-                      {msg.content && msg.content !== "📷 Foto" && (
+                    {isDocument && msg.attachmentUrl ? (
+                      <a
+                        href={msg.attachmentUrl}
+                        download={fileName}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block px-4 py-3 ${isMine ? "text-white" : "text-slate-800"} hover:opacity-80 transition-opacity`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${isMine ? "bg-white/20" : "bg-red-100"}`}>
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{fileName}</p>
+                            <p className={`text-xs ${isMine ? "text-emerald-100" : "text-slate-500"}`}>Documento PDF</p>
+                          </div>
+                          <svg className={`w-5 h-5 ${isMine ? "text-white" : "text-slate-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </div>
+                      </a>
+                    ) : null}
+                    <div className={`px-4 py-3 ${(isImage || isDocument) ? "pt-2" : ""}`}>
+                      {msg.content && msg.content !== "📷 Foto" && msg.content !== "📄 Documento" && (
                         <p className="break-words text-sm leading-relaxed">{msg.content}</p>
                       )}
                       <p className={`text-xs mt-1.5 flex items-center gap-1 ${isMine ? "text-emerald-100" : "text-slate-400"}`}>
@@ -504,6 +625,7 @@ export default function ChatPage() {
             })}
 
             {/* Indicador de escritura */}
+
             {typingUsers.length > 0 && (
               <div className="flex justify-start">
                 <CompactTypingIndicator />
@@ -524,6 +646,32 @@ export default function ChatPage() {
           </div>
         )}
 
+        {/* Previsualización de documento */}
+        {selectedDocument && (
+          <div className="max-w-4xl mx-auto mb-3">
+            <div className="inline-flex items-center gap-3 px-4 py-3 bg-slate-100 rounded-2xl">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-800 truncate">{selectedDocument.name}</p>
+                <p className="text-xs text-slate-500">PDF - {(selectedDocument.size / 1024).toFixed(1)} KB</p>
+              </div>
+              <button
+                type="button"
+                onClick={removeSelectedDocument}
+                className="p-1.5 bg-white rounded-full text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-3">
           {/* Botón de imagen */}
           <input
@@ -536,12 +684,32 @@ export default function ChatPage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={sending || uploadingImage}
+            disabled={sending || uploadingImage || uploadingDocument}
             className="p-3.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Enviar imagen"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+
+          {/* Botón de documento */}
+          <input
+            ref={documentInputRef}
+            type="file"
+            accept="application/pdf"
+            onChange={handleDocumentSelect}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => documentInputRef.current?.click()}
+            disabled={sending || uploadingImage || uploadingDocument}
+            className="p-3.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Enviar documento PDF"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </button>
 
@@ -573,10 +741,10 @@ export default function ChatPage() {
           </div>
           <button
             type="submit"
-            disabled={(!newMessage.trim() && !selectedImage) || sending || uploadingImage}
+            disabled={(!newMessage.trim() && !selectedImage && !selectedDocument) || sending || uploadingImage || uploadingDocument}
             className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3.5 rounded-2xl font-semibold hover:from-emerald-700 hover:to-emerald-600 transition-all duration-200 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20 flex items-center gap-2"
           >
-            {sending || uploadingImage ? (
+            {sending || uploadingImage || uploadingDocument ? (
               <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
