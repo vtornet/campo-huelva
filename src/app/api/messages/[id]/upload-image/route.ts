@@ -1,52 +1,20 @@
 import { NextResponse } from "next/server";
 import admin from "firebase-admin";
-import { getApps } from "firebase/app";
 
 // Tamaño máximo: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-// Inicializar Firebase Admin si no está inicializado
-if (!admin.apps.length) {
-  // Usar las variables de entorno
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-
-  // Si no hay credenciales de servicio, usar el método simplificado (para development)
-  if (!clientEmail || !privateKey) {
-    console.log("[Upload] Inicializando Firebase Admin sin credenciales de servicio");
-    try {
-      admin.initializeApp({
-        projectId: projectId,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      });
-    } catch (e) {
-      console.log("[Upload] Error en inicialización simple:", e);
-    }
-  } else {
-    console.log("[Upload] Inicializando Firebase Admin con credenciales de servicio");
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: projectId,
-        clientEmail: clientEmail,
-        privateKey: privateKey,
-      }),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-  }
-}
-
-const bucket = admin.storage().bucket();
-
 export async function POST(request: Request) {
+  let bucket: any = null;
+
   try {
-    console.log("[Upload] Iniciando subida de imagen");
+    console.log("[Upload] === Iniciando subida de imagen ===");
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const userId = formData.get("userId") as string;
 
-    console.log("[Upload] File:", file?.name, "Size:", file?.size, "UserId:", userId);
+    console.log("[Upload] File:", file?.name, "Size:", file?.size, "Type:", file?.type, "UserId:", userId);
 
     if (!file) {
       return NextResponse.json({ error: "No se proporcionó archivo" }, { status: 400 });
@@ -66,11 +34,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "La imagen excede los 5MB máximos" }, { status: 400 });
     }
 
-    console.log("[Upload] Validaciones pasadas, convirtiendo a buffer");
+    console.log("[Upload] Validaciones pasadas");
+
+    // Inicializar Firebase Admin si no está inicializado
+    if (!admin.apps.length) {
+      console.log("[Upload] Inicializando Firebase Admin...");
+
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+      console.log("[Upload] ProjectId:", projectId, "StorageBucket:", storageBucket);
+
+      try {
+        admin.initializeApp({
+          projectId: projectId,
+          storageBucket: storageBucket,
+        });
+        console.log("[Upload] Firebase Admin inicializado correctamente");
+      } catch (initError) {
+        console.error("[Upload] Error inicializando Firebase Admin:", initError);
+        throw new Error(`Error iniciando Firebase: ${initError}`);
+      }
+    } else {
+      console.log("[Upload] Firebase Admin ya estaba inicializado");
+    }
+
+    bucket = admin.storage().bucket();
+    console.log("[Upload] Bucket obtenido:", bucket?.name);
 
     // Convertir File a Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    console.log("[Upload] Buffer creado, tamaño:", buffer.length);
 
     // Generar nombre único
     const timestamp = Date.now();
@@ -81,22 +76,25 @@ export async function POST(request: Request) {
 
     console.log("[Upload] Storage path:", storagePath);
 
-    // Subir a Firebase Storage usando Admin SDK
+    // Subir a Firebase Storage
     const fileRef = bucket.file(storagePath);
+    console.log("[Upload] File ref creado");
 
-    console.log("[Upload] Iniciando upload a bucket...");
+    console.log("[Upload] Iniciando save()...");
     await fileRef.save(buffer, {
       contentType: file.type,
-      metadata: { contentType: file.type }
+      resumable: false
     });
-    console.log("[Upload] Upload completado");
+    console.log("[Upload] Save completado");
 
     // Hacer el archivo público
+    console.log("[Upload] Haciendo archivo público...");
     await fileRef.makePublic();
-    console.log("[Upload] Archivo hecho público");
+    console.log("[Upload] Archivo público");
 
     // Generar URL pública
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+    const bucketName = bucket.name;
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/${storagePath}`;
     console.log("[Upload] URL pública:", publicUrl);
 
     return NextResponse.json({
@@ -105,11 +103,15 @@ export async function POST(request: Request) {
       path: storagePath
     });
 
-  } catch (error) {
-    console.error("[Upload] Error:", error);
+  } catch (error: any) {
+    console.error("[Upload] ERROR completo:", error);
+    console.error("[Upload] Error message:", error?.message);
+    console.error("[Upload] Error stack:", error?.stack);
+
     return NextResponse.json({
       error: "Error al subir la imagen",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error?.message || "Unknown error",
+      stack: error?.stack
     }, { status: 500 });
   }
 }
