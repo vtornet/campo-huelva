@@ -182,6 +182,12 @@ model CompanyProfile {
   // Foto de perfil (logo de empresa - URL de Firebase Storage)
   profileImage   String?
 
+  // Galería de fotos (URLs de Firebase Storage)
+  photos         String[]
+
+  // Descripción extendida (más detallada)
+  extendedDescription String?
+
   posts          Post[]
 }
 

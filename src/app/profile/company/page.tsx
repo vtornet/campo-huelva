@@ -8,6 +8,7 @@ import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA } from "@/lib/constants";
 import CifInput from "@/components/CifInput";
 import CompanyVerification from "@/components/CompanyVerification";
 import PhoneInput from "@/components/PhoneInput";
+import CompanyPhotoGallery from "@/components/CompanyPhotoGallery";
 import { PageBackButton } from "@/components/BackButton";
 
 export default function CompanyProfilePage() {
@@ -39,6 +40,8 @@ export default function CompanyProfilePage() {
     contactPerson: "",
     website: "",
     description: "",
+    extendedDescription: "",
+    photos: [] as string[],
   });
 
   // Proteger la página: si no hay usuario, ir a login
@@ -65,6 +68,8 @@ export default function CompanyProfilePage() {
               contactPerson: data.contactPerson || "",
               website: data.website || "",
               description: data.description || "",
+              extendedDescription: data.extendedDescription || "",
+              photos: data.photos || [],
             });
             setIsUpdate(true);
             setProfileLoaded(true);
@@ -367,6 +372,28 @@ export default function CompanyProfilePage() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Descripción extendida
+                  </label>
+                  <textarea
+                    rows={6}
+                    placeholder="Cuenta más sobre tu empresa: historia, valores, tipos de cultivos, certificaciones, procesos de trabajo, beneficios que ofertas a empleados..."
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200 resize-none"
+                    value={formData.extendedDescription}
+                    onChange={(e) => setFormData({ ...formData, extendedDescription: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Usa este espacio para dar a conocer tu empresa a posibles candidatos.
+                  </p>
+                </div>
+
+                <CompanyPhotoGallery
+                  photos={formData.photos}
+                  onPhotosChange={(photos) => setFormData({ ...formData, photos })}
+                  maxPhotos={6}
+                />
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">

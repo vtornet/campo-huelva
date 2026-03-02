@@ -35,6 +35,8 @@ export async function PUT(request: Request) {
       contactPerson,
       website,
       description,
+      extendedDescription,
+      photos,
       companyVerified,
       verificationData
     } = body;
@@ -81,7 +83,9 @@ export async function PUT(request: Request) {
         phone: phone || null,
         contactPerson: contactPerson || null,
         website: website || null,
-        description: description || null
+        description: description || null,
+        extendedDescription: extendedDescription || null,
+        photos: photos || [],
       };
 
       // Solo actualizar CIF si es diferente del actual
@@ -122,6 +126,8 @@ export async function PUT(request: Request) {
           contactPerson: contactPerson || null,
           website: website || null,
           description: description || null,
+          extendedDescription: extendedDescription || null,
+          photos: photos || [],
           // Datos de verificación
           isVerified: companyVerified && verificationMethod === "AEAT",
           verificationMethod: verificationMethod,

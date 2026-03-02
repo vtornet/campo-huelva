@@ -496,10 +496,11 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] Cookies necesarias siempre activas (Firebase Auth, sesión)
 - [x] Categorías opcionales: Analíticas, Marketing
 
-#### 4. ✅ Página de Contacto/Soporte (COMPLETADO - 25/02/2026)
+#### 4. ✅ Página de Contacto/Soporte (COMPLETADO - 02/03/2026)
 - [x] Formulario de contacto (nombre, email, asunto, mensaje)
 - [x] Validaciones en tiempo real con mensajes de error
 - [x] Rate limiting (5 mensajes por hora) para prevenir spam
+- [x] **Envío de emails funcional** mediante Resend API
 - [x] Email de soporte visible (contact@appstracta.app)
 - [x] Política de respuesta: máximo 48 horas
 - [x] Información de ubicación y horario
