@@ -592,6 +592,7 @@ model Message {
 enum MessageType {
   TEXT
   IMAGE
+  DOCUMENT
   LOCATION
 }
 
