@@ -463,6 +463,24 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Endpoint DELETE `/api/board-posts/[id]` para eliminar
 - [x] Endpoint PUT `/api/board-posts/[id]` para editar
 
+### ✅ 27. Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
+- [x] **Galería de fotos**: Las empresas pueden añadir hasta 6 fotos de sus instalaciones, cultivos, etc.
+  - Subida de imágenes a ImgBB o Base64 como fallback
+  - Componente `CompanyPhotoGallery` reutilizable
+  - Vista previa y eliminación de fotos
+- [x] **Descripción extendida**: Campo adicional para información detallada sobre la empresa
+  - Historia, valores, tipos de cultivos, certificaciones, beneficios, etc.
+- [x] **Página pública de empresa** (`/company/[id]`):
+  - Información completa de la empresa (logo, descripción, contacto)
+  - Galería de fotos visual
+  - Historial de ofertas publicadas con conteo de inscritos
+  - Links a cada oferta para ver detalles e inscribirse
+- [x] **Nuevos campos en Prisma**: `photos[]`, `extendedDescription`
+- [x] **API endpoints**:
+  - `GET /api/companies/[id]` - Obtener perfil público de empresa
+  - `GET /api/companies/[id]/posts` - Obtener ofertas de una empresa
+  - `POST /api/upload-image` - Subir imágenes genérico
+
 ---
 
 ## 🎯 Roadmap a Fase Beta
@@ -609,13 +627,13 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Selector de idioma persistente
 - [ ] Detección automática de idioma
 
-#### 5. Perfil de Empresa Mejorado
+#### 5. ✅ Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
 > **Más información para evaluar a las empresas**
 
-- [ ] Galería de fotos (instalaciones, cultivos)
-- [ ] Descripción extendida de la empresa
+- [x] Galería de fotos (instalaciones, cultivos)
+- [x] Descripción extendida de la empresa
 - [ ] Valoraciones de trabajadores (cuando haya reputación)
-- [ ] Historial de ofertas publicadas
+- [x] Historial de ofertas publicadas
 
 #### 6. Dashboard de Analytics
 > **Métricas para entender el uso de la plataforma**
@@ -737,13 +755,13 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Selector de idioma persistente
 - [ ] Detección automática de idioma
 
-#### 10. Perfil de Empresa Mejorado
+#### 10. ✅ Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
 > **Más información para evaluar a las empresas**
 
-- [ ] Galería de fotos (instalaciones, cultivos)
-- [ ] Descripción extendida de la empresa
+- [x] Galería de fotos (instalaciones, cultivos)
+- [x] Descripción extendida de la empresa
 - [ ] Valoraciones de trabajadores (cuando haya reputación)
-- [ ] Historial de ofertas publicadas
+- [x] Historial de ofertas publicadas
 
 #### 11. Dashboard de Analytics
 > **Métricas para entender el uso de la plataforma**
