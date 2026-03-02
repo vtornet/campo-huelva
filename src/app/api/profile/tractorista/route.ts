@@ -23,8 +23,6 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    console.log("Datos recibidos en tractorista profile:", JSON.stringify(body, null, 2));
-
     const {
       uid,
       email,

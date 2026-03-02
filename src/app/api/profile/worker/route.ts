@@ -23,9 +23,6 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    // Logging para depuración
-    console.log("Datos recibidos en worker profile:", JSON.stringify(body, null, 2));
-
     const {
       uid,
       email, // <--- Importante: Recibimos el email

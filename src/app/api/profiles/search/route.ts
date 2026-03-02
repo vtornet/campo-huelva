@@ -37,8 +37,6 @@ export async function GET(request: NextRequest) {
     // Obtener el UID del usuario desde el header (enviado por el cliente)
     const userId = request.headers.get("x-user-id");
 
-    console.log("[SEARCH] UserId:", userId);
-
     if (!userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
@@ -48,8 +46,6 @@ export async function GET(request: NextRequest) {
       where: { id: userId },
       select: { role: true },
     });
-
-    console.log("[SEARCH] User role:", user?.role);
 
     if (!user || user.role !== "COMPANY") {
       return NextResponse.json(
@@ -74,8 +70,6 @@ export async function GET(request: NextRequest) {
       cropExperience: searchParams.get("cropExperience")?.split(",") || undefined,
       servicesOffered: searchParams.get("servicesOffered")?.split(",") || undefined,
     };
-
-    console.log("[SEARCH] Filters:", filters);
 
     // Filtros booleanos especiales (necesitamos saber si fueron enviados)
     const hasVehicle = searchParams.get("hasVehicle");
@@ -108,7 +102,6 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log("[SEARCH] Workers found:", workers.length);
 
       // Filtrar trabajadores
       const filteredWorkers = workers.filter((w) => {
@@ -164,7 +157,6 @@ export async function GET(request: NextRequest) {
         return true;
       });
 
-      console.log("[SEARCH] Workers after filtering:", filteredWorkers.length);
 
       // Formatear resultados de trabajadores
       for (const w of filteredWorkers) {
@@ -200,7 +192,6 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log("[SEARCH] Foremen found:", foremen.length);
 
       // Filtrar manijeros
       const filteredForemen = foremen.filter((f) => {
@@ -268,7 +259,6 @@ export async function GET(request: NextRequest) {
         return true;
       });
 
-      console.log("[SEARCH] Foremen after filtering:", filteredForemen.length);
 
       // Formatear resultados de manijeros
       for (const f of filteredForemen) {
@@ -306,7 +296,6 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log("[SEARCH] Engineers found:", engineers.length);
 
       // Filtrar ingenieros
       const filteredEngineers = engineers.filter((e) => {
@@ -378,7 +367,6 @@ export async function GET(request: NextRequest) {
         return true;
       });
 
-      console.log("[SEARCH] Engineers after filtering:", filteredEngineers.length);
 
       // Formatear resultados de ingenieros
       for (const e of filteredEngineers) {
@@ -404,7 +392,6 @@ export async function GET(request: NextRequest) {
     // Ordenar resultados: primero por nombre
     results.sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
 
-    console.log("[SEARCH] Total results:", results.length);
 
     return NextResponse.json({
       results,
