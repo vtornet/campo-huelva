@@ -207,9 +207,11 @@ export default function CompanyPhotoGallery({
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
-        💡 Muestra tus instalaciones, cultivos o equipos. Máximo {maxPhotos} fotos de 5MB cada una.
-      </p>
+      {editable && (
+        <p className="text-xs text-slate-500">
+          💡 Muestra tus instalaciones, cultivos o equipos. Máximo {maxPhotos} fotos de 5MB cada una.
+        </p>
+      )}
     </div>
   );
 }
