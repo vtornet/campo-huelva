@@ -1264,21 +1264,13 @@ export default function UserProfilePage() {
             </div>
 
             {/* Footer del modal */}
-            <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex gap-3 rounded-b-2xl">
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 rounded-b-2xl">
               <button
                 onClick={() => setShowProfileModal(false)}
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
               >
                 Cerrar
               </button>
-              {selectedProfile.phone && (
-                <a
-                  href={`tel:${selectedProfile.phone}`}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-center flex items-center justify-center gap-2"
-                >
-                  📞 Llamar
-                </a>
-              )}
             </div>
           </div>
         </div>

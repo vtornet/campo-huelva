@@ -33,7 +33,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Suscribirse a los cambios de autenticación de Firebase
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        console.log("AuthProvider: Estado de auth cambió:", currentUser ? "Usuario autenticado" : "No hay usuario");
+        console.log("AuthProvider: Estado de auth cambió:", currentUser ? {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName
+        } : "No hay usuario");
         setUser(currentUser);
         setLoading(false);
       }, (err) => {

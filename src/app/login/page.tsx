@@ -41,23 +41,39 @@ export default function LoginPage() {
 
   // Verificar resultado de redirect al cargar la página (para móviles)
   useEffect(() => {
+    // Solo ejecutar si aún no hay usuario (evitar problemas)
+    if (user) return;
+
     const checkRedirectResult = async () => {
       try {
+        console.log("Verificando redirect result...");
         const result = await getRedirectResult(auth);
         if (result) {
-          // Usuario autenticado correctamente con redirect
-          router.push("/");
+          console.log("Redirect result exitoso, usuario:", result.user);
+          // NO necesitamos router.push aquí
+          // El AuthContext detectará el cambio y redirigirá automáticamente
+          // Esperamos un momento para que el AuthContext se actualice
+          setTimeout(() => {
+            if (!loading) {
+              console.log("Redirigiendo a /");
+              router.push("/");
+            }
+          }, 100);
         }
       } catch (error: any) {
-        // Si no hay redirect pendiente, ignorar el error
-        if (error.code !== 'auth/credential-already-in-use') {
-          console.log("No hay redirect pendiente:", error.message);
+        // Si no hay redirect pendiente, es normal, ignorar
+        if (error.code === 'auth/credential-already-in-use') {
+          console.log("Credencial ya en uso, intentando nuevamente...");
+          // Caso especial: el usuario ya existe con esta credencial
+          // Intentar hacer login de nuevo
+        } else {
+          console.log("No hay redirect pendiente:", error.code || error.message);
         }
       }
     };
 
     checkRedirectResult();
-  }, [auth, router]);
+  }, [auth, router, user, loading]);
 
   // Cerrar automáticamente el mensaje de error después de 5 segundos
   useEffect(() => {
