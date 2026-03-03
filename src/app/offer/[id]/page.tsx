@@ -658,75 +658,74 @@ export default function OfferDetailPage() {
                         Oferta cerrada
                       </div>
                     ) : (
-                    <button
-                      onClick={handleApply}
-                      disabled={applying}
-                      className={`text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 ${
-                        applying
-                          ? 'bg-slate-400 cursor-wait'
-                          : applicationStatus
-                            ? applicationStatus === 'ACCEPTED'
-                              ? 'bg-green-500 hover:bg-green-600 shadow-green-500/25'
-                              : applicationStatus === 'REJECTED'
-                                ? 'bg-red-400 hover:bg-red-500 shadow-red-500/25'
-                                : applicationStatus === 'CONTACTED'
-                                  ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'
-                                  : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
-                            : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
-                      }`}
-                    >
-                    {applying ? (
-                      <>
-                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Procesando...
-                      </>
-                    ) : applicationStatus ? (
-                      applicationStatus === 'ACCEPTED' ? (
-                        <>
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Aceptado
-                        </>
-                      ) : applicationStatus === 'REJECTED' ? (
-                        <>
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          No seleccionado
-                        </>
-                      ) : applicationStatus === 'CONTACTED' ? (
-                        <>
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          Contactado
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Inscrito
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Inscribirse
-                      </>
-                    )}
+                      <button
+                        onClick={handleApply}
+                        disabled={applying}
+                        className={`text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 ${
+                          applying
+                            ? 'bg-slate-400 cursor-wait'
+                            : applicationStatus
+                              ? applicationStatus === 'ACCEPTED'
+                                ? 'bg-green-500 hover:bg-green-600 shadow-green-500/25'
+                                : applicationStatus === 'REJECTED'
+                                  ? 'bg-red-400 hover:bg-red-500 shadow-red-500/25'
+                                  : applicationStatus === 'CONTACTED'
+                                    ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'
+                                    : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
+                              : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
+                        }`}
+                      >
+                        {applying ? (
+                          <>
+                            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Procesando...
+                          </>
+                        ) : applicationStatus ? (
+                          applicationStatus === 'ACCEPTED' ? (
+                            <>
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Aceptado
+                            </>
+                          ) : applicationStatus === 'REJECTED' ? (
+                            <>
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              No seleccionado
+                            </>
+                          ) : applicationStatus === 'CONTACTED' ? (
+                            <>
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              Contactado
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Inscrito
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Inscribirse
+                          </>
+                        )}
+                      </button>
                     )
                   )}
-                </button>
-                )}
-                {/* Para demandas: botón de contactar */}
-                {isDemand && !isCompany && (
+                  {/* Para demandas: botón de contactar */}
+                  {isDemand && !isCompany && (
                   <button
                     onClick={handleContact}
                     className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 ${
