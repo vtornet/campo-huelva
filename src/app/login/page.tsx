@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -37,6 +37,24 @@ export default function LoginPage() {
       router.push("/");
     }
   }, [user, loading, router]);
+
+  // Manejar el resultado de signInWithRedirect
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          router.push("/");
+        }
+      } catch (err: any) {
+        // Silenciar errores de "no hay redirect pendiente"
+        if (err.code !== 'auth/no-pending-credential') {
+          console.error("Error en redirect result:", err);
+        }
+      }
+    };
+    handleRedirectResult();
+  }, [auth, router]);
 
   // Cerrar automáticamente el mensaje de error después de 10 segundos
   useEffect(() => {
@@ -109,7 +127,18 @@ export default function LoginPage() {
     }
   };
 
-  // Login con Google
+  // Detectar si estamos en PWA instalada
+  const isPWAInstalled = () => {
+    if (typeof window === 'undefined') return false;
+    // Detectar PWA por modo standalone o display-mode
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes('android-app://')
+    );
+  };
+
+  // Login con Google - Usa redirect en PWA, popup en navegador normal
   const handleGoogleLogin = async () => {
     setError("");
 
@@ -120,10 +149,19 @@ export default function LoginPage() {
       }
     }
 
+    const pwaInstalled = isPWAInstalled();
+
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push("/");
+
+      if (pwaInstalled) {
+        // En PWA instalada usamos redirect (los popups no funcionan bien)
+        await signInWithRedirect(auth, provider);
+      } else {
+        // En navegador normal usamos popup (mejor UX)
+        await signInWithPopup(auth, provider);
+        router.push("/");
+      }
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user') {
         setError("Cancelaste el inicio de sesión");
