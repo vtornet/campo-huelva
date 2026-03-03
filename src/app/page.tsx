@@ -894,7 +894,7 @@ export default function Dashboard() {
                                 e.stopPropagation();
                                 router.push(`/company/${post.company.id}`);
                               }}
-                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 transition-colors"
+                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 hover:underline transition-all cursor-pointer"
                             >
                               {post.company.companyName}
                             </button>
@@ -904,12 +904,12 @@ export default function Dashboard() {
                                 e.stopPropagation();
                                 router.push(`/user/${post.publisher.id}`);
                               }}
-                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 transition-colors"
+                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 hover:underline transition-all cursor-pointer"
                             >
                               {post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || post.publisher?.engineerProfile?.fullName || post.publisher?.encargadoProfile?.fullName || post.publisher?.tractoristProfile?.fullName || "Usuario"}
                             </button>
                           ) : (
-                            <span className="text-sm text-slate-700 font-medium">Usuario</span>
+                            <span className="text-sm text-slate-500 font-medium">Usuario</span>
                           )}
                       </div>
 

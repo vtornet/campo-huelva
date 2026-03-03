@@ -416,7 +416,7 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
                     e.stopPropagation();
                     router.push(`/user/${post.authorId}`);
                   }}
-                  className="font-semibold text-slate-800 hover:text-indigo-600 transition-colors"
+                  className="font-semibold text-slate-800 hover:text-indigo-600 hover:underline transition-all cursor-pointer"
                 >
                   {getAuthorName()}
                 </button>
