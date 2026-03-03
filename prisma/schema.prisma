@@ -49,6 +49,10 @@ model User {
   contactsSent     Contact[]     @relation("ContactRequester")
   contactsReceived Contact[]   @relation("ContactRecipient")
 
+  // Sistema de Bloqueos
+  blockedUsers     BlockedUser[] @relation("Blocker")
+  blockedBy        BlockedUser[] @relation("Blocked")
+
   // Mensajería
   sentMessages      Message[]     @relation("MessageSender")
   receivedMessages  Message[]     @relation("MessageReceiver")
@@ -464,6 +468,20 @@ enum ContactStatus {
   PENDING   // Solicitud enviada, esperando respuesta
   ACCEPTED  // Aceptado como contacto
   BLOCKED   // Bloqueado (no quiere recibir mensajes de esta persona)
+}
+
+// === BLOQUEOS DE USUARIOS ===
+model BlockedUser {
+  id         String   @id @default(uuid())
+  blockerId  String
+  blocker    User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedById String
+  blockedUser User    @relation("Blocked", fields: [blockedById], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([blockerId, blockedById])
+  @@index([blockerId])
+  @@index([blockedById])
 }
 
 // === DENUNCIAS ===

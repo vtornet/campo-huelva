@@ -411,7 +411,15 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
             )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-800">{getAuthorName()}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/user/${post.authorId}`);
+                  }}
+                  className="font-semibold text-slate-800 hover:text-indigo-600 transition-colors"
+                >
+                  {getAuthorName()}
+                </button>
                 <span className="text-xs text-slate-500">•</span>
                 <span className="text-xs text-slate-500">{formatDate(post.createdAt)}</span>
               </div>

@@ -898,10 +898,18 @@ export default function Dashboard() {
                             >
                               {post.company.companyName}
                             </button>
+                          ) : post.publisher ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/user/${post.publisher.id}`);
+                              }}
+                              className="text-sm text-slate-700 font-medium hover:text-indigo-600 transition-colors"
+                            >
+                              {post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || post.publisher?.engineerProfile?.fullName || post.publisher?.encargadoProfile?.fullName || post.publisher?.tractoristProfile?.fullName || "Usuario"}
+                            </button>
                           ) : (
-                            <span className="text-sm text-slate-700 font-medium">
-                              {post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || "Usuario"}
-                            </span>
+                            <span className="text-sm text-slate-700 font-medium">Usuario</span>
                           )}
                       </div>
 
