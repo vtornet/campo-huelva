@@ -148,9 +148,8 @@ export default function RootLayout({
                 {children}
                 <Footer />
               </div>
-              {/* Service Worker desactivado temporalmente */}
-              {/* <ServiceWorkerProvider /> */}
-              {/* <ServiceWorkerRegister /> */}
+              <ServiceWorkerProvider />
+              <ServiceWorkerRegister />
               <PushNotificationManager />
               <PWAInstaller />
               <CookieBannerWrapper />
