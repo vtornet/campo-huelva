@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, inMemoryPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -15,6 +15,14 @@ const firebaseConfig = {
 // Singleton: Evita que se conecte 2 veces si ya está conectado
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-export const auth = getAuth(app);
+const auth = getAuth(app);
+
+// Configurar persistencia en memoria para evitar problemas con popups en móviles
+// Esto no afecta el login normal, solo ayuda con los popups de terceros
+auth.setPersistence(inMemoryPersistence).catch((err) => {
+  console.warn("No se pudo configurar persistencia en memoria:", err);
+});
+
+export { auth };
 export const db = getFirestore(app);
 export const storage = getStorage(app);

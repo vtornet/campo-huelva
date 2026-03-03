@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https:;",
               "font-src 'self' data:;",
               "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://firestore.googleapis.com;",
-              "frame-src 'self' blob: https://red-agricola-e06cc.firebaseapp.com/;",
+              "frame-src 'self' blob: https://red-agricola-e06cc.firebaseapp.com/ https://red-agricola-e06cc.web.app;",
               "object-src 'none';",
               "base-uri 'self';",
               "form-action 'self';",
