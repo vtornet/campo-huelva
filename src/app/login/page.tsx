@@ -33,7 +33,9 @@ export default function LoginPage() {
 
   // Si ya está autenticado, redirigir al inicio
   useEffect(() => {
+    console.log("[LOGIN] Estado:", { loading, user: user?.email });
     if (!loading && user) {
+      console.log("[LOGIN] Usuario autenticado, redirigiendo...");
       router.push("/");
     }
   }, [user, loading, router]);
@@ -109,6 +111,9 @@ export default function LoginPage() {
 
   // Login con Google
   const handleGoogleLogin = async () => {
+    console.log("[LOGIN] Iniciando Google Login...");
+    setError("");
+
     if (activeTab === "register") {
       if (!consents.privacy || !consents.terms || !consents.age) {
         setError("Para registrarte con Google, debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
@@ -117,16 +122,27 @@ export default function LoginPage() {
     }
 
     try {
+      console.log("[LOGIN] Creando GoogleAuthProvider...");
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      console.log("[LOGIN] Llamando a signInWithPopup...");
+      const result = await signInWithPopup(auth, provider);
+      console.log("[LOGIN] signInWithPopup exitoso:", result.user?.email);
       router.push("/");
     } catch (err: any) {
+      console.error("[LOGIN] Error completo:", err);
+      console.error("[LOGIN] Error code:", err.code);
+      console.error("[LOGIN] Error message:", err.message);
+      console.error("[LOGIN] Error name:", err.name);
+      console.error("[LOGIN] Error stack:", err.stack);
+
       if (err.code === 'auth/popup-closed-by-user') {
         setError("Cancelaste el inicio de sesión");
       } else if (err.code === 'auth/popup-blocked') {
         setError("El popup fue bloqueado. Permite popups para este sitio.");
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        setError("Cancelaste el inicio de sesión");
       } else {
-        setError("Error al iniciar con Google");
+        setError(`Error al iniciar con Google: ${err.code || err.message || 'Desconocido'}`);
       }
     }
   };
