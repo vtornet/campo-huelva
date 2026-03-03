@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "SAMEORIGIN", // Cambiado de DENY para permitir iframes del mismo origen si son necesarios
+            value: "DENY",
           },
           {
             key: "X-Content-Type-Options",
@@ -59,15 +59,6 @@ const nextConfig: NextConfig = {
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
-          },
-          // COOP/COPE: Permitir popups para Firebase Auth (importante para Google Login)
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
-          },
-          {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "require-corp",
           },
           // CSP básico para producción
           {
