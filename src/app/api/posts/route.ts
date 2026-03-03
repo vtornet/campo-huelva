@@ -78,6 +78,8 @@ export async function GET(request: Request) {
         startDate: true,
         endDate: true,
         externalLink: true,
+        isClosed: true,
+        closedAt: true,
         createdAt: true,
         publisherId: true,
         companyId: true,

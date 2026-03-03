@@ -26,6 +26,7 @@ export default function OfferDetailPage() {
   const [userData, setUserData] = useState<any>(null);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [togglingClose, setTogglingClose] = useState(false);
 
   // Cargar datos del usuario
   useEffect(() => {
@@ -292,6 +293,57 @@ export default function OfferDetailPage() {
     }
   };
 
+  // Función para cerrar/reabrir una oferta (solo empresas propietarias)
+  const handleToggleClose = async () => {
+    if (!user || !offer) return;
+
+    setTogglingClose(true);
+    try {
+      const action = offer.isClosed ? 'reopen' : 'close';
+      const res = await fetch(`/api/posts/${offer.id}/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          action
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Actualizar el estado local de la oferta
+        setOffer({
+          ...offer,
+          isClosed: !offer.isClosed,
+          closedAt: !offer.isClosed ? new Date().toISOString() : null
+        });
+        showNotification({
+          type: 'success',
+          title: data.message,
+          message: offer.isClosed
+            ? 'La oferta ya está disponible para recibir inscripciones.'
+            : 'La oferta ya no recibirá nuevas inscripciones.',
+        });
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: 'error',
+          title: 'No se pudo actualizar',
+          message: data.error || 'Inténtalo de nuevo.',
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling close status:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error de conexión',
+        message: 'Verifica tu internet e inténtalo de nuevo.',
+      });
+    } finally {
+      setTogglingClose(false);
+    }
+  };
+
   // Formatear fecha
   const formatDate = (dateString: string | null) => {
     if (!dateString) return null;
@@ -327,11 +379,21 @@ export default function OfferDetailPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 shadow-black/5">
           {/* Etiqueta de tipo */}
           <div className="flex justify-between items-start mb-4">
-            <div>
+            <div className="flex flex-wrap gap-2">
               {offer.type === 'OFFICIAL' && (
-                <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
-                  Empresa verificada
-                </span>
+                <>
+                  <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
+                    Empresa verificada
+                  </span>
+                  {offer.isClosed && (
+                    <span className="bg-slate-200 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full border border-slate-300 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Cerrada
+                    </span>
+                  )}
+                </>
               )}
               {offer.type === 'SHARED' && (
                 <span className="bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full border border-slate-200">
@@ -344,9 +406,47 @@ export default function OfferDetailPage() {
                 </span>
               )}
             </div>
-            {isOwner && (
-              <span className="text-xs text-slate-500">Tu publicación</span>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Botón para cerrar/reabrir oferta - solo para empresa propietaria */}
+              {isOwner && offer.type === 'OFFICIAL' && (
+                <button
+                  onClick={handleToggleClose}
+                  disabled={togglingClose}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all duration-200 flex items-center gap-1 ${
+                    offer.isClosed
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  } ${togglingClose ? 'opacity-50 cursor-wait' : ''}`}
+                >
+                  {togglingClose ? (
+                    <>
+                      <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Procesando...
+                    </>
+                  ) : offer.isClosed ? (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      </svg>
+                      Reabrir
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Cerrar
+                    </>
+                  )}
+                </button>
+              )}
+              {isOwner && (
+                <span className="text-xs text-slate-500">Tu publicación</span>
+              )}
+            </div>
           </div>
 
           <h1 className="text-2xl font-bold text-slate-800 mb-2">{offer.title}</h1>
@@ -549,6 +649,15 @@ export default function OfferDetailPage() {
                 <>
                   {/* Para ofertas OFICIALES: botón de inscribirse (no para empresas) */}
                   {isOffer && !isCompany && (
+                    offer.isClosed ? (
+                      // Oferta cerrada: mostrar badge
+                      <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 bg-slate-100 px-6 py-3 rounded-xl border border-slate-200 flex-1">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Oferta cerrada
+                      </div>
+                    ) : (
                     <button
                       onClick={handleApply}
                       disabled={applying}
@@ -612,7 +721,9 @@ export default function OfferDetailPage() {
                         Inscribirse
                       </>
                     )}
-                  </button>
+                    )
+                  )}
+                </button>
                 )}
                 {/* Para demandas: botón de contactar */}
                 {isDemand && !isCompany && (

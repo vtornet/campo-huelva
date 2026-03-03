@@ -348,6 +348,10 @@ model Post {
   // Enlace externo para ofertas compartidas (solo admin puede añadirlo)
   externalLink    String?  // URL a la oferta original (para SHARED)
 
+  // Estado de cierre de oferta (para empresas)
+  isClosed        Boolean  @default(false) // La oferta está cerrada (no admite más inscripciones)
+  closedAt        DateTime? // Fecha en que se cerró la oferta
+
   // Contadores
   likesCount     Int      @default(0)
   sharesCount    Int      @default(0)

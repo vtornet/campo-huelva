@@ -61,6 +61,11 @@ export async function POST(
       return NextResponse.json({ error: "No puedes inscribirte en una demanda" }, { status: 400 });
     }
 
+    // Verificar que la oferta no esté cerrada
+    if (post.isClosed) {
+      return NextResponse.json({ error: "Esta oferta ya está cerrada y no admite más inscripciones" }, { status: 400 });
+    }
+
     // Obtener ID de la empresa - primero intentar obtener el userId del company
     let companyId = post.companyId || undefined;
     if (post.company && post.companyId) {

@@ -782,8 +782,13 @@ export default function Dashboard() {
                 }`}>
 
                   {/* ETIQUETA DE TIPO */}
-                  <div className="absolute top-4 right-4 z-10 pointer-events-none">
-                     {post.type === "OFFICIAL" && <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-emerald-200 shadow-sm">Empresa verificada</span>}
+                  <div className="absolute top-4 right-4 z-10 pointer-events-none flex flex-col items-end gap-1">
+                     {post.type === "OFFICIAL" && (
+                       <>
+                         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-emerald-200 shadow-sm">Empresa verificada</span>
+                         {post.isClosed && <span className="bg-slate-200 text-slate-600 text-[10px] font-semibold px-3 py-1 rounded-full border border-slate-300 shadow-sm">Cerrada</span>}
+                       </>
+                     )}
                      {post.type === "SHARED" && <span className="bg-indigo-100 text-indigo-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-indigo-200 shadow-sm flex items-center gap-1">⚡ Oferta compartida</span>}
                      {post.type === "DEMAND" && <span className="bg-orange-100 text-orange-800 text-[10px] font-semibold px-3 py-1 rounded-full border border-orange-200">Demanda</span>}
                   </div>
@@ -934,6 +939,14 @@ export default function Dashboard() {
                       ) : post.type === 'DEMAND' ? (
                         // Para demandas: botones sociales (sin añadir contacto)
                         <div className="w-24"></div>
+                      ) : post.isClosed ? (
+                        // Oferta cerrada: mostrar badge
+                        <div className="flex items-center gap-1 text-sm font-medium text-slate-500 bg-slate-100 px-3 py-2 rounded-xl">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          Cerrada
+                        </div>
                       ) : (
                         // Para ofertas OFICIALES: botón de inscribirse
                         <button

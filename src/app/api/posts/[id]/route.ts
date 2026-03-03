@@ -34,6 +34,8 @@ export async function GET(
         startDate: true,
         endDate: true,
         externalLink: true,
+        isClosed: true,
+        closedAt: true,
         createdAt: true,
         publisherId: true, // Importante para verificar permisos
         companyId: true, // Importante para verificar permisos
