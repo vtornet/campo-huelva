@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +18,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [debugError, setDebugError] = useState("");
 
   // Estados para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
@@ -39,38 +38,15 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  // Manejar el resultado de signInWithRedirect (para móviles)
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          setDebugError(`✓ Éxito con redirect: ${result.user.email}`);
-          setTimeout(() => {
-            router.push("/");
-          }, 500);
-        }
-      } catch (err: any) {
-        // Solo mostrar error si no es un error de "no hay redirect pendiente"
-        if (err.code !== 'auth/no-pending-credential' && err.code !== 'auth/empty-redirect-result') {
-          console.error("Error en redirect result:", err);
-        }
-      }
-    };
-
-    handleRedirectResult();
-  }, [auth, router]);
-
   // Cerrar automáticamente el mensaje de error después de 10 segundos
   useEffect(() => {
-    if (error || debugError) {
+    if (error) {
       const timer = setTimeout(() => {
         setError("");
-        setDebugError("");
       }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [error, debugError]);
+  }, [error]);
 
   // Mostrar loading mientras verificamos autenticación
   if (loading) {
@@ -101,7 +77,6 @@ export default function LoginPage() {
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setDebugError("");
 
     if (!consents.privacy || !consents.terms || !consents.age) {
       setError("Debes aceptar la Política de Privacidad, los Términos y confirmar que tienes 16 años o más");
@@ -134,16 +109,9 @@ export default function LoginPage() {
     }
   };
 
-  // Función para detectar si es dispositivo móvil
-  const isMobile = () => {
-    if (typeof window === 'undefined') return false;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
-  // Login con Google - Usa redirect en móviles, popup en desktop
+  // Login con Google
   const handleGoogleLogin = async () => {
     setError("");
-    setDebugError("");
 
     if (activeTab === "register") {
       if (!consents.privacy || !consents.terms || !consents.age) {
@@ -152,46 +120,17 @@ export default function LoginPage() {
       }
     }
 
-    const mobile = isMobile();
-
     try {
       const provider = new GoogleAuthProvider();
-
-      if (mobile) {
-        // En móviles usamos redirect para evitar problemas con COOP/COPE
-        setDebugError("Abriendo Google (redirección)...");
-        await signInWithRedirect(auth, provider);
-        // El resultado se maneja en el useEffect de getRedirectResult
-      } else {
-        // En desktop usamos popup
-        setDebugError("Abriendo popup de Google...");
-        const result = await signInWithPopup(auth, provider);
-        setDebugError(`✓ Éxito: ${result.user?.email}`);
-        setTimeout(() => {
-          router.push("/");
-        }, 500);
-      }
-
+      await signInWithPopup(auth, provider);
+      router.push("/");
     } catch (err: any) {
-      console.error("Error completo Google Auth:", err);
-
-      // Mostrar información detallada del error
-      const errorInfo = [
-        `Código: ${err.code || 'sin código'}`,
-        `Mensaje: ${err.message || 'sin mensaje'}`,
-        `Móvil: ${mobile ? 'Sí' : 'No'}`,
-      ];
-
-      setDebugError(`ERROR: ${errorInfo.join(' | ')}`);
-
       if (err.code === 'auth/popup-closed-by-user') {
         setError("Cancelaste el inicio de sesión");
       } else if (err.code === 'auth/popup-blocked') {
         setError("El popup fue bloqueado. Permite popups para este sitio.");
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        setError("Cancelaste el inicio de sesión");
       } else {
-        setError(`Error al iniciar con Google`);
+        setError("Error al iniciar con Google");
       }
     }
   };
@@ -213,13 +152,13 @@ export default function LoginPage() {
         {/* Pestañas */}
         <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
           <button
-            onClick={() => { setError(""); setDebugError(""); setActiveTab("login"); }}
+            onClick={() => { setError(""); setActiveTab("login"); }}
             className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${activeTab === "login" ? "bg-white text-emerald-700 shadow-sm" : "text-gray-600 hover:text-gray-800"}`}
           >
             Iniciar Sesión
           </button>
           <button
-            onClick={() => { setError(""); setDebugError(""); setActiveTab("register"); }}
+            onClick={() => { setError(""); setActiveTab("register"); }}
             className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${activeTab === "register" ? "bg-white text-emerald-700 shadow-sm" : "text-gray-600 hover:text-gray-800"}`}
           >
             Registrarse
@@ -237,18 +176,6 @@ export default function LoginPage() {
                 ✕
               </button>
             </div>
-          </div>
-        )}
-
-        {debugError && (
-          <div className="mb-4 bg-gray-100 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg">
-            <p className="text-xs font-mono break-all">{debugError}</p>
-            <button
-              onClick={() => setDebugError("")}
-              className="text-xs text-gray-500 hover:text-gray-700 mt-1 underline"
-            >
-              Cerrar
-            </button>
           </div>
         )}
 
