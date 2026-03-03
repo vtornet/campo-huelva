@@ -1,12 +1,12 @@
 // Service Worker para Agro Red - PWA con soporte offline y notificaciones push
-// Versión 2 - Actualización de caché para forzar recarga
+// Versión 4 - Solo interceptar peticiones que necesitamos cachear
 
-const CACHE_NAME = "agro-red-v3";
-const STATIC_CACHE_NAME = "agro-red-static-v3";
-const API_CACHE_NAME = "agro-red-api-v3";
+const CACHE_VERSION = "v4";
+const STATIC_CACHE = `agro-red-static-${CACHE_VERSION}`;
+const API_CACHE = `agro-red-api-${CACHE_VERSION}`;
+const GENERAL_CACHE = `agro-red-general-${CACHE_VERSION}`;
 
-// Dominios que deben ser ignorados por el Service Worker (Google Auth, Firebase, etc.)
-// Estos dominios NO deben ser interceptados para evitar problemas con autenticación
+// Dominios que NUNCA deben ser interceptados (Google Auth, Firebase, etc.)
 const IGNORED_DOMAINS = [
   "accounts.google.com",
   "oauth2.googleapis.com",
@@ -15,268 +15,214 @@ const IGNORED_DOMAINS = [
   "firestore.googleapis.com",
   "identitytoolkit.googleapis.com",
   "securetoken.googleapis.com",
+  "firebaseruntime.googleapis.com",
   "linkedin.com",
   "www.linkedin.com",
+  "facebook.com",
+  "www.facebook.com",
 ];
 
-// URLs que se cachearán estáticamente (recursos críticos)
+// Recursos estáticos críticos a cachear
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
   "/logo.png",
-  // Se añadirán los iconos cuando se generen
 ];
 
-// URLs de API que se pueden cachear temporalmente
+// Patrones de API que podemos cachear (solo GET)
 const CACHEABLE_API_PATTERNS = [
   "/api/posts",
   "/api/user/me",
 ];
 
-// Instalación del Service Worker
+// Instalación
 self.addEventListener("install", (event) => {
-  console.log("[SW] Instalando Service Worker...");
+  console.log("[SW] Instalando...");
 
   event.waitUntil(
     (async () => {
       try {
-        // Crear caches
-        const staticCache = await caches.open(STATIC_CACHE_NAME);
-        console.log("[SW] Cache estático creado");
-
-        // Intentar cachear recursos estáticos críticos
-        try {
-          await staticCache.addAll(STATIC_ASSETS);
-          console.log("[SW] Recursos estáticos cacheados");
-        } catch (err) {
-          console.warn("[SW] No se pudieron cachear todos los recursos estáticos:", err);
-        }
-
-        // NO forzar activación inmediata para evitar bucles de recarga
-        // El service worker se activará cuando todos los clientes se cierren
-        // await self.skipWaiting();
+        const cache = await caches.open(STATIC_CACHE);
+        await cache.addAll(STATIC_ASSETS);
+        console.log("[SW] Recursos estáticos cacheados");
       } catch (err) {
-        console.error("[SW] Error durante la instalación:", err);
+        console.warn("[SW] Error cacheando recursos:", err);
       }
     })()
   );
 });
 
-// Activación del Service Worker
+// Activación
 self.addEventListener("activate", (event) => {
-  console.log("[SW] Activando Service Worker...");
+  console.log("[SW] Activando...");
 
   event.waitUntil(
     (async () => {
       // Limpiar caches antiguos
       const cacheNames = await caches.keys();
       const cachesToDelete = cacheNames.filter(
-        (name) =>
-          name !== STATIC_CACHE_NAME &&
-          name !== API_CACHE_NAME &&
-          name !== CACHE_NAME
+        (name) => !name.includes(CACHE_VERSION)
       );
 
       await Promise.all(
-        cachesToDelete.map((name) => {
-          console.log("[SW] Eliminando cache antiguo:", name);
-          return caches.delete(name);
-        })
+        cachesToDelete.map((name) => caches.delete(name))
       );
 
-      // Tomar control de todos los clientes inmediatamente
-      await self.clients.claim();
-      console.log("[SW] Service Worker activado y controlando clientes");
+      console.log("[SW] Caches antiguos eliminados");
     })()
   );
 });
 
 // ============================================
-// NOTIFICACIONES PUSH
+// FETCH - ESTRATEGIA MEJORADA
 // ============================================
-
-self.addEventListener("push", (event) => {
-  console.log("[SW] Push notification recibida:", event);
-
-  const data = event.data?.json();
-  if (!data) return;
-
-  const options = {
-    body: data.body || "Tienes una nueva notificación de Agro Red",
-    icon: "/logo.png",
-    badge: "/logo.png",
-    vibrate: [200, 100, 200],
-    tag: data.tag || "general",
-    requireInteraction: data.requireInteraction || false,
-    data: {
-      url: data.url || "/",
-      notificationId: data.notificationId
-    }
-  };
-
-  // Mostrar notificación
-  event.waitUntil(
-    self.registration.showNotification(data.title || "Agro Red", options)
-  );
-});
-
-// Click en notificación
-self.addEventListener("notificationclick", (event) => {
-  console.log("[SW] Notification click:", event);
-
-  event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url || "/", "_blank")
-  );
-});
-
-// ============================================
-// FETCH STRATEGIES
-// ============================================
-
-// Estrategia de fetch: Network First con fallback a Cache
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignorar requests de extensión de Chrome/devtools
-  if (
-    !url.protocol.startsWith("http") ||
-    url.hostname === "chrome-extension" ||
-    url.hostname === "chrome"
-  ) {
+  // 1. Ignorar peticiones no-HTTP (chrome-extension., data:, etc.)
+  if (!url.protocol.startsWith("http")) {
     return;
   }
 
-  // IMPORTANTE: No interceptar peticiones a dominios de Google Auth/Firebase
-  // Esto evita problemas con signInWithPopup en dispositivos móviles
+  // 2. IMPORTANTE: Ignorar completamente los dominios de Google Auth
+  // NO hacer event.respondWith() para estas peticiones
   if (IGNORED_DOMAINS.some(domain => url.hostname === domain || url.hostname.endsWith("." + domain))) {
-    // Dejar pasar estas peticiones sin intervenir
+    // Dejar que el navegador maneje estas peticiones normalmente
     return;
   }
 
-  // Para recursos estáticos: Cache First con Network fallback
-  if (request.destination === "image" || request.destination === "font") {
-    event.respondWith(cacheFirst(request));
+  // 3. Para peticiones POST/PUT/DELETE: nunca interceptar
+  if (request.method !== "GET") {
     return;
   }
 
-  // Para API: Network First con Cache fallback
+  // 4. Para imágenes: cache first
+  if (request.destination === "image") {
+    event.respondWith(handleImageRequest(request));
+    return;
+  }
+
+  // 5. Para fuentes: cache first
+  if (request.destination === "font") {
+    event.respondWith(handleFontRequest(request));
+    return;
+  }
+
+  // 6. Para scripts y estilos: network first
+  if (request.destination === "script" || request.destination === "style") {
+    event.respondWith(handleScriptStyleRequest(request));
+    return;
+  }
+
+  // 7. Para navegación (pages): network first con offline fallback
+  if (request.mode === "navigate") {
+    event.respondWith(handleNavigationRequest(request));
+    return;
+  }
+
+  // 8. Para API endpoints específicos: network first
   if (url.pathname.startsWith("/api/")) {
-    // Solo cachear GET requests de APIs permitidas
-    if (
-      request.method === "GET" &&
-      CACHEABLE_API_PATTERNS.some((pattern) => url.pathname.startsWith(pattern))
-    ) {
-      event.respondWith(networkFirstAPI(request));
+    if (CACHEABLE_API_PATTERNS.some(pattern => url.pathname.startsWith(pattern))) {
+      event.respondWith(handleAPIRequest(request));
       return;
     }
-    // Para otros métodos o endpoints, no cachear
+    // Para otras APIs, no interceptar
     return;
   }
 
-  // Para navegación: Network First con fallback a cache offline
-  if (request.mode === "navigate") {
-    event.respondWith(networkFirstNavigation(request));
-    return;
-  }
-
-  // Para otros recursos: Network First
-  event.respondWith(networkFirst(request));
+  // 9. Para todo lo demás: NO interceptar, dejar pasar
+  return;
 });
 
-// Estrategia: Cache First (para recursos estáticos)
-async function cacheFirst(request) {
-  const cache = await caches.open(STATIC_CACHE_NAME);
+// ============================================
+// HANDLERS DE PETICIONES
+// ============================================
+
+// Imágenes: Cache First
+async function handleImageRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
 
   if (cached) {
-    console.log("[SW] Cache HIT:", request.url);
     return cached;
   }
 
   try {
     const response = await fetch(request);
-    // Solo cachear solicitudes GET exitosas
-    if (response.ok && request.method === "GET") {
+    if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
-    console.error("[SW] Error fetching:", request.url, error);
-    // Para imágenes, retornar un placeholder
-    if (request.destination === "image") {
-      return new Response(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
-          <rect width="200" height="200" fill="#e5e7eb"/>
-          <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#6b7280" font-size="14">Sin conexión</text>
-        </svg>`,
-        { headers: { "Content-Type": "image/svg+xml" } }
-      );
+    // Placeholder para imágenes
+    return new Response(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+        <rect width="200" height="200" fill="#e5e7eb"/>
+        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#6b7280" font-size="14">Sin conexión</text>
+      </svg>`,
+      { headers: { "Content-Type": "image/svg+xml" } }
+    );
+  }
+}
+
+// Fuentes: Cache First
+async function handleFontRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(request);
+
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Scripts y estilos: Network First
+async function handleScriptStyleRequest(request) {
+  const cache = await caches.open(GENERAL_CACHE);
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) {
+      return cached;
     }
     throw error;
   }
 }
 
-// Estrategia: Network First (para API)
-async function networkFirstAPI(request) {
-  const cache = await caches.open(API_CACHE_NAME);
+// Navegación: Network First con offline fallback
+async function handleNavigationRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
 
   try {
     const response = await fetch(request);
-    // Solo cachear solicitudes GET exitosas (API responses)
-    if (response.ok && request.method === "GET") {
-      // Cachear respuesta por 5 minutos
+    if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
-    console.log("[SW] Network falló, buscando en cache:", request.url);
     const cached = await cache.match(request);
+
     if (cached) {
       return cached;
     }
-    // Si no hay cache, retornar respuesta de error
-    return new Response(
-      JSON.stringify({
-        error: "Sin conexión",
-        message: "No hay conexión a internet. Mostrando datos guardados.",
-      }),
-      {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-}
 
-// Estrategia: Network First con Offline Fallback (para navegación)
-async function networkFirstNavigation(request) {
-  const cache = await caches.open(STATIC_CACHE_NAME);
-
-  try {
-    const networkResponse = await fetch(request);
-    // Solo cachear solicitudes GET exitosas (navegación)
-    if (networkResponse.ok && request.method === "GET") {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.log("[SW] Network falló, buscando en cache:", request.url);
-    const cachedResponse = await cache.match(request);
-
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-
-    // Fallback a página offline
-    const offlineResponse = await cache.match("/offline");
-    if (offlineResponse) {
-      return offlineResponse;
-    }
-
-    // Crear respuesta HTML básica offline
+    // Página offline
     return new Response(
       `<!DOCTYPE html>
       <html lang="es">
@@ -295,33 +241,11 @@ async function networkFirstNavigation(request) {
             justify-content: center;
             padding: 20px;
           }
-          .container {
-            text-align: center;
-            color: white;
-            max-width: 400px;
-          }
-          .icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
+          .container { text-align: center; color: white; max-width: 400px; }
+          .icon { width: 80px; height: 80px; margin: 0 auto 20px; background: rgba(255,255,255,0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; }
           h1 { font-size: 24px; margin-bottom: 10px; }
           p { color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
-          button {
-            background: #059669;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-          }
+          button { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 16px; cursor: pointer; }
           button:hover { background: #047857; }
         </style>
       </head>
@@ -346,39 +270,70 @@ async function networkFirstNavigation(request) {
   }
 }
 
-// Estrategia genérica: Network First
-async function networkFirst(request) {
-  const cache = await caches.open(CACHE_NAME);
+// API: Network First
+async function handleAPIRequest(request) {
+  const cache = await caches.open(API_CACHE);
 
   try {
     const response = await fetch(request);
-    // Solo cachear solicitudes GET exitosas (no POST, PUT, DELETE, etc.)
-    if (response.ok && request.method === "GET") {
+    if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
-    console.log("[SW] Network falló, buscando en cache:", request.url);
     const cached = await cache.match(request);
     if (cached) {
       return cached;
     }
-    throw error;
+    return new Response(
+      JSON.stringify({ error: "Sin conexión", message: "No hay conexión a internet." }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
 
-// Mensajes desde el cliente
+// ============================================
+// PUSH NOTIFICATIONS
+// ============================================
+
+self.addEventListener("push", (event) => {
+  const data = event.data?.json();
+  if (!data) return;
+
+  const options = {
+    body: data.body || "Tienes una nueva notificación de Agro Red",
+    icon: "/logo.png",
+    badge: "/logo.png",
+    vibrate: [200, 100, 200],
+    tag: data.tag || "general",
+    requireInteraction: data.requireInteraction || false,
+    data: { url: data.url || "/", notificationId: data.notificationId }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Agro Red", options)
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || "/")
+  );
+});
+
+// ============================================
+// MENSAJES DEL CLIENTE
+// ============================================
+
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
+  if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
-
-  if (event.data && event.data.type === "CLEAR_CACHE") {
+  if (event.data?.type === "CLEAR_CACHE") {
     event.waitUntil(
       caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => caches.delete(cacheName))
-        );
+        return Promise.all(cacheNames.map((name) => caches.delete(name)));
       })
     );
   }
