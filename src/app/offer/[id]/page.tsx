@@ -498,7 +498,7 @@ export default function OfferDetailPage() {
           )}
 
           {/* Información del autor */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-slate-100 gap-4">
             <div className="flex items-center gap-3">
               {offer.company?.profileImage || offer.publisher?.workerProfile?.profileImage || offer.publisher?.foremanProfile?.profileImage ? (
                 <img
@@ -533,37 +533,39 @@ export default function OfferDetailPage() {
               </div>
             </div>
 
-            {/* Botón para ver perfil de empresa */}
-            {offer.company && (
-              <button
-                onClick={() => router.push(`/company/${offer.company.id}`)}
-                className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-sm font-medium transition-colors"
-              >
-                Ver perfil de la empresa
-              </button>
-            )}
+            {/* Botones de acción - segunda fila en móvil */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* Botón para ver perfil de empresa */}
+              {offer.company && (
+                <button
+                  onClick={() => router.push(`/company/${offer.company.id}`)}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-sm font-medium transition-colors flex-1 sm:flex-none justify-center"
+                >
+                  Ver perfil
+                </button>
+              )}
 
-            {!isOwner && !isSharedOffer && (
-              <>
-                {/* Para ofertas OFICIALES: botón de inscribirse (no para empresas) */}
-                {isOffer && !isCompany && (
-                  <button
-                    onClick={handleApply}
-                    disabled={applying}
-                    className={`text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center gap-2 ${
-                      applying
-                        ? 'bg-slate-400 cursor-wait'
-                        : applicationStatus
-                          ? applicationStatus === 'ACCEPTED'
-                            ? 'bg-green-500 hover:bg-green-600 shadow-green-500/25'
-                            : applicationStatus === 'REJECTED'
-                              ? 'bg-red-400 hover:bg-red-500 shadow-red-500/25'
-                              : applicationStatus === 'CONTACTED'
-                                ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'
-                                : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
-                          : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
-                    }`}
-                  >
+              {!isOwner && !isSharedOffer && (
+                <>
+                  {/* Para ofertas OFICIALES: botón de inscribirse (no para empresas) */}
+                  {isOffer && !isCompany && (
+                    <button
+                      onClick={handleApply}
+                      disabled={applying}
+                      className={`text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 ${
+                        applying
+                          ? 'bg-slate-400 cursor-wait'
+                          : applicationStatus
+                            ? applicationStatus === 'ACCEPTED'
+                              ? 'bg-green-500 hover:bg-green-600 shadow-green-500/25'
+                              : applicationStatus === 'REJECTED'
+                                ? 'bg-red-400 hover:bg-red-500 shadow-red-500/25'
+                                : applicationStatus === 'CONTACTED'
+                                  ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'
+                                  : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
+                            : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
+                      }`}
+                    >
                     {applying ? (
                       <>
                         <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
@@ -612,11 +614,11 @@ export default function OfferDetailPage() {
                     )}
                   </button>
                 )}
-                {/* Para demandas o empresas viendo ofertas: botón de contactar */}
+                {/* Para demandas: botón de contactar */}
                 {isDemand && !isCompany && (
                   <button
                     onClick={handleContact}
-                    className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center gap-2 ${
+                    className={`text-white px-6 py-3 rounded-xl font-semibold hover:from-opacity-90 hover:to-opacity-90 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 ${
                       isDemand
                         ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-orange-500/25'
                         : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
@@ -633,6 +635,7 @@ export default function OfferDetailPage() {
             {/* Para ofertas compartidas: sin botón de acción */}
             {isSharedOffer && !isOwner && <div className="w-32"></div>}
           </div>
+        </div>
         </div>
 
         {/* === RECOMENDACIONES DE TRABAJADORES (Solo para empresas) === */}
