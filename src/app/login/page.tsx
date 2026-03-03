@@ -39,41 +39,31 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  // Verificar resultado de redirect al cargar la página (para móviles)
+  // Verificar resultado de redirect (solo para fallback de desktop)
   useEffect(() => {
-    // Solo ejecutar si aún no hay usuario (evitar problemas)
+    // Solo ejecutar si aún no hay usuario
     if (user) return;
 
     const checkRedirectResult = async () => {
       try {
-        console.log("Verificando redirect result...");
         const result = await getRedirectResult(auth);
         if (result) {
-          console.log("Redirect result exitoso, usuario:", result.user);
-          // NO necesitamos router.push aquí
-          // El AuthContext detectará el cambio y redirigirá automáticamente
-          // Esperamos un momento para que el AuthContext se actualice
+          console.log("Redirect result exitoso:", result.user?.email);
+          // Dar tiempo al AuthContext
           setTimeout(() => {
-            if (!loading) {
-              console.log("Redirigiendo a /");
-              router.push("/");
-            }
-          }, 100);
+            router.push("/");
+          }, 200);
         }
       } catch (error: any) {
-        // Si no hay redirect pendiente, es normal, ignorar
-        if (error.code === 'auth/credential-already-in-use') {
-          console.log("Credencial ya en uso, intentando nuevamente...");
-          // Caso especial: el usuario ya existe con esta credencial
-          // Intentar hacer login de nuevo
-        } else {
-          console.log("No hay redirect pendiente:", error.code || error.message);
+        // No hay redirect pendiente, es normal
+        if (error.code !== 'auth/credential-already-in-use') {
+          console.log("Sin redirect pendiente");
         }
       }
     };
 
     checkRedirectResult();
-  }, [auth, router, user, loading]);
+  }, [auth, router, user]);
 
   // Cerrar automáticamente el mensaje de error después de 5 segundos
   useEffect(() => {
@@ -162,30 +152,56 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
+
+      // Configurar el provider para móviles
+      provider.setCustomParameters({
+        prompt: 'select_account', // Forzar selección de cuenta
+      });
+
       // Añadir scopes básicos
       provider.addScope('email');
       provider.addScope('profile');
 
-      // Usar redirect en móviles, popup en desktop
-      if (typeof window !== 'undefined' && isMobile()) {
-        // En móviles, usar redirect (más confiable)
-        await signInWithRedirect(auth, provider);
-        // La redirección ocurrirá automáticamente, no necesitamos router.push aquí
-      } else {
-        // En desktop, usar popup (mejor UX)
+      // Intentar con popup primero (más fiable en la mayoría de casos)
+      try {
+        console.log("Intentando signInWithPopup...");
         await signInWithPopup(auth, provider);
+        console.log("Popup exitoso, redirigiendo...");
         router.push("/");
+        return;
+      } catch (popupError: any) {
+        console.log("Popup falló, error:", popupError.code);
+
+        // Si el popup fue bloqueado, intentar con redirect SOLO en desktop
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+          if (typeof window !== 'undefined' && !isMobile()) {
+            console.log("Intentando redirect en desktop...");
+            await signInWithRedirect(auth, provider);
+            return;
+          } else {
+            // En móvil, si el popup falla, mostrar error
+            if (popupError.code === 'auth/popup-blocked') {
+              setError("El popup fue bloqueado. En móvil, permite las ventanas emergentes o usa otro navegador.");
+            } else {
+              setError("Cancelaste el inicio de sesión");
+            }
+            throw popupError;
+          }
+        }
+        throw popupError;
       }
     } catch (err: any) {
       console.error("Error en Google Login:", err);
       if (err.code === 'auth/popup-closed-by-user') {
         setError("Cancelaste el inicio de sesión");
       } else if (err.code === 'auth/popup-blocked') {
-        setError("El popup fue bloqueado. Permite popups para este sitio o usa un navegador diferente.");
+        setError("El popup fue bloqueado. Permite popups para este sitio.");
       } else if (err.code === 'auth/cancelled-popup-request') {
         setError("Cancelaste el inicio de sesión");
+      } else if (err.code === 'auth/missing-initial-state') {
+        setError("Error de sesión. Cierra y vuelve a abrir la app.");
       } else {
-        setError("Error al iniciar con Google. Intenta de nuevo.");
+        setError("Error al iniciar con Google: " + (err.message || "Intenta de nuevo."));
       }
     } finally {
       setLoadingGoogle(false);
