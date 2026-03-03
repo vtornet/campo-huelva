@@ -604,6 +604,14 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Envío de ubicación
 - [ ] Búsqueda en el historial de mensajes
 
+#### 3.5. Botón de Comentarios Destacado (PENDIENTE - 03/03/2026)
+> **El botón de comentarios en las publicaciones del tablón está demasiado camuflado**
+
+- **Problema identificado**: El botón de comentarios tiene el mismo estilo visual que los otros botones (Like, Compartir, Denunciar), lo que dificulta que los usuarios lo identifiquen como la acción principal para interactuar.
+- **Solución propuesta**: Destacar visualmente el botón de comentarios (color diferente, tamaño, posición)
+- **Archivo**: `src/components/BoardPostCard.tsx` (líneas 468-481)
+- **Prioridad**: Baja - valorar tras feedback de usuarios beta
+
 #### 4. ✅ Gestión de Denuncias (Admin) (COMPLETADO - 01/03/2026)
 > **Panel para moderar contenido reportado**
 

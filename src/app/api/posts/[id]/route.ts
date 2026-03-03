@@ -33,6 +33,7 @@ export async function GET(
         providesAccommodation: true,
         startDate: true,
         endDate: true,
+        externalLink: true,
         createdAt: true,
         publisherId: true, // Importante para verificar permisos
         companyId: true, // Importante para verificar permisos
@@ -190,7 +191,8 @@ export async function PUT(
       'salaryPeriod',
       'hoursPerWeek',
       'startDate',
-      'endDate'
+      'endDate',
+      'externalLink'
     ];
 
     const updateData: any = {};

@@ -77,6 +77,7 @@ export async function GET(request: Request) {
         hoursPerWeek: true,
         startDate: true,
         endDate: true,
+        externalLink: true,
         createdAt: true,
         publisherId: true,
         companyId: true,
@@ -202,7 +203,8 @@ export async function POST(request: Request) {
       salaryPeriod,
       hoursPerWeek,
       startDate,
-      endDate
+      endDate,
+      externalLink
     } = body;
 
     // Validación básica
@@ -337,6 +339,10 @@ export async function POST(request: Request) {
       postData.hoursPerWeek = hoursPerWeek ? parseInt(hoursPerWeek) : null;
       postData.startDate = startDate || null;
       postData.endDate = endDate || null;
+      // Enlace externo solo para ofertas compartidas (SHARED)
+      if (type === "SHARED" && externalLink) {
+        postData.externalLink = externalLink;
+      }
     }
 
     // 3. Vinculación Inteligente según el ROL

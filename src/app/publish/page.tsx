@@ -59,6 +59,7 @@ function PublishForm() {
     hoursPerWeek: "",
     startDate: "",
     endDate: "",
+    externalLink: "", // Enlace externo para ofertas compartidas (solo admin)
   });
 
   // Cargar rol del usuario
@@ -115,6 +116,7 @@ function PublishForm() {
             hoursPerWeek: data.hoursPerWeek || "",
             startDate: data.startDate || "",
             endDate: data.endDate || "",
+            externalLink: data.externalLink || "",
           });
         })
         .catch(err => {
@@ -438,6 +440,41 @@ function PublishForm() {
                 </span>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ENLACE EXTERNO - Solo para admin en ofertas compartidas */}
+        {postType === 'OFFER' && isAdmin && userRole !== 'COMPANY' && (
+          <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+            <h3 className="font-semibold text-indigo-800 flex items-center gap-2 mb-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              Enlace a la oferta original
+            </h3>
+            <p className="text-sm text-slate-600 mb-3">
+              Añade un enlace externo para que los usuarios puedan acceder a la oferta original (por ejemplo, en InfoJobs, LinkedIn, etc.)
+            </p>
+            <input
+              type="url"
+              placeholder="https://ejemplo.com/oferta"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all duration-200"
+              value={formData.externalLink}
+              onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
+            />
+            {formData.externalLink && (
+              <a
+                href={formData.externalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Probar enlace
+              </a>
+            )}
           </div>
         )}
 

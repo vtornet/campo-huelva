@@ -345,6 +345,9 @@ model Post {
   startDate       String?  // Fecha de inicio estimada
   endDate         String?  // Fecha de fin (para contratos eventuales)
 
+  // Enlace externo para ofertas compartidas (solo admin puede añadirlo)
+  externalLink    String?  // URL a la oferta original (para SHARED)
+
   // Contadores
   likesCount     Int      @default(0)
   sharesCount    Int      @default(0)

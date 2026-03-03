@@ -632,8 +632,24 @@ export default function OfferDetailPage() {
                 )}
               </>
             )}
-            {/* Para ofertas compartidas: sin botón de acción */}
-            {isSharedOffer && !isOwner && <div className="w-32"></div>}
+            {/* Para ofertas compartidas: botón de enlace externo si existe */}
+            {isSharedOffer && !isOwner && (
+              offer.externalLink ? (
+                <a
+                  href={offer.externalLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 shadow-indigo-500/25"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Acceder a la oferta
+                </a>
+              ) : (
+                <div className="w-32"></div>
+              )
+            )}
           </div>
         </div>
         </div>
