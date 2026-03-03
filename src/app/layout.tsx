@@ -148,8 +148,9 @@ export default function RootLayout({
                 {children}
                 <Footer />
               </div>
-              <ServiceWorkerProvider />
-              <ServiceWorkerRegister />
+              {/* Service Worker desactivado temporalmente para probar Google Auth en móvil */}
+              {/* <ServiceWorkerProvider /> */}
+              {/* <ServiceWorkerRegister /> */}
               <PushNotificationManager />
               <PWAInstaller />
               <CookieBannerWrapper />
