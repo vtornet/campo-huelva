@@ -29,7 +29,12 @@ export async function POST(
       select: {
         publisherId: true,
         companyId: true,
-        type: true
+        type: true,
+        company: {
+          select: {
+            userId: true
+          }
+        }
       }
     });
 
@@ -49,7 +54,9 @@ export async function POST(
     }
 
     // Verificar que el usuario es el dueño (empresa)
-    if (post.companyId !== userId) {
+    // companyId es el ID del CompanyProfile, necesitamos comparar con el userId del User
+    const companyUserId = post.company?.userId;
+    if (companyUserId !== userId) {
       return NextResponse.json(
         { error: 'No tienes permiso para modificar esta oferta' },
         { status: 403 }
