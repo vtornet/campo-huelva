@@ -1,9 +1,23 @@
 // Service Worker para Agro Red - PWA con soporte offline y notificaciones push
 // Versión 2 - Actualización de caché para forzar recarga
 
-const CACHE_NAME = "agro-red-v2";
-const STATIC_CACHE_NAME = "agro-red-static-v2";
-const API_CACHE_NAME = "agro-red-api-v2";
+const CACHE_NAME = "agro-red-v3";
+const STATIC_CACHE_NAME = "agro-red-static-v3";
+const API_CACHE_NAME = "agro-red-api-v3";
+
+// Dominios que deben ser ignorados por el Service Worker (Google Auth, Firebase, etc.)
+// Estos dominios NO deben ser interceptados para evitar problemas con autenticación
+const IGNORED_DOMAINS = [
+  "accounts.google.com",
+  "oauth2.googleapis.com",
+  "www.googleapis.com",
+  "firebase.googleapis.com",
+  "firestore.googleapis.com",
+  "identitytoolkit.googleapis.com",
+  "securetoken.googleapis.com",
+  "linkedin.com",
+  "www.linkedin.com",
+];
 
 // URLs que se cachearán estáticamente (recursos críticos)
 const STATIC_ASSETS = [
@@ -132,6 +146,13 @@ self.addEventListener("fetch", (event) => {
     url.hostname === "chrome-extension" ||
     url.hostname === "chrome"
   ) {
+    return;
+  }
+
+  // IMPORTANTE: No interceptar peticiones a dominios de Google Auth/Firebase
+  // Esto evita problemas con signInWithPopup en dispositivos móviles
+  if (IGNORED_DOMAINS.some(domain => url.hostname === domain || url.hostname.endsWith("." + domain))) {
+    // Dejar pasar estas peticiones sin intervenir
     return;
   }
 
