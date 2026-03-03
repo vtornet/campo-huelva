@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, browserLocalPersistence, setPersistence, inMemoryPersistence } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -15,20 +15,7 @@ const firebaseConfig = {
 // Singleton: Evita que se conecte 2 veces si ya está conectado
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Configurar auth con persistencia local para evitar problemas con redirect en PWAs
-const authInstance = getAuth(app);
-
-// Configurar persistencia local para móviles (más fiable con redirects)
-if (typeof window !== 'undefined') {
-  setPersistence(authInstance, browserLocalPersistence).catch((err) => {
-    console.error("Error al configurar persistencia:", err);
-    // Fallback a inMemory si falla
-    setPersistence(authInstance, inMemoryPersistence).catch(console.error);
-  });
-}
-
-export const auth = authInstance;
-
+export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
