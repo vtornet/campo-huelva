@@ -30,6 +30,7 @@ export default function UserProfilePage() {
   // Datos de publicaciones
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [togglingClose, setTogglingClose] = useState<Record<string, boolean>>({});
 
   // Datos de contactos
   const [contacts, setContacts] = useState<any[]>([]);
@@ -422,6 +423,60 @@ export default function UserProfilePage() {
           message: "Verifica tu internet e inténtalo de nuevo.",
         });
       });
+  };
+
+  const handleToggleClose = async (postId: string) => {
+    if (!user) return;
+
+    const post = userPosts.find(p => p.id === postId);
+    if (!post || post.type !== 'OFFICIAL') return;
+
+    setTogglingClose(prev => ({ ...prev, [postId]: true }));
+
+    try {
+      const action = post.isClosed ? 'reopen' : 'close';
+      const res = await fetch(`/api/posts/${postId}/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          action
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Actualizar el estado local de la publicación
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, isClosed: !p.isClosed, closedAt: !p.isClosed ? new Date().toISOString() : null }
+            : p
+        ));
+        showNotification({
+          type: 'success',
+          title: data.message,
+          message: post.isClosed
+            ? 'La oferta ya está disponible para recibir inscripciones.'
+            : 'La oferta ya no recibirá nuevas inscripciones.',
+        });
+      } else {
+        const data = await res.json();
+        showNotification({
+          type: 'error',
+          title: 'No se pudo actualizar',
+          message: data.error || 'Inténtalo de nuevo.',
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling close status:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error de conexión',
+        message: 'Verifica tu internet e inténtalo de nuevo.',
+      });
+    } finally {
+      setTogglingClose(prev => ({ ...prev, [postId]: false }));
+    }
   };
 
   return (
@@ -867,6 +922,14 @@ export default function UserProfilePage() {
                                    isBoardPost ? "Tablón" :
                                    "Compartida"}
                                 </span>
+                                {post.isClosed && (
+                                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    Cerrada
+                                  </span>
+                                )}
                                 <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
                               </div>
                               <h4 className={`font-bold ${
@@ -923,6 +986,42 @@ export default function UserProfilePage() {
                                 </svg>
                                 Eliminar
                               </button>
+                              {/* Botón Cerrar/Reabrir - Solo para ofertas OFICIALES de empresas */}
+                              {!isBoardPost && post.type === 'OFFICIAL' && role === 'COMPANY' && (
+                                <button
+                                  onClick={() => handleToggleClose(post.id)}
+                                  disabled={togglingClose[post.id]}
+                                  className={`inline-flex items-center gap-1 px-3 py-2 border rounded-lg transition text-sm font-medium ${
+                                    post.isClosed
+                                      ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
+                                      : 'text-slate-600 bg-slate-50 hover:bg-slate-100 border-slate-200'
+                                  } ${togglingClose[post.id] ? 'opacity-50 cursor-wait' : ''}`}
+                                  title={post.isClosed ? 'Reabrir oferta' : 'Cerrar oferta'}
+                                >
+                                  {togglingClose[post.id] ? (
+                                    <>
+                                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                    </>
+                                  ) : post.isClosed ? (
+                                    <>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                      </svg>
+                                      Reabrir
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                      </svg>
+                                      Cerrar
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
