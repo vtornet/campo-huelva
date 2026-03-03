@@ -46,16 +46,6 @@ export function AddContactButton({
     }
   }, [user, propUserRole]);
 
-  if (!user || user.uid === userId) {
-    return null; // No mostrar botón si es el propio usuario
-  }
-
-  // Las empresas no pueden añadir contactos
-  const effectiveRole = propUserRole || fetchedRole;
-  if (effectiveRole === "COMPANY") {
-    return null;
-  }
-
   const handleAddContact = async () => {
     const confirmed = await confirm({
       title: "Añadir como contacto",
@@ -63,6 +53,8 @@ export function AddContactButton({
     });
 
     if (!confirmed) return;
+
+    if (!user) return;
 
     setLoading(true);
     try {
@@ -124,22 +116,33 @@ export function AddContactButton({
     </svg>
   );
 
-  // Ya es contacto
-  if (isContact) {
-    return (
-      <span className={`text-emerald-600 text-sm flex items-center gap-1 ${className}`}>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Contacto
-      </span>
-    );
-  }
+  // Renderizar el contenido según el estado
+  const renderContent = () => {
+    // No mostrar botón si es el propio usuario
+    if (!user || user.uid === userId) {
+      return null;
+    }
 
-  if (variant === "icon") {
-    return (
-      <>
-        {ConfirmDialogComponent()}
+    // Las empresas no pueden añadir contactos
+    const effectiveRole = propUserRole || fetchedRole;
+    if (effectiveRole === "COMPANY") {
+      return null;
+    }
+
+    // Ya es contacto
+    if (isContact) {
+      return (
+        <span className={`text-emerald-600 text-sm flex items-center gap-1 ${className}`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Contacto
+        </span>
+      );
+    }
+
+    if (variant === "icon") {
+      return (
         <button
           onClick={handleAddContact}
           disabled={loading}
@@ -155,14 +158,11 @@ export function AddContactButton({
             <UserPlusIcon />
           )}
         </button>
-      </>
-    );
-  }
+      );
+    }
 
-  if (variant === "text") {
-    return (
-      <>
-        {ConfirmDialogComponent()}
+    if (variant === "text") {
+      return (
         <button
           onClick={handleAddContact}
           disabled={loading}
@@ -170,14 +170,11 @@ export function AddContactButton({
         >
           {loading ? "Enviando..." : label}
         </button>
-      </>
-    );
-  }
+      );
+    }
 
-  // Por defecto: botón completo
-  return (
-    <>
-      {ConfirmDialogComponent()}
+    // Por defecto: botón completo
+    return (
       <button
         onClick={handleAddContact}
         disabled={loading}
@@ -198,6 +195,13 @@ export function AddContactButton({
           </>
         )}
       </button>
+    );
+  };
+
+  return (
+    <>
+      {renderContent()}
+      <ConfirmDialogComponent />
     </>
   );
 }

@@ -403,7 +403,7 @@ export default function UserProfilePage() {
         )}
       </div>
 
-      {ConfirmDialogComponent}
+      <ConfirmDialogComponent />
     </div>
   );
 }
