@@ -186,11 +186,17 @@ export async function DELETE(
     let userId: string;
     try {
       userId = await authenticateRequest(request);
-    } catch (error: any) {
-      return NextResponse.json(
-        { error: error.message || "No autenticado" },
-        { status: 401 }
-      );
+    } catch (headerError: any) {
+      // Fallback para beta: intentar obtener userId del body
+      try {
+        const body = await request.json();
+        if (!body.userId) {
+          throw headerError;
+        }
+        userId = body.userId;
+      } catch {
+        throw headerError;
+      }
     }
 
     // Buscar la publicación

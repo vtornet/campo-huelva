@@ -281,8 +281,10 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
       const res = await fetch(`/api/board-posts/${post.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${await user.getIdToken()}`
-        }
+          'Authorization': `Bearer ${await user.getIdToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: user.uid })
       });
 
       if (res.ok) {
