@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, getRedirectResult } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import LegalCheckboxes from "@/components/LegalCheckboxes";
@@ -12,12 +12,16 @@ type TabType = "login" | "register";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+
+  // Estado para controlar si estamos procesando un redirect de Google
+  const [processingRedirect, setProcessingRedirect] = useState(false);
 
   // Estados para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
@@ -33,28 +37,52 @@ export default function LoginPage() {
 
   // Si ya está autenticado, redirigir al inicio
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !processingRedirect) {
       router.push("/");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, processingRedirect]);
 
   // Manejar el resultado de signInWithRedirect
   useEffect(() => {
     const handleRedirectResult = async () => {
+      // Detectar si volvimos de un redirect de Google
+      // Google añade estos parámetros a la URL cuando vuelve
+      const hasGoogleRedirectParams =
+        searchParams?.has("code") ||
+        searchParams?.has("state") ||
+        searchParams?.has("prompt");
+
+      if (!hasGoogleRedirectParams && !processingRedirect) {
+        return;
+      }
+
+      console.log("[Login] Detectado redirect de Google, procesando...");
+      setProcessingRedirect(true);
+
+      // Dar tiempo a que Firebase procese el redirect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       try {
         const result = await getRedirectResult(auth);
         if (result?.user) {
+          console.log("[Login] Redirect exitoso:", result.user.email);
           router.push("/");
+        } else {
+          console.log("[Login] No hay resultado de redirect");
+          setProcessingRedirect(false);
         }
       } catch (err: any) {
-        // Silenciar errores de "no hay redirect pendiente"
+        console.error("[Login] Error en redirect result:", err);
+        // Si no hay redirect pendiente, no es un error real
         if (err.code !== 'auth/no-pending-credential') {
-          console.error("Error en redirect result:", err);
+          setError("Error al procesar el inicio de sesión con Google");
         }
+        setProcessingRedirect(false);
       }
     };
+
     handleRedirectResult();
-  }, [auth, router]);
+  }, [auth, router, searchParams, processingRedirect]);
 
   // Cerrar automáticamente el mensaje de error después de 10 segundos
   useEffect(() => {
@@ -66,11 +94,16 @@ export default function LoginPage() {
     }
   }, [error]);
 
-  // Mostrar loading mientras verificamos autenticación
-  if (loading) {
+  // Mostrar loading mientras verificamos autenticación o procesamos redirect
+  if (loading || processingRedirect) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
+          <p className="text-gray-600 mt-4">
+            {processingRedirect ? "Procesando inicio de sesión..." : "Cargando..."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -130,7 +163,6 @@ export default function LoginPage() {
   // Detectar si estamos en PWA instalada
   const isPWAInstalled = () => {
     if (typeof window === 'undefined') return false;
-    // Detectar PWA por modo standalone o display-mode
     return (
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true ||
@@ -153,16 +185,23 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
+      // Añadir este prompt para forzar selección de cuenta
+      provider.setCustomParameters({ prompt: 'select_account' });
 
       if (pwaInstalled) {
         // En PWA instalada usamos redirect (los popups no funcionan bien)
+        console.log("[Login] Iniciando Google Auth con redirect (PWA detectada)");
+        setProcessingRedirect(true);
         await signInWithRedirect(auth, provider);
       } else {
         // En navegador normal usamos popup (mejor UX)
+        console.log("[Login] Iniciando Google Auth con popup (navegador)");
         await signInWithPopup(auth, provider);
         router.push("/");
       }
     } catch (err: any) {
+      console.error("[Login] Error en Google Auth:", err);
+      setProcessingRedirect(false);
       if (err.code === 'auth/popup-closed-by-user') {
         setError("Cancelaste el inicio de sesión");
       } else if (err.code === 'auth/popup-blocked') {
