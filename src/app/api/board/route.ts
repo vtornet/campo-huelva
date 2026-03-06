@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get("limit") || "10");
   const userId = searchParams.get("userId"); // Para obtener publicaciones de un usuario específico
   const currentUserId = searchParams.get("currentUserId"); // Usuario autenticado actual (para verificar sus likes)
+  const province = searchParams.get("province"); // Filtro por provincia
 
   const skip = (page - 1) * limit;
 
@@ -23,6 +24,33 @@ export async function GET(request: Request) {
   // Si se pide un userId, filtramos por ese usuario
   if (userId) {
     where.authorId = userId;
+  }
+
+  // Filtrar por provincia si se proporciona
+  if (province && province !== "Todas") {
+    // Necesitamos buscar publicaciones donde el autor tenga esa provincia en su perfil
+    // Como la provincia está en los perfiles específicos, necesitamos un filtro más complejo
+    // Primero obtenemos los IDs de usuarios de esa provincia
+    const usersWithProvince = await prisma.user.findMany({
+      where: {
+        OR: [
+          { workerProfile: { province } },
+          { foremanProfile: { province } },
+          { engineerProfile: { province } },
+          { encargadoProfile: { province } },
+          { tractoristProfile: { province } },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const userIdsInProvince = usersWithProvince.map((u) => u.id);
+    if (userIdsInProvince.length > 0) {
+      where.authorId = { in: userIdsInProvince };
+    } else {
+      // Si no hay usuarios en esa provincia, devolver resultado vacío
+      return NextResponse.json([]);
+    }
   }
 
   try {

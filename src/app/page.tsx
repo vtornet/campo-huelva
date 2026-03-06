@@ -56,6 +56,26 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<any[]>([]); // Usamos 'posts' en vez de 'offers' porque pueden ser demandas
   const [filterProvinces, setFilterProvinces] = useState<string[]>([]); // Multiselección de provincias
   const [filterTaskTypes, setFilterTaskTypes] = useState<string[]>([]); // Multiselección de tipos de tarea
+
+  // Filtro de provincia para el tablón (single selection)
+  const [boardProvinceFilter, setBoardProvinceFilter] = useState<string>("Todas");
+  useEffect(() => {
+    // Cargar preferencia guardada del tablón
+    const saved = localStorage.getItem("boardProvinceFilter");
+    if (saved) {
+      setBoardProvinceFilter(saved);
+    } else {
+      // Si no hay preferencia, usar la provincia del usuario
+      if (userData?.profile?.province) {
+        setBoardProvinceFilter(userData.profile.province);
+      }
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    // Guardar preferencia cuando cambia
+    localStorage.setItem("boardProvinceFilter", boardProvinceFilter);
+  }, [boardProvinceFilter]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -192,13 +212,18 @@ export default function Dashboard() {
     }
   };
 
-  // Recargar cuando cambie el filtro o la pestaña (Ofertas/Demandas)
+  // Recargar cuando cambie el filtro o la pestaña (Ofertas/Demandas/Tablón)
   useEffect(() => {
     if (viewMode === "BOARD") {
       // Cargar posts del tablón
       loadBoardPosts(true);
       return;
     }
+
+    setPage(1);
+    setHasMore(true);
+    fetchPosts(true);
+  }, [filterProvinces, viewMode, filterTaskTypes, boardProvinceFilter]);
 
     setPage(1);
     setHasMore(true);
@@ -213,7 +238,8 @@ export default function Dashboard() {
     setLoadingBoardPosts(true);
 
     try {
-      const res = await fetch(`/api/board?page=${currentPage}&currentUserId=${user?.uid || ''}`);
+      const provinceParam = boardProvinceFilter ? `&province=${encodeURIComponent(boardProvinceFilter)}` : '';
+      const res = await fetch(`/api/board?page=${currentPage}&currentUserId=${user?.uid || ''}${provinceParam}`);
 
       if (!res.ok) {
         console.error('Error fetching board posts:', res.status);
@@ -758,6 +784,32 @@ export default function Dashboard() {
           </div>
           )}
 
+          {/* FILTROS - Solo para el Tablón */}
+          {viewMode === "BOARD" && (
+          <div className="grid grid-cols-1 gap-4 mb-5">
+            {/* Filtro de Provincia - Single selection para el tablón */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Filtrar por provincia
+              </label>
+              <select
+                value={boardProvinceFilter}
+                onChange={(e) => {
+                  setBoardProvinceFilter(e.target.value);
+                }}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+              >
+                <option value="Todas">Todas las provincias</option>
+                {PROVINCIAS.map((prov) => (
+                  <option key={prov} value={prov}>
+                    {prov}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          )}
+
           {/* LISTADO DE POSTS (CON ESTILOS SEGÚN TIPO) - Solo para Ofertas y Demandas */}
           {viewMode !== "BOARD" && (
           <div className="space-y-4">
@@ -1086,9 +1138,14 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Tablón vacío</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                    {boardProvinceFilter !== "Todas" ? "Sin publicaciones en esta provincia" : "Tablón vacío"}
+                  </h3>
                   <p className="text-slate-500 text-sm">
-                    Sé el primero en compartir algo con la comunidad.
+                    {boardProvinceFilter !== "Todas"
+                      ? `No hay publicaciones en ${boardProvinceFilter}. Prueba con otra provincia o selecciona "Todas las provincias".`
+                      : "Sé el primero en compartir algo con la comunidad."
+                    }
                   </p>
                 </div>
               ) : (
