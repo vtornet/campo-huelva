@@ -225,11 +225,6 @@ export default function Dashboard() {
     fetchPosts(true);
   }, [filterProvinces, viewMode, filterTaskTypes, boardProvinceFilter]);
 
-    setPage(1);
-    setHasMore(true);
-    fetchPosts(true);
-  }, [filterProvinces, viewMode, filterTaskTypes]);
-
   // Función para cargar publicaciones del tablón
   const loadBoardPosts = async (reset = false) => {
     if (loadingBoardPosts && !reset) return;
