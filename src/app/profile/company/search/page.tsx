@@ -133,7 +133,7 @@ export default function ProfileSearchPage() {
 
   // Estado de suscripción Premium
   const [isPremium, setIsPremium] = useState<boolean | null>(null); // null = no verificado aún
-  const [loading, setLoading] = useState(true);
+  const [checkingPremium, setCheckingPremium] = useState(true);
 
   // Control de visibilidad de filtros avanzados
   const [showWorkerFilters, setShowWorkerFilters] = useState(true);
@@ -162,7 +162,7 @@ export default function ProfileSearchPage() {
           console.error("Error checking premium:", err);
           setIsPremium(false);
         } finally {
-          setLoading(false);
+          setCheckingPremium(false);
         }
       };
 
@@ -756,7 +756,7 @@ export default function ProfileSearchPage() {
   );
 
   // Mostrar loading mientras verificamos autenticación
-  if (authLoading || loading || isPremium === null) {
+  if (authLoading || checkingPremium || isPremium === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
