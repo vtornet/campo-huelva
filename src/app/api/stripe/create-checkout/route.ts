@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Role } from "@prisma/client";
-import { createCheckoutSession } from "@/lib/stripe";
+import { createCheckoutSession, PREMIUM_PRICE_ID } from "@/lib/stripe";
 
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
+    // Verificar que Stripe esté configurado
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("STRIPE_SECRET_KEY no está configurada en Railway");
+      return NextResponse.json(
+        { error: "STRIPE_NOT_CONFIGURED", message: "Sistema de pagos no configurado" },
+        { status: 503 }
+      );
+    }
+
+    if (!PREMIUM_PRICE_ID) {
+      console.error("STRIPE_PREMIUM_PRICE_ID no está configurada");
+      return NextResponse.json(
+        { error: "STRIPE_NOT_CONFIGURED", message: "ID de precio no configurado" },
+        { status: 503 }
+      );
+    }
+
     // Obtener userId del body
     const body = await request.json();
     const { uid } = body;
@@ -94,19 +111,12 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error creating checkout session:", error);
 
-    // Manejo específico para errores de Stripe no configurado
-    if (error?.message?.includes('STRIPE_SECRET_KEY')) {
-      return NextResponse.json(
-        {
-          error: "STRIPE_NOT_CONFIGURED",
-          message: "El sistema de pagos no está configurado. Contacta con soporte."
-        },
-        { status: 503 }
-      );
-    }
+    // Mensaje de error más detallado
+    const errorMessage = error?.message || error?.toString() || "Error desconocido";
+    console.error("Error details:", errorMessage);
 
     return NextResponse.json(
-      { error: error?.message || "Error al crear la sesión de pago" },
+      { error: "Error al crear la sesión de pago", details: errorMessage },
       { status: 500 }
     );
   }
