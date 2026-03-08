@@ -40,10 +40,9 @@ function PublishForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
-  const [checkingPremium, setCheckingPremium] = useState(false);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null); // null = cargando
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [showPremiumBlock, setShowPremiumBlock] = useState(false);
-  const [initialCheckDone, setInitialCheckDone] = useState(false); // Nuevo estado
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
@@ -73,8 +72,6 @@ function PublishForm() {
 
     const loadUserData = async () => {
       try {
-        setCheckingPremium(true);
-
         // Cargar datos del usuario (incluye rol)
         const userRes = await fetch(`/api/user/me?uid=${user.uid}`);
         const userData = await userRes.json();
@@ -98,8 +95,7 @@ function PublishForm() {
         console.error("Error loading user data:", err);
         setIsPremium(false);
       } finally {
-        setCheckingPremium(false);
-        setInitialCheckDone(true);
+        setCheckingAuth(false);
       }
     };
 
@@ -236,6 +232,7 @@ function PublishForm() {
   }
 
   // Si estamos editando pero aún no conocemos el tipo, mostrar loading
+  // Mostrar loading si estamos cargando datos o verificando
   if (isEditMode && !postType) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -244,9 +241,17 @@ function PublishForm() {
     );
   }
 
+  // Mostrar loading si estamos verificando premium
+  if (checkingAuth || isPremium === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
+
   // Mostrar bloqueo Premium para empresas sin suscripción (solo para nuevas ofertas OFICIAL)
-  // Solo mostrar si la verificación inicial ha terminado
-  if (showPremiumBlock || (initialCheckDone && userRole === 'COMPANY' && !isEditMode && !isPremium && !checkingPremium && postType === 'OFFER')) {
+  if (showPremiumBlock || (userRole === 'COMPANY' && !isEditMode && isPremium === false && postType === 'OFFER')) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
