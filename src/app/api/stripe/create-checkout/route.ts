@@ -94,9 +94,10 @@ export async function POST(request: Request) {
     }
 
     // Obtener URLs de redirección
-    const origin = new URL(request.url).origin;
-    const successUrl = `${origin}/premium?success=true&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${origin}/premium?canceled=true`;
+    // Usar NEXT_PUBLIC_APP_URL si está disponible, si no usar el origin de la petición
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    const successUrl = `${baseUrl}/premium?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}/premium?canceled=true`;
 
     // Crear sesión de checkout
     const checkoutSession = await createCheckoutSession(
