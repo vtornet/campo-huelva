@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, SubscriptionStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +25,14 @@ export async function GET(
             role: true,
           },
         },
+        subscription: {
+          select: {
+            status: true,
+            isTrial: true,
+            trialEndsAt: true,
+            currentPeriodEnd: true,
+          },
+        },
       },
     });
 
@@ -32,7 +40,18 @@ export async function GET(
       return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
     }
 
-    return NextResponse.json(company);
+    // Calcular si es premium (para mostrar en frontend)
+    const isPremium =
+      company.subscription &&
+      (company.subscription.status === SubscriptionStatus.ACTIVE ||
+        company.subscription.status === SubscriptionStatus.TRIALING) &&
+      (!company.subscription.currentPeriodEnd ||
+        new Date(company.subscription.currentPeriodEnd) > new Date());
+
+    return NextResponse.json({
+      ...company,
+      isPremium,
+    });
   } catch (error) {
     console.error("Error al obtener perfil de empresa:", error);
     return NextResponse.json(

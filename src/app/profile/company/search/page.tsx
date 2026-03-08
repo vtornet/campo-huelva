@@ -131,6 +131,11 @@ export default function ProfileSearchPage() {
     canTravel: "" as "" | "true" | "false",
   });
 
+  // Estado de suscripción Premium
+  const [isPremium, setIsPremium] = useState(false);
+  const [checkingPremium, setCheckingPremium] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
   // Control de visibilidad de filtros avanzados
   const [showWorkerFilters, setShowWorkerFilters] = useState(true);
   const [showForemanFilters, setShowForemanFilters] = useState(true);
@@ -139,17 +144,33 @@ export default function ProfileSearchPage() {
   // Proteger la página: solo empresas pueden acceder
   useEffect(() => {
     if (!authLoading && user) {
-      // Verificar rol
-      fetch(`/api/user/me?uid=${user.uid}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.role !== "COMPANY") {
+      const loadUserData = async () => {
+        try {
+          setCheckingPremium(true);
+
+          // Verificar rol primero
+          const userRes = await fetch(`/api/user/me?uid=${user.uid}`);
+          const userData = await userRes.json();
+
+          if (userData.role !== "COMPANY") {
             router.push("/");
+            return;
           }
-        })
-        .catch(() => {
-          router.push("/");
-        });
+
+          // Verificar suscripción Premium
+          const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
+          const subData = await subRes.json();
+          setIsPremium(!!subData.isPremium);
+        } catch (err) {
+          console.error("Error loading user data:", err);
+          setIsPremium(false);
+        } finally {
+          setCheckingPremium(false);
+          setInitialCheckDone(true);
+        }
+      };
+
+      loadUserData();
     }
   }, [user, authLoading, router]);
 
@@ -739,7 +760,7 @@ export default function ProfileSearchPage() {
   );
 
   // Mostrar loading mientras verificamos autenticación
-  if (authLoading) {
+  if (authLoading || checkingPremium) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -750,6 +771,74 @@ export default function ProfileSearchPage() {
   // Si no hay usuario, no mostramos nada (redirección en curso)
   if (!user) {
     return null;
+  }
+
+  // Mostrar bloqueo Premium para empresas sin suscripción
+  // Solo mostrar si la verificación inicial ha terminado
+  if (initialCheckDone && !isPremium) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            Buscador Premium
+          </h1>
+          <p className="text-slate-600 mb-6">
+            El acceso al buscador de candidatos es exclusivo para empresas con suscripción Premium.
+          </p>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-6 text-left border border-yellow-200">
+            <h3 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              Beneficios Premium
+            </h3>
+            <ul className="text-sm text-yellow-800 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Buscador avanzado de candidatos con filtros</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Ver perfiles completos con datos de contacto</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Publicación de ofertas ilimitadas</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Badge &quot;Empresa Premium&quot; en tu perfil</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/premium')}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold py-3 px-6 rounded-xl transition"
+            >
+              Suscribirme a Premium - 99€/mes
+            </button>
+            <button
+              onClick={() => router.push('/profile')}
+              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-3 px-6 rounded-xl transition"
+            >
+              Volver al perfil
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 mt-4">
+            7 días de prueba gratis • Cancela cuando quieras
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

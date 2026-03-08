@@ -6,6 +6,7 @@ import { useNotifications } from "@/components/Notifications";
 import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA, TIPOS_CONTRATO, PERIODOS_SALARIALES, TIPOS_JORNADA } from "@/lib/constants";
 import AIImprovedTextarea from "@/components/AIImprovedTextarea";
 import { PageBackButton } from "@/components/BackButton";
+import { Crown, Lock } from "lucide-react";
 
 
 // Componente interno que lee los parámetros
@@ -39,6 +40,10 @@ function PublishForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [checkingPremium, setCheckingPremium] = useState(false);
+  const [showPremiumBlock, setShowPremiumBlock] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false); // Nuevo estado
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
@@ -62,22 +67,43 @@ function PublishForm() {
     externalLink: "", // Enlace externo para ofertas compartidas (solo admin)
   });
 
-  // Cargar rol del usuario
+  // Cargar rol del usuario y estado Premium
   useEffect(() => {
-    if (user) {
-      fetch(`/api/user/me?uid=${user.uid}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.role) {
-            setUserRole(data.role);
-            // Verificar si es admin (necesario para publicar ofertas compartidas)
-            if (data.role === 'ADMIN') {
-              setIsAdmin(true);
-            }
+    if (!user) return;
+
+    const loadUserData = async () => {
+      try {
+        setCheckingPremium(true);
+
+        // Cargar datos del usuario (incluye rol)
+        const userRes = await fetch(`/api/user/me?uid=${user.uid}`);
+        const userData = await userRes.json();
+
+        if (userData.role) {
+          setUserRole(userData.role);
+          if (userData.role === 'ADMIN') {
+            setIsAdmin(true);
           }
-        })
-        .catch(err => console.error("Error fetching user role:", err));
-    }
+        }
+
+        // Solo verificar premium si es empresa
+        if (userData.role === 'COMPANY') {
+          const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
+          const subData = await subRes.json();
+          setIsPremium(!!subData.isPremium);
+        } else {
+          setIsPremium(false);
+        }
+      } catch (err) {
+        console.error("Error loading user data:", err);
+        setIsPremium(false);
+      } finally {
+        setCheckingPremium(false);
+        setInitialCheckDone(true);
+      }
+    };
+
+    loadUserData();
   }, [user]);
 
   // Cargar datos de la publicación si estamos en modo edición
@@ -187,7 +213,11 @@ function PublishForm() {
         }, 1500);
       } else {
         const data = await res.json();
-        setErrorMessage(data.error || "Error al guardar la publicación. Por favor, intenta de nuevo.");
+        if (data.error === "PREMIUM_REQUIRED" || data.premiumRequired) {
+          setShowPremiumBlock(true);
+        } else {
+          setErrorMessage(data.message || data.error || "Error al guardar la publicación. Por favor, intenta de nuevo.");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -210,6 +240,74 @@ function PublishForm() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
+
+  // Mostrar bloqueo Premium para empresas sin suscripción (solo para nuevas ofertas OFICIAL)
+  // Solo mostrar si la verificación inicial ha terminado
+  if (showPremiumBlock || (initialCheckDone && userRole === 'COMPANY' && !isEditMode && !isPremium && !checkingPremium && postType === 'OFFER')) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            Plan Premium requerido
+          </h1>
+          <p className="text-slate-600 mb-6">
+            Para publicar ofertas de empleo ilimitadas, necesitas una suscripción Premium.
+          </p>
+
+          <div className="bg-yellow-50 rounded-xl p-4 mb-6 text-left">
+            <h3 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+              <Crown className="w-5 h-5" />
+              Beneficios Premium
+            </h3>
+            <ul className="text-sm text-yellow-800 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Publicación de ofertas ilimitadas</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Acceso completo al buscador de candidatos</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Badge &quot;Empresa Premium&quot; en tu perfil</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-600 mt-0.5">✓</span>
+                <span>Prioridad en resultados de búsqueda</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/premium')}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold py-3 px-6 rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <Crown className="w-5 h-5" />
+              Suscribirme a Premium
+            </button>
+            <button
+              onClick={() => {
+                setShowPremiumBlock(false);
+                router.push('/profile');
+              }}
+              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-3 px-6 rounded-xl transition"
+            >
+              Volver al perfil
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 mt-4">
+            99€/mes • 7 días de prueba gratis
+          </p>
+        </div>
       </div>
     );
   }

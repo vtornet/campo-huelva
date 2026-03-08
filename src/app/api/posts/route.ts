@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, PostType, Role } from "@prisma/client";
+import { hasActivePremiumSubscription } from "@/lib/subscription";
 
 const prisma = new PrismaClient();
 
@@ -265,6 +266,16 @@ export async function POST(request: Request) {
       if (!user.companyProfile?.isApproved) {
         return NextResponse.json({
           error: "Tu empresa debe estar aprobada por un administrador para publicar ofertas oficiales. Contacta con soporte para solicitar la aprobación."
+        }, { status: 403 });
+      }
+
+      // Verificar si tiene suscripción Premium activa
+      const hasPremium = await hasActivePremiumSubscription(user.id);
+      if (!hasPremium) {
+        return NextResponse.json({
+          error: "PREMIUM_REQUIRED",
+          premiumRequired: true,
+          message: "Para publicar ofertas necesitas una suscripción Premium."
         }, { status: 403 });
       }
     }

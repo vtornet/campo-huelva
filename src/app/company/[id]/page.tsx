@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useNotifications } from "@/components/Notifications";
 import CompanyPhotoGallery from "@/components/CompanyPhotoGallery";
 import { BackButton } from "@/components/BackButton";
+import { Crown } from "lucide-react";
 
 interface CompanyProfile {
   id: string;
@@ -22,6 +23,7 @@ interface CompanyProfile {
   profileImage?: string;
   isVerified?: boolean;
   isApproved?: boolean;
+  isPremium?: boolean;
 }
 
 interface Post {
@@ -144,6 +146,12 @@ export default function CompanyPublicProfilePage() {
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold">{company.companyName}</h1>
+                {company.isPremium && (
+                  <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs font-medium rounded-full flex items-center gap-1">
+                    <Crown className="w-3 h-3" />
+                    Premium
+                  </span>
+                )}
                 {company.isVerified && (
                   <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs font-medium rounded-full">
                     ✓ Verificada

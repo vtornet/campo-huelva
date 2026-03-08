@@ -1,6 +1,7 @@
 // API de búsqueda de perfiles para empresas
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { hasActivePremiumSubscription } from "@/lib/subscription";
 
 const prisma = new PrismaClient();
 
@@ -52,6 +53,15 @@ export async function GET(request: NextRequest) {
         { error: "Solo las empresas pueden buscar perfiles", debugRole: user?.role },
         { status: 403 }
       );
+    }
+
+    // Verificar que la empresa tiene suscripción premium activa
+    const hasPremium = await hasActivePremiumSubscription(userId);
+    if (!hasPremium) {
+      return NextResponse.json({
+        error: "El acceso al buscador de candidatos requiere una suscripción Premium",
+        requiresPremium: true,
+      }, { status: 403 });
     }
 
     // Obtener parámetros de búsqueda

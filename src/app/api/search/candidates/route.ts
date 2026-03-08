@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
+import { authenticateRequest } from "@/lib/firebase-admin";
+import { hasActivePremiumSubscription } from "@/lib/subscription";
 
 const prisma = new PrismaClient();
 
@@ -9,6 +11,32 @@ export async function GET(request: Request) {
 
   if (!category) {
     return NextResponse.json({ error: "Categoría no especificada" }, { status: 400 });
+  }
+
+  // Verificar autenticación
+  const authResult = await authenticateRequest(request);
+
+  // Si está autenticado, verificar si es empresa con suscripción premium
+  const authResultAny = authResult as any;
+  if (!authResultAny.error && authResultAny.uid) {
+    const userId = authResultAny.uid;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    // Si es empresa, verificar que tenga suscripción premium
+    if (user?.role === Role.COMPANY) {
+      const hasPremium = await hasActivePremiumSubscription(userId);
+
+      if (!hasPremium) {
+        return NextResponse.json({
+          error: "El acceso al buscador de candidatos requiere una suscripción Premium",
+          requiresPremium: true,
+        }, { status: 403 });
+      }
+    }
   }
 
   try {

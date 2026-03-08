@@ -193,6 +193,7 @@ model CompanyProfile {
   extendedDescription String?
 
   posts          Post[]
+  subscription   Subscription?
 }
 
 model EngineerProfile {
@@ -833,4 +834,87 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// === SUSCRIPCIONES PREMIUM ===
+model Subscription {
+  id                String              @id @default(uuid())
+  companyId         String              @unique // Una empresa solo puede tener una suscripción activa
+  company           CompanyProfile      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Datos de Stripe
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+
+  // Estado de la suscripción
+  status            SubscriptionStatus @default(ACTIVE)
+
+  // Periodo de prueba
+  isTrial           Boolean  @default(true)
+  trialEndsAt       DateTime?
+  trialUsed         Boolean  @default(false) // Si ya usó su prueba gratuita
+
+  // Fechas
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean  @default(false)
+
+  // Tracking de cambios
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Historial de cambios
+  history           SubscriptionHistory[]
+
+  @@index([status])
+  @@index([stripeSubscriptionId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE           // Suscripción activa
+  TRIALING         // En periodo de prueba
+  PAST_DUE         // Pago pendiente
+  CANCELED         // Cancelada pero sigue activa hasta fin de periodo
+  INCOMPLETE       // Incompleta (fallo en pago inicial)
+  INCOMPLETE_EXPIRED
+  PAUSED
+}
+
+// === HISTORIAL DE SUSCRIPCIONES ===
+model SubscriptionHistory {
+  id              String              @id @default(uuid())
+  subscriptionId  String
+  subscription    Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Cambio realizado
+  action          SubscriptionAction
+  fromStatus      SubscriptionStatus?
+  toStatus        SubscriptionStatus?
+
+  // Metadata adicional
+  metadata        Json?               // Datos adicionales en formato JSON
+
+  // Quién hizo el cambio (system o userId)
+  changedBy       String?             // UID del usuario si fue manual
+  changeReason    String?             // Razón del cambio
+
+  createdAt       DateTime            @default(now())
+
+  @@index([subscriptionId])
+  @@index([createdAt])
+}
+
+enum SubscriptionAction {
+  CREATED            // Suscripción creada
+  TRIAL_STARTED      // Inicio de prueba
+  TRIAL_ENDED        // Fin de prueba
+  RENEWED            // Renovación
+  PAYMENT_FAILED     // Fallo de pago
+  PAYMENT_SUCCEEDED  // Pago exitoso
+  CANCELED           // Cancelación solicitada
+  PAUSED             // Pausa
+  RESUMED            // Reactivación
+  UPDATED            // Actualización genérica
+  STATUS_CHANGED     // Cambio de estado
 }
