@@ -160,6 +160,7 @@ export default function ProfileSearchPage() {
           // Verificar suscripción Premium
           const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
           const subData = await subRes.json();
+          console.log('[SEARCH DEBUG] subData:', subData, 'isPremium:', !!subData.isPremium);
           setIsPremium(!!subData.isPremium);
         } catch (err) {
           console.error("Error loading user data:", err);
@@ -167,6 +168,7 @@ export default function ProfileSearchPage() {
         } finally {
           setCheckingPremium(false);
           setInitialCheckDone(true);
+          console.log('[SEARCH DEBUG] initialCheckDone set to true, isPremium:', isPremium);
         }
       };
 
@@ -775,6 +777,7 @@ export default function ProfileSearchPage() {
 
   // Mostrar bloqueo Premium para empresas sin suscripción
   // Solo mostrar si la verificación inicial ha terminado
+  console.log('[SEARCH DEBUG] Render - initialCheckDone:', initialCheckDone, 'isPremium:', isPremium, 'shouldBlock:', initialCheckDone && !isPremium);
   if (initialCheckDone && !isPremium) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
