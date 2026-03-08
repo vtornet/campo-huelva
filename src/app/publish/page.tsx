@@ -87,6 +87,8 @@ function PublishForm() {
         if (userData.role === 'COMPANY') {
           const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
           const subData = await subRes.json();
+          console.log('[PUBLISH DEBUG] subData:', subData);
+          console.log('[PUBLISH DEBUG] isPremium:', !!subData.isPremium);
           setIsPremium(!!subData.isPremium);
         } else {
           setIsPremium(false);
