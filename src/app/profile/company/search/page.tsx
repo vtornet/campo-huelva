@@ -785,7 +785,7 @@ export default function ProfileSearchPage() {
             Buscador Premium
           </h1>
           <p className="text-slate-600 mb-6">
-            El acceso al buscador de candidatos es exclusivo para empresas con suscripción Premium.
+            El acceso al buscador de candidatos está disponible tras finalizar tu periodo de prueba de 7 días y suscribirte a Premium.
           </p>
 
           <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-6 text-left border border-yellow-200">

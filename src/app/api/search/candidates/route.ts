@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Role } from "@prisma/client";
 import { authenticateRequest } from "@/lib/firebase-admin";
-import { hasActivePremiumSubscription } from "@/lib/subscription";
+import { hasPaidSubscription } from "@/lib/subscription";
 
 const prisma = new PrismaClient();
 
@@ -26,17 +26,18 @@ export async function GET(request: Request) {
         select: { role: true },
       });
 
-      // Si es empresa, verificar que tenga suscripción premium
+      // Si es empresa, verificar que tenga suscripción PAGADA (no solo prueba)
       if (user?.role === Role.COMPANY) {
-        const hasPremium = await hasActivePremiumSubscription(userId);
+        const hasPaid = await hasPaidSubscription(userId);
 
-        if (!hasPremium) {
+        if (!hasPaid) {
           return NextResponse.json({
-            error: "El acceso al buscador de candidatos requiere una suscripción Premium",
+            error: "El acceso al buscador de candidatos requiere una suscripción Premium pagada (finaliza tu periodo de prueba)",
             requiresPremium: true,
+            inTrial: true,
           }, { status: 403 });
         }
-        console.log('[SEARCH CANDIDATES] Empresa premium verificada');
+        console.log('[SEARCH CANDIDATES] Empresa con suscripción pagada verificada');
       }
     }
   } catch (authError) {
