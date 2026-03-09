@@ -909,7 +909,7 @@ export default function UserProfilePage() {
                           "border-slate-200/60"
                         }`}>
                           <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                   post.type === "OFFICIAL" ? "bg-emerald-100 text-emerald-700" :
@@ -932,7 +932,7 @@ export default function UserProfilePage() {
                                 )}
                                 <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
                               </div>
-                              <h4 className={`font-bold ${
+                              <h4 className={`font-bold break-words ${
                                 post.type === 'DEMAND' ? 'text-orange-900' :
                                 isBoardPost ? 'text-blue-900' :
                                 'text-slate-800'
