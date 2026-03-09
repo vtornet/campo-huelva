@@ -2,8 +2,37 @@ import { NextResponse } from "next/server";
 import { PrismaClient, Role } from "@prisma/client";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import { hasPaidSubscription } from "@/lib/subscription";
+import { extractTokenFromHeader } from "@/lib/firebase-admin";
 
 const prisma = new PrismaClient();
+
+// Función auxiliar para obtener userId del token sin verificar completamente (modo degradado)
+async function getUserIdFromToken(request: Request): Promise<string | null> {
+  try {
+    const token = extractTokenFromHeader(request);
+    if (!token) return null;
+
+    // Intentar autenticación completa primero
+    try {
+      return await authenticateRequest(request);
+    } catch (authError) {
+      // Si falla, intentar decodificar el token sin verificar (modo degradado)
+      console.log('[SEARCH] Auth falló, intentando modo degradado');
+      try {
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+          return payload.user_id || payload.uid || null;
+        }
+      } catch (decodeError) {
+        console.error('[SEARCH] Error decodificando token:', decodeError);
+      }
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,37 +42,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Categoría no especificada" }, { status: 400 });
   }
 
-  // Verificar autenticación (si falla, se permite búsqueda sin premium)
-  let userId: string | null = null;
-  try {
-    userId = await authenticateRequest(request);
+  // Verificar autenticación y premium para empresas
+  const userId = await getUserIdFromToken(request);
+
+  if (userId) {
     console.log('[SEARCH CANDIDATES] Usuario autenticado:', userId);
 
-    // Si está autenticado, verificar si es empresa con suscripción premium
-    if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
 
-      // Si es empresa, verificar que tenga suscripción PAGADA (no solo prueba)
-      if (user?.role === Role.COMPANY) {
-        const hasPaid = await hasPaidSubscription(userId);
+    // Si es empresa, verificar que tenga suscripción PAGADA (no solo prueba)
+    if (user?.role === Role.COMPANY) {
+      const hasPaid = await hasPaidSubscription(userId);
 
-        if (!hasPaid) {
-          return NextResponse.json({
-            error: "El acceso al buscador de candidatos requiere una suscripción Premium pagada (finaliza tu periodo de prueba)",
-            requiresPremium: true,
-            inTrial: true,
-          }, { status: 403 });
-        }
-        console.log('[SEARCH CANDIDATES] Empresa con suscripción pagada verificada');
+      if (!hasPaid) {
+        console.log('[SEARCH CANDIDATES] Empresa sin suscripción pagada, bloqueando acceso');
+        return NextResponse.json({
+          error: "El acceso al buscador de candidatos requiere una suscripción Premium pagada (finaliza tu periodo de prueba)",
+          requiresPremium: true,
+          inTrial: true,
+        }, { status: 403 });
       }
+      console.log('[SEARCH CANDIDATES] Empresa con suscripción pagada verificada');
     }
-  } catch (authError) {
-    // Si falla la autenticación, continuar sin verificar premium
-    // (se permite búsqueda para usuarios no autenticados o con token inválido)
-    console.log('[SEARCH CANDIDATES] Autenticación fallida o no proporcionada, continuando sin verificación premium');
+  } else {
+    console.log('[SEARCH CANDIDATES] Usuario no autenticado, permitiendo búsqueda');
   }
 
   try {
