@@ -49,13 +49,30 @@ export async function hasActivePremiumSubscription(
       trialEndsAt: subscription.trialEndsAt,
     });
 
-    // Verificar si la suscripción está activa
-    const isActive =
-      (subscription.status === "ACTIVE" ||
-        subscription.status === "TRIALING") &&
-      (!subscription.currentPeriodEnd ||
-        new Date(subscription.currentPeriodEnd) > new Date());
+    // Verificar si está en periodo de prueba (prioridad sobre currentPeriodEnd)
+    const isTrial =
+      subscription &&
+      subscription.isTrial &&
+      subscription.trialEndsAt &&
+      new Date(subscription.trialEndsAt) > new Date();
 
+    // Verificar si la suscripción está activa
+    // Si está en prueba, usar trialEndsAt. Si no, usar currentPeriodEnd.
+    let isActive = false;
+    if (subscription) {
+      if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
+        // Si está en periodo de prueba, verificar por trialEndsAt
+        if (isTrial) {
+          isActive = true;
+        } else {
+          // Si no está en prueba, verificar por currentPeriodEnd
+          isActive = !subscription.currentPeriodEnd ||
+            new Date(subscription.currentPeriodEnd) > new Date();
+        }
+      }
+    }
+
+    console.log('[hasActivePremiumSubscription] isTrial:', isTrial);
     console.log('[hasActivePremiumSubscription] isActive:', isActive);
     console.log('[hasActivePremiumSubscription] status check:', subscription.status === "ACTIVE" || subscription.status === "TRIALING");
     console.log('[hasActivePremiumSubscription] period check:', !subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > new Date());
@@ -170,11 +187,24 @@ export async function getSubscriptionInfo(userId: string) {
 
     const sub = user.companyProfile.subscription;
 
+    // Verificar si está en periodo de prueba
+    const isTrial = sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date();
+
+    // Verificar si la suscripción está activa
+    let isActive = false;
+    if (sub.status === "ACTIVE" || sub.status === "TRIALING") {
+      // Si está en periodo de prueba, verificar por trialEndsAt
+      if (isTrial) {
+        isActive = true;
+      } else {
+        // Si no está en prueba, verificar por currentPeriodEnd
+        isActive = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
+      }
+    }
+
     return {
-      isActive:
-        (sub.status === "ACTIVE" || sub.status === "TRIALING") &&
-        (!sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date()),
-      isTrial: sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date(),
+      isActive,
+      isTrial,
       status: sub.status,
       trialEndsAt: sub.trialEndsAt,
       currentPeriodEnd: sub.currentPeriodEnd,

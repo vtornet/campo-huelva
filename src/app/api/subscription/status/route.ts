@@ -54,20 +54,28 @@ export async function GET(request: Request) {
 
     const subscription = user.companyProfile.subscription;
 
-    // Verificar si la suscripción está activa
-    const isActive =
-      subscription &&
-      (subscription.status === "ACTIVE" ||
-        subscription.status === "TRIALING") &&
-      (!subscription.currentPeriodEnd ||
-        new Date(subscription.currentPeriodEnd) > new Date());
-
-    // Verificar si está en periodo de prueba
+    // Verificar si está en periodo de prueba (prioridad sobre currentPeriodEnd)
     const isTrial =
       subscription &&
       subscription.isTrial &&
       subscription.trialEndsAt &&
       new Date(subscription.trialEndsAt) > new Date();
+
+    // Verificar si la suscripción está activa
+    // Si está en prueba, usar trialEndsAt. Si no, usar currentPeriodEnd.
+    let isActive = false;
+    if (subscription) {
+      if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
+        // Si está en periodo de prueba, verificar por trialEndsAt
+        if (isTrial) {
+          isActive = true;
+        } else {
+          // Si no está en prueba, verificar por currentPeriodEnd
+          isActive = !subscription.currentPeriodEnd ||
+            new Date(subscription.currentPeriodEnd) > new Date();
+        }
+      }
+    }
 
     // Debug logs
     console.log('[SUBSCRIPTION STATUS] userId:', userId);
