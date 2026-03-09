@@ -908,8 +908,8 @@ export default function UserProfilePage() {
                           isBoardPost ? "border-blue-200/80" :
                           "border-slate-200/60"
                         }`}>
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0 w-full">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                   post.type === "OFFICIAL" ? "bg-emerald-100 text-emerald-700" :
@@ -932,7 +932,7 @@ export default function UserProfilePage() {
                                 )}
                                 <span className="text-xs text-slate-500">{formatPostDate(post.createdAt)}</span>
                               </div>
-                              <h4 className={`font-bold break-words ${
+                              <h4 className={`font-bold break-all ${
                                 post.type === 'DEMAND' ? 'text-orange-900' :
                                 isBoardPost ? 'text-blue-900' :
                                 'text-slate-800'
@@ -955,7 +955,7 @@ export default function UserProfilePage() {
                                 </p>
                               )}
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap sm:flex-nowrap self-start sm:self-auto">
                               {isBoardPost ? (
                                 <button
                                   onClick={() => handleEditBoardPost(post.id, post.description)}
