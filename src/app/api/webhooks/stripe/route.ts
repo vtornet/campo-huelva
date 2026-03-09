@@ -117,23 +117,38 @@ async function handleCheckoutCompleted(session: any) {
     const subscription = subscriptionResponse as any;
 
     console.log('[WEBHOOK] Suscripción recuperada de Stripe:', subscription.status);
+    console.log('[WEBHOOK] current_period_start:', subscription.current_period_start);
+    console.log('[WEBHOOK] current_period_end:', subscription.current_period_end);
 
     // Determinar si está en periodo de prueba
     const hasTrial = Boolean(subscription.trial_end && subscription.trial_end > Date.now() / 1000);
+
+    // Preparar datos para crear/actualizar con validación de fechas
+    const subscriptionData: any = {
+      companyId,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      stripePriceId: subscription.items?.data?.[0]?.price?.id,
+      status: mapStripeStatus(subscription.status),
+      isTrial: hasTrial,
+    };
+
+    // Fechas opcionales - solo asignar si existen
+    if (subscription.trial_end) {
+      subscriptionData.trialEndsAt = new Date(subscription.trial_end * 1000);
+    }
+    if (subscription.current_period_start) {
+      subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+    }
+    if (subscription.current_period_end) {
+      subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    }
 
     // Crear o actualizar registro de suscripción
     const createdSubscription = await prisma.subscription.upsert({
       where: { companyId },
       create: {
-        companyId,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-        stripePriceId: subscription.items.data[0].price.id,
-        status: mapStripeStatus(subscription.status),
-        isTrial: hasTrial,
-        trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        ...subscriptionData,
         history: {
           create: {
             action: SubscriptionAction.CREATED,
@@ -143,13 +158,7 @@ async function handleCheckoutCompleted(session: any) {
           },
         },
       },
-      update: {
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-        status: mapStripeStatus(subscription.status),
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      },
+      update: subscriptionData,
     });
 
     console.log('[WEBHOOK] Suscripción creada/actualizada:', createdSubscription.id);
@@ -172,13 +181,21 @@ async function handleSubscriptionCreated(subscription: any) {
     return;
   }
 
+  // Preparar datos con validación
+  const updateData: any = {
+    status: mapStripeStatus(subscription.status),
+  };
+
+  if (subscription.current_period_start) {
+    updateData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+  }
+  if (subscription.current_period_end) {
+    updateData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  }
+
   await prisma.subscription.update({
     where: { stripeCustomerId: customerId },
-    data: {
-      status: mapStripeStatus(subscription.status),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    },
+    data: updateData,
   });
 }
 
@@ -196,14 +213,23 @@ async function handleSubscriptionUpdated(subscription: any) {
 
   const newStatus = mapStripeStatus(subscription.status);
 
+  // Preparar datos de actualización con validación de fechas
+  const updateData: any = {
+    status: newStatus,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+  };
+
+  // Solo actualizar fechas si están disponibles
+  if (subscription.current_period_start) {
+    updateData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+  }
+  if (subscription.current_period_end) {
+    updateData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  }
+
   await prisma.subscription.update({
     where: { stripeCustomerId: customerId },
-    data: {
-      status: newStatus,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    },
+    data: updateData,
   });
 
   // Añadir al historial si hubo cambio de estado
@@ -211,7 +237,7 @@ async function handleSubscriptionUpdated(subscription: any) {
     await prisma.subscriptionHistory.create({
       data: {
         subscriptionId: existing.id,
-        action: SubscriptionAction.UPDATED, // Este enum no existe, lo arreglaré
+        action: SubscriptionAction.UPDATED,
         fromStatus: existing.status,
         toStatus: newStatus,
         changeReason: "Stripe subscription updated",
@@ -243,14 +269,18 @@ async function handleInvoicePaid(invoice: any) {
   console.log('[WEBHOOK] customerId:', customerId);
   console.log('[WEBHOOK] invoice metadata:', invoice.metadata);
 
-  // Primero intentar buscar por stripeSubscriptionId
-  let existing = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-  });
+  let existing = null;
 
-  // Si no existe, buscar por customerId y crear
+  // Si hay subscriptionId, buscar por stripeSubscriptionId
+  if (subscriptionId) {
+    existing = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId: subscriptionId },
+    });
+  }
+
+  // Si no existe o no hay subscriptionId, buscar por customerId
   if (!existing) {
-    console.log('[WEBHOOK] Suscripción no encontrada por stripeSubscriptionId, buscando por customerId...');
+    console.log('[WEBHOOK] Buscando suscripción por customerId...');
 
     // Buscar si hay una suscripción con ese customerId
     const customerSubscription = await prisma.subscription.findFirst({
@@ -259,12 +289,15 @@ async function handleInvoicePaid(invoice: any) {
 
     if (customerSubscription) {
       console.log('[WEBHOOK] Actualizando suscripción existente por customerId');
+      const updateData: any = {
+        status: SubscriptionStatus.ACTIVE,
+      };
+      if (invoice.period_end) {
+        updateData.currentPeriodEnd = new Date(invoice.period_end * 1000);
+      }
       await prisma.subscription.update({
         where: { id: customerSubscription.id },
-        data: {
-          status: SubscriptionStatus.ACTIVE,
-          currentPeriodEnd: new Date(invoice.period_end * 1000),
-        },
+        data: updateData,
       });
     } else {
       console.log('[WEBHOOK] No hay suscripción con ese customerId. Verificando metadata...');
@@ -272,39 +305,85 @@ async function handleInvoicePaid(invoice: any) {
       if (invoice.metadata && invoice.metadata.userId && invoice.metadata.companyId) {
         console.log('[WEBHOOK] Creando suscripción desde metadata de factura');
 
-        // Obtener detalles de la suscripción desde Stripe
-        const stripeInstance = getStripe();
-        const subscriptionResponse = await stripeInstance.subscriptions.retrieve(subscriptionId);
-        const subscription = subscriptionResponse as any;
+        // Si hay subscriptionId, obtener detalles completos desde Stripe
+        if (subscriptionId) {
+          try {
+            const stripeInstance = getStripe();
+            const subscriptionResponse = await stripeInstance.subscriptions.retrieve(subscriptionId);
+            const subscription = subscriptionResponse as any;
 
-        const hasTrial = Boolean(subscription.trial_end && subscription.trial_end > Date.now() / 1000);
+            console.log('[WEBHOOK] Suscripción recuperada de Stripe:', subscription.status);
+            console.log('[WEBHOOK] current_period_start:', subscription.current_period_start);
+            console.log('[WEBHOOK] current_period_end:', subscription.current_period_end);
 
-        await prisma.subscription.create({
-          data: {
-            companyId: invoice.metadata.companyId,
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            stripePriceId: subscription.items.data[0].price.id,
-            status: mapStripeStatus(subscription.status),
-            isTrial: hasTrial,
-            trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            const hasTrial = Boolean(subscription.trial_end && subscription.trial_end > Date.now() / 1000);
+
+            // Preparar datos con validación
+            const subscriptionData: any = {
+              companyId: invoice.metadata.companyId,
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: subscriptionId,
+              stripePriceId: subscription.items?.data?.[0]?.price?.id,
+              status: mapStripeStatus(subscription.status),
+              isTrial: hasTrial,
+            };
+
+            if (subscription.trial_end) {
+              subscriptionData.trialEndsAt = new Date(subscription.trial_end * 1000);
+            }
+            if (subscription.current_period_start) {
+              subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+            }
+            if (subscription.current_period_end) {
+              subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+            }
+
+            await prisma.subscription.create({
+              data: subscriptionData
+            });
+            console.log('[WEBHOOK] Suscripción creada desde metadata de factura');
+          } catch (stripeError) {
+            console.error('[WEBHOOK] Error obteniendo suscripción de Stripe:', stripeError);
+            // Crear suscripción básica sin datos de Stripe
+            await prisma.subscription.create({
+              data: {
+                companyId: invoice.metadata.companyId,
+                stripeCustomerId: customerId,
+                stripeSubscriptionId: subscriptionId,
+                status: SubscriptionStatus.ACTIVE,
+                isTrial: false,
+              }
+            });
+            console.log('[WEBHOOK] Suscripción básica creada (sin datos completos de Stripe)');
           }
-        });
-        console.log('[WEBHOOK] Suscripción creada desde metadata de factura');
+        } else {
+          // No hay subscriptionId, crear suscripción básica
+          console.log('[WEBHOOK] No hay subscriptionId, creando suscripción básica');
+          await prisma.subscription.create({
+            data: {
+              companyId: invoice.metadata.companyId,
+              stripeCustomerId: customerId,
+              status: SubscriptionStatus.ACTIVE,
+              isTrial: false,
+            }
+          });
+          console.log('[WEBHOOK] Suscripción básica creada');
+        }
       } else {
         console.error('[WEBHOOK] No hay metadata en la factura para crear suscripción');
       }
     }
   } else {
     console.log('[WEBHOOK] Actualizando suscripción existente');
+    const updateData: any = {
+      status: SubscriptionStatus.ACTIVE,
+    };
+    if (invoice.period_end) {
+      updateData.currentPeriodEnd = new Date(invoice.period_end * 1000);
+    }
     await prisma.subscription.update({
-      where: { stripeSubscriptionId: subscriptionId },
-      data: {
-        status: SubscriptionStatus.ACTIVE,
-        currentPeriodEnd: new Date(invoice.period_end * 1000),
-      },
+      where: { id: existing.id },
+      data: updateData,
     });
   }
 }
@@ -312,21 +391,40 @@ async function handleInvoicePaid(invoice: any) {
 // Manejar fallo de pago
 async function handleInvoicePaymentFailed(invoice: any) {
   const subscriptionId = invoice.subscription as string;
+  const customerId = invoice.customer as string;
 
-  const existing = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-  });
+  console.log('[WEBHOOK] invoice.payment_failed recibido');
+  console.log('[WEBHOOK] subscriptionId:', subscriptionId);
+  console.log('[WEBHOOK] customerId:', customerId);
+
+  let existing = null;
+
+  // Si hay subscriptionId, buscar por stripeSubscriptionId
+  if (subscriptionId) {
+    existing = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId: subscriptionId },
+    });
+  }
+
+  // Si no existe, buscar por customerId
+  if (!existing) {
+    existing = await prisma.subscription.findFirst({
+      where: { stripeCustomerId: customerId },
+    });
+  }
 
   if (!existing) {
+    console.log('[WEBHOOK] No se encontró suscripción para actualizar estado');
     return;
   }
 
   await prisma.subscription.update({
-    where: { stripeSubscriptionId: subscriptionId },
+    where: { id: existing.id },
     data: {
       status: SubscriptionStatus.PAST_DUE,
     },
   });
+  console.log('[WEBHOOK] Suscripción marcada como PAST_DUE');
 }
 
 // Mapear status de Stripe a nuestro enum
