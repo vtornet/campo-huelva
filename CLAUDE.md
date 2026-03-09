@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 1 de marzo de 2026
+**Última actualización**: 9 de marzo de 2026
 
 ## Comandos de Desarrollo
 
@@ -487,6 +487,31 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
   - `GET /api/companies/[id]` - Obtener perfil público de empresa
   - `GET /api/companies/[id]/posts` - Obtener ofertas de una empresa
   - `POST /api/upload-image` - Subir imágenes genérico
+
+### ✅ 28. Gestión de Suscripciones Premium en Admin (COMPLETADO - 09/03/2026)
+- [x] **Nueva columna "Premium"** en tabla de empresas del panel admin
+  - Muestra estado visual: "No", "Inactiva", "🧪 Prueba (Xd)", "👑 Premium"
+  - Calcula días restantes en periodo de prueba
+- [x] **Filtros por estado premium**:
+  - `👑 Premium` - Todas las suscripciones activas (incluye prueba)
+  - `💰 Pagadas` - Solo suscripciones pagadas (fuera de trial)
+  - `🧪 En Prueba` - Solo empresas en periodo de prueba
+  - `❌ Sin Premium` - Empresas sin suscripción o inactivas
+- [x] **Botones de gestión manual de suscripciones**:
+  - Para empresas sin premium: `+1m` (activar 1 mes), `+3m` (activar 3 meses), `🧪` (resetear prueba)
+  - Para empresas con premium: `+1m` (extender 1 mes), `+3m` (extender 3 meses), `❌` (revocar)
+- [x] **API endpoint `/api/admin/companies/subscription`**:
+  - `activate` - Crear/activar suscripción por X meses (sin trial)
+  - `extend` - Extender suscripción existente
+  - `revoke` - Revocar/cancelar suscripción
+  - `reset_trial` - Reiniciar periodo de prueba de 7 días
+- [x] **Historial de cambios**: Todas las acciones quedan registradas en `SubscriptionHistory` con ID del admin
+
+### ✅ 29. Fix Visualización Mis Publicaciones en Móvil (COMPLETADO - 09/03/2026)
+- [x] Corregido layout de tarjetas en "Mis Publicaciones" del perfil
+- [x] `flex-col` en móvil para que los botones vayan debajo del contenido
+- [x] `break-all` en títulos para manejar palabras largas
+- [x] Los títulos ahora ocupan el ancho normal en móvil (antes mostraban 1-2 letras por línea)
 
 ---
 
