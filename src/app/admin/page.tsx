@@ -592,7 +592,34 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
   const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved">("all");
+  const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved" | "premium" | "paid" | "trial" | "inactive">("all");
+
+  // Función auxiliar para determinar el estado premium de una empresa
+  const getPremiumStatus = (company: any) => {
+    const sub = company.subscription;
+    if (!sub) {
+      return { label: "No", color: "bg-slate-600", isActive: false };
+    }
+
+    const now = new Date();
+    const isActive = sub.status === "ACTIVE" || sub.status === "TRIALING";
+    const isTrial = sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > now;
+
+    if (!isActive) {
+      return { label: "Inactiva", color: "bg-red-600", isActive: false };
+    }
+
+    if (isTrial) {
+      const daysLeft = Math.ceil((new Date(sub.trialEndsAt!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        label: `🧪 Prueba (${daysLeft}d)`,
+        color: "bg-amber-600",
+        isActive: true
+      };
+    }
+
+    return { label: "👑 Premium", color: "bg-emerald-600", isActive: true };
+  };
 
   useEffect(() => {
     loadCompanies();
@@ -675,6 +702,61 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     }
   };
 
+  const handleSubscriptionAction = async (companyId: string, action: string, months?: number) => {
+    const actionMessages: Record<string, { title: string; message: string }> = {
+      activate: {
+        title: "Activar Premium",
+        message: `¿Activar suscripción premium por ${months || 1} mes(es)? La empresa podrá acceder a todas las funciones premium.`
+      },
+      revoke: {
+        title: "Revocar Premium",
+        message: "¿Revocar la suscripción premium? La empresa perderá acceso a las funciones premium."
+      },
+      extend: {
+        title: "Extender Suscripción",
+        message: `¿Extender la suscripción ${months || 1} mes(es)?`
+      },
+      reset_trial: {
+        title: "Resetear Prueba",
+        message: "¿Reiniciar el periodo de prueba de 7 días?"
+      }
+    };
+
+    const confirmMsg = actionMessages[action];
+    if (!confirmMsg) return;
+
+    const confirmed = await confirmDialog({
+      title: confirmMsg.title,
+      message: confirmMsg.message,
+      type: action === "revoke" ? "danger" : "warning",
+    });
+    if (!confirmed) return;
+
+    const res = await fetch("/api/admin/companies/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId, action, months, userId: adminId }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      loadCompanies();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Acción completada",
+        message: data.message || "La acción se ha realizado correctamente.",
+      });
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error al realizar la acción",
+        message: errorData.error || "Inténtalo de nuevo más tarde.",
+      });
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -685,6 +767,10 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
           <FilterButton active={filter === "unverified"} onClick={() => setFilter("unverified")}>Sin Verificar</FilterButton>
           <FilterButton active={filter === "approved"} onClick={() => setFilter("approved")}>Aprobadas</FilterButton>
           <FilterButton active={filter === "unapproved"} onClick={() => setFilter("unapproved")}>Por Aprobar</FilterButton>
+          <FilterButton active={filter === "premium"} onClick={() => setFilter("premium")}>👑 Premium</FilterButton>
+          <FilterButton active={filter === "paid"} onClick={() => setFilter("paid")}>💰 Pagadas</FilterButton>
+          <FilterButton active={filter === "trial"} onClick={() => setFilter("trial")}>🧪 En Prueba</FilterButton>
+          <FilterButton active={filter === "inactive"} onClick={() => setFilter("inactive")}>❌ Sin Premium</FilterButton>
         </div>
       </div>
 
@@ -700,6 +786,7 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                 <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
                 <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">CIF</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Ubicación</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Premium</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Verificación</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Aprobación</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
@@ -716,6 +803,16 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                   </td>
                   <td className="px-4 py-3 font-mono text-sm hidden md:table-cell">{c.cif}</td>
                   <td className="px-4 py-3 text-sm">{c.city ? `${c.city}, ${c.province}` : c.province || "-"}</td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const premium = getPremiumStatus(c);
+                      return (
+                        <span className={`${premium.color} px-2 py-1 rounded text-xs inline-flex items-center gap-1`}>
+                          {premium.label}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3">
                     {c.isVerified ? (
                       <span className="bg-emerald-600 px-2 py-1 rounded text-xs inline-flex items-center gap-1">
@@ -750,6 +847,55 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                           )}
                         </>
                       )}
+                      {/* Botones de gestión de suscripción premium */}
+                      <div className="border-l border-slate-600 pl-2 flex gap-1">
+                        {(() => {
+                          const premium = getPremiumStatus(c);
+                          if (!premium.isActive) {
+                            // Sin suscripción activa: botones para activar
+                            return (
+                              <>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                  title="Activar 1 mes"
+                                >+1m</button>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "activate", 3)}
+                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                  title="Activar 3 meses"
+                                >+3m</button>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "reset_trial")}
+                                  className="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-xs"
+                                  title="Resetear periodo de prueba"
+                                >🧪</button>
+                              </>
+                            );
+                          } else {
+                            // Con suscripción activa: botones para extender o revocar
+                            return (
+                              <>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "extend", 1)}
+                                  className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
+                                  title="Extender 1 mes"
+                                >+1m</button>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "extend", 3)}
+                                  className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
+                                  title="Extender 3 meses"
+                                >+3m</button>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "revoke")}
+                                  className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                  title="Revocar premium"
+                                >❌</button>
+                              </>
+                            );
+                          }
+                        })()}
+                      </div>
                     </div>
                   </td>
                 </tr>

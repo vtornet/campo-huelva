@@ -24,6 +24,32 @@ export async function GET(request: Request) {
       where.isVerified = true;
       where.isApproved = false;
     }
+    // Filtros por estado premium
+    else if (filter === "premium") {
+      // Empresas con suscripción activa (incluye trial)
+      where.subscription = {
+        status: { in: ["ACTIVE", "TRIALING"] }
+      };
+    } else if (filter === "paid") {
+      // Empresas con suscripción pagada (fuera de trial)
+      where.subscription = {
+        status: "ACTIVE",
+        isTrial: false
+      };
+    } else if (filter === "trial") {
+      // Empresas en periodo de prueba
+      where.subscription = {
+        status: { in: ["ACTIVE", "TRIALING"] },
+        isTrial: true,
+        trialEndsAt: { gt: new Date() }
+      };
+    } else if (filter === "inactive") {
+      // Empresas sin suscripción o con suscripción inactiva
+      where.OR = [
+        { subscription: null },
+        { subscription: { status: { notIn: ["ACTIVE", "TRIALING"] } } }
+      ];
+    }
 
     const companies = await prisma.companyProfile.findMany({
       where,
@@ -37,6 +63,7 @@ export async function GET(request: Request) {
             isSilenced: true,
           }
         },
+        subscription: true,
       },
       orderBy: { id: "desc" },
     });
