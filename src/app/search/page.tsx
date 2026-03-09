@@ -60,6 +60,7 @@ export default function SearchPage() {
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPremiumBlock, setShowPremiumBlock] = useState(false);
 
   // Verificar autenticación
   useEffect(() => {
@@ -210,13 +211,16 @@ export default function SearchPage() {
       if (response.ok) {
         const data = await response.json();
         setResults(data.candidates || []);
+        setShowPremiumBlock(false);
       } else {
-        // Si es un error 403 (requiresPremium), mostrar mensaje
+        // Si es un error 403 (requiresPremium), mostrar bloqueo premium
         if (response.status === 403) {
           const errorData = await response.json();
           console.error("[SEARCH ERROR]", errorData);
+          setShowPremiumBlock(true);
+        } else {
+          setResults([]);
         }
-        setResults([]);
       }
     } catch (error) {
       console.error("Error searching:", error);
@@ -305,7 +309,73 @@ export default function SearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {!selectedCategory ? (
+        {/* Bloqueo Premium para empresas sin suscripción pagada */}
+        {showPremiumBlock && (
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              Buscador Premium
+            </h1>
+            <p className="text-slate-600 mb-6">
+              El acceso al buscador de candidatos está disponible tras finalizar tu periodo de prueba de 7 días y suscribirte a Premium.
+            </p>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-6 text-left border border-yellow-200">
+              <h3 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                Beneficios Premium
+              </h3>
+              <ul className="text-sm text-yellow-800 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-600 mt-0.5">✓</span>
+                  <span>Buscador avanzado de candidatos con filtros</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-600 mt-0.5">✓</span>
+                  <span>Ver perfiles completos con datos de contacto</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-600 mt-0.5">✓</span>
+                  <span>Publicación de ofertas ilimitadas</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-600 mt-0.5">✓</span>
+                  <span>Badge "Empresa Premium" en tu perfil</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/premium')}
+                className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold py-3 px-6 rounded-xl transition"
+              >
+                Suscribirme a Premium - 99€/mes
+              </button>
+              <button
+                onClick={() => {
+                  setShowPremiumBlock(false);
+                  setSelectedCategory(null);
+                }}
+                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-3 px-6 rounded-xl transition"
+              >
+                Volver
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 mt-4">
+              7 días de prueba gratis • Cancela cuando quieras
+            </p>
+          </div>
+        )}
+
+        {!showPremiumBlock && !selectedCategory ? (
           /* Selector de categoría */
           <div>
             <h2 className="text-2xl font-bold text-slate-800 mb-6">¿Qué tipo de profesional buscas?</h2>
@@ -931,6 +1001,7 @@ export default function SearchPage() {
               )}
             </div>
           </div>
+        )}
         )}
       </main>
 
