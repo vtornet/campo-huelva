@@ -1002,7 +1002,6 @@ export default function SearchPage() {
             </div>
           </div>
         )}
-        )}
       </main>
 
       {/* Modal de perfil completo */}
