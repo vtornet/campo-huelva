@@ -69,6 +69,18 @@ export async function GET(request: Request) {
       subscription.trialEndsAt &&
       new Date(subscription.trialEndsAt) > new Date();
 
+    // Debug logs
+    console.log('[SUBSCRIPTION STATUS] userId:', userId);
+    console.log('[SUBSCRIPTION STATUS] subscription:', subscription ? {
+      id: subscription.id,
+      status: subscription.status,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      trialEndsAt: subscription.trialEndsAt
+    } : 'NO SUBSCRIPTION');
+    console.log('[SUBSCRIPTION STATUS] isActive:', isActive);
+    console.log('[SUBSCRIPTION STATUS] isTrial:', isTrial);
+    console.log('[SUBSCRIPTION STATUS] isPremium:', isActive || false);
+
     return NextResponse.json({
       isPremium: isActive || false,
       isTrial: isTrial || false,

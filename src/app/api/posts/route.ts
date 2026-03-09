@@ -270,7 +270,13 @@ export async function POST(request: Request) {
       }
 
       // Verificar si tiene suscripción Premium activa
+      console.log('[POST CREATE] Verificando premium para userId:', user.id);
+      console.log('[POST CREATE] user.companyProfile:', user.companyProfile ? {
+        id: user.companyProfile.id,
+        isApproved: user.companyProfile.isApproved
+      } : 'NO COMPANY PROFILE');
       const hasPremium = await hasActivePremiumSubscription(user.id);
+      console.log('[POST CREATE] hasPremium:', hasPremium);
       if (!hasPremium) {
         return NextResponse.json({
           error: "PREMIUM_REQUIRED",

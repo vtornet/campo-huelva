@@ -11,6 +11,8 @@ export async function hasActivePremiumSubscription(
   userId: string
 ): Promise<boolean> {
   try {
+    console.log('[hasActivePremiumSubscription] Checking userId:', userId);
+
     // Obtener el usuario con su perfil de empresa y suscripción
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -23,16 +25,29 @@ export async function hasActivePremiumSubscription(
       },
     });
 
+    console.log('[hasActivePremiumSubscription] user found:', !!user);
+    console.log('[hasActivePremiumSubscription] user.role:', user?.role);
+    console.log('[hasActivePremiumSubscription] companyProfile:', !!user?.companyProfile);
+
     // Verificar que sea empresa
     if (!user || user.role !== Role.COMPANY || !user.companyProfile) {
+      console.log('[hasActivePremiumSubscription] Not a company or no profile');
       return false;
     }
 
     // Verificar si tiene suscripción
     const subscription = user.companyProfile.subscription;
     if (!subscription) {
+      console.log('[hasActivePremiumSubscription] No subscription found');
       return false;
     }
+
+    console.log('[hasActivePremiumSubscription] subscription:', {
+      id: subscription.id,
+      status: subscription.status,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      trialEndsAt: subscription.trialEndsAt,
+    });
 
     // Verificar si la suscripción está activa
     const isActive =
@@ -40,6 +55,10 @@ export async function hasActivePremiumSubscription(
         subscription.status === "TRIALING") &&
       (!subscription.currentPeriodEnd ||
         new Date(subscription.currentPeriodEnd) > new Date());
+
+    console.log('[hasActivePremiumSubscription] isActive:', isActive);
+    console.log('[hasActivePremiumSubscription] status check:', subscription.status === "ACTIVE" || subscription.status === "TRIALING");
+    console.log('[hasActivePremiumSubscription] period check:', !subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > new Date());
 
     return isActive;
   } catch (error) {

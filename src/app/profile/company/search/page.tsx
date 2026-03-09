@@ -157,9 +157,11 @@ export default function ProfileSearchPage() {
           // Verificar suscripción Premium
           const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
           const subData = await subRes.json();
+          console.log('[SEARCH DEBUG] subData:', subData);
+          console.log('[SEARCH DEBUG] isPremium:', !!subData.isPremium);
           setIsPremium(!!subData.isPremium);
         } catch (err) {
-          console.error("Error checking premium:", err);
+          console.error("[SEARCH DEBUG] Error checking premium:", err);
           setIsPremium(false);
         } finally {
           setCheckingPremium(false);

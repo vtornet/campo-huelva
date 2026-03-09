@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api-client";
 import { PROVINCIAS, CULTIVOS, EXPERIENCIAS_TRABAJADOR, ESPECIALIDADES_MANIJERO, NIVELES_FITOSANITARIO, RANGOS_CUADRILLA, RANGOS_EXPERIENCIA, TIPOS_MAQUINARIA, TIPOS_APEROS, EXPERIENCIAS_ENCARGADO, MUNICIPIOS_POR_PROVINCIA, EXPERIENCIA_ALMACEN, EXPERIENCIA_ALMACEN_ENCARGADO, HERRAMIENTAS_MANUALES } from "@/lib/constants";
 import { AddContactButton } from "@/components/AddContactButton";
 
@@ -205,11 +206,16 @@ export default function SearchPage() {
         if (filters.servicesOffered?.length) params.append("servicesOffered", filters.servicesOffered.join(","));
       }
 
-      const response = await fetch(`/api/search/candidates?${params.toString()}`);
+      const response = await apiFetch(`/api/search/candidates?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setResults(data.candidates || []);
       } else {
+        // Si es un error 403 (requiresPremium), mostrar mensaje
+        if (response.status === 403) {
+          const errorData = await response.json();
+          console.error("[SEARCH ERROR]", errorData);
+        }
         setResults([]);
       }
     } catch (error) {

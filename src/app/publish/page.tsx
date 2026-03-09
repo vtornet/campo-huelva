@@ -253,7 +253,8 @@ function PublishForm() {
   }
 
   // Mostrar bloqueo Premium para empresas sin suscripción (solo para nuevas ofertas OFICIAL)
-  if (showPremiumBlock || (userRole === 'COMPANY' && !isEditMode && isPremium === false && postType === 'OFFER')) {
+  // Solo mostrar si YA hemos terminado de verificar (isPremium no es null)
+  if (showPremiumBlock || (userRole === 'COMPANY' && !isEditMode && isPremium === false && postType === 'OFFER' && !checkingAuth)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
