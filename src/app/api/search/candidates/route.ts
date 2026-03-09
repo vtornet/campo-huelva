@@ -13,30 +13,36 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Categoría no especificada" }, { status: 400 });
   }
 
-  // Verificar autenticación
-  const authResult = await authenticateRequest(request);
+  // Verificar autenticación (si falla, se permite búsqueda sin premium)
+  let userId: string | null = null;
+  try {
+    userId = await authenticateRequest(request);
+    console.log('[SEARCH CANDIDATES] Usuario autenticado:', userId);
 
-  // Si está autenticado, verificar si es empresa con suscripción premium
-  const authResultAny = authResult as any;
-  if (!authResultAny.error && authResultAny.uid) {
-    const userId = authResultAny.uid;
+    // Si está autenticado, verificar si es empresa con suscripción premium
+    if (userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
+      // Si es empresa, verificar que tenga suscripción premium
+      if (user?.role === Role.COMPANY) {
+        const hasPremium = await hasActivePremiumSubscription(userId);
 
-    // Si es empresa, verificar que tenga suscripción premium
-    if (user?.role === Role.COMPANY) {
-      const hasPremium = await hasActivePremiumSubscription(userId);
-
-      if (!hasPremium) {
-        return NextResponse.json({
-          error: "El acceso al buscador de candidatos requiere una suscripción Premium",
-          requiresPremium: true,
-        }, { status: 403 });
+        if (!hasPremium) {
+          return NextResponse.json({
+            error: "El acceso al buscador de candidatos requiere una suscripción Premium",
+            requiresPremium: true,
+          }, { status: 403 });
+        }
+        console.log('[SEARCH CANDIDATES] Empresa premium verificada');
       }
     }
+  } catch (authError) {
+    // Si falla la autenticación, continuar sin verificar premium
+    // (se permite búsqueda para usuarios no autenticados o con token inválido)
+    console.log('[SEARCH CANDIDATES] Autenticación fallida o no proporcionada, continuando sin verificación premium');
   }
 
   try {
