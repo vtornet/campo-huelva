@@ -96,13 +96,18 @@ export default function LoginPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Enviar email de verificación
-      await sendEmailVerification(userCredential.user, {
-        url: `${window.location.origin}/verify-email`,
-        handleCodeInApp: true,
-      });
+      // Intentar enviar email de verificación (no fallar el registro si hay error)
+      try {
+        await sendEmailVerification(userCredential.user, {
+          url: `${window.location.origin}/verify-email`,
+          handleCodeInApp: true,
+        });
+      } catch (emailError: any) {
+        console.warn("No se pudo enviar email de verificación:", emailError?.code);
+        // No fallamos el registro por esto, el usuario puede reenviar después
+      }
 
-      // Redirigir a página de verificación
+      // Redirigir a página de verificación siempre
       router.push("/verify-email");
     } catch (err: any) {
       if (err.code === "auth/email-already-in-use") {
@@ -111,6 +116,8 @@ export default function LoginPage() {
         setError("Email inválido");
       } else if (err.code === "auth/weak-password") {
         setError("La contraseña es demasiado débil");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Demasiados intentos. Espera unos minutos antes de volver a intentar.");
       } else {
         setError("Error al registrar usuario");
       }

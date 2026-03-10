@@ -20,9 +20,15 @@ export default function EmailVerificationBanner() {
     try {
       await sendVerificationEmail();
       alert("Email de verificación enviado. Revisa tu bandeja de entrada.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al enviar email:", error);
-      alert("Error al enviar el email. Inténtalo de nuevo.");
+
+      // Manejo específico de errores comunes
+      if (error?.code === "auth/too-many-requests") {
+        alert("Has realizado demasiadas solicitudes. Espera unos minutos antes de reenviar.");
+      } else {
+        alert("Error al enviar el email. Inténtalo de nuevo más tarde.");
+      }
     } finally {
       setLoading(false);
     }

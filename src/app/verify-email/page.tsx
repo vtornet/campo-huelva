@@ -31,7 +31,13 @@ export default function VerifyEmailPage() {
       setMessageType("success");
     } catch (error: any) {
       console.error("Error al enviar email:", error);
-      setMessage("Error al enviar el email. Inténtalo de nuevo.");
+
+      // Manejo específico de errores comunes
+      if (error?.code === "auth/too-many-requests") {
+        setMessage("Has realizado demasiadas solicitudes. Espera unos minutos antes de reenviar.");
+      } else {
+        setMessage("Error al enviar el email. Inténtalo de nuevo más tarde.");
+      }
       setMessageType("error");
     } finally {
       setLoading(false);
