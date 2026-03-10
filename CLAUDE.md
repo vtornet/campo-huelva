@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 9 de marzo de 2026
+**Última actualización**: 10 de marzo de 2026
 
 ## Comandos de Desarrollo
 
@@ -700,14 +700,34 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Estado: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
 - [ ] **Nota**: Actualmente la verificación de empresas es manual por admin.
 
-#### 2. Sistema de Validación de Email
+#### 2. Sistema de Validación de Email (EN PROGRESO - 10/03/2026)
 > **Confirmar que los emails son reales y pertenecen al usuario**
 
-- [ ] Envío de email de verificación al registro
-- [ ] Límite de tiempo para verificar (24-48h)
-- [ ] Bloquear funcionalidades hasta verificar email (publicar ofertas, contactar, etc.)
-- [ ] Reenviar email de verificación
-- [ ] Usar Firebase Auth Email Verification
+**Estado**: Primer intento implementado. Pendiente de testing en producción (deploys pausados en Railway).
+
+- [x] Envío de email de verificación al registro
+- [x] Página `/verify-email` con instrucciones y botón de reenvío
+- [x] Banner recordatorio para usuarios no verificados (`EmailVerificationBanner`)
+- [x] Restricciones en funcionalidades clave:
+  - [x] Publicar ofertas/demandas (`/publish`)
+  - [x] Ver candidatos inscritos (`/applications`)
+  - [x] Inscribirse en ofertas
+  - [x] Contactar usuarios
+  - [x] Añadir contactos
+- [x] Auto-recarga de usuario cada 30s para detectar verificación
+- [x] Manejo de error `auth/too-many-requests` gracefully
+- [ ] **PENDIENTE**: Límite de tiempo para verificar (24-48h)
+- [ ] **PENDIENTE**: Testing completo en producción
+
+**Archivos clave**:
+- `src/app/verify-email/page.tsx` - Página de verificación
+- `src/components/EmailVerificationBanner.tsx` - Banner recordatorio
+- `src/components/RequireEmailVerification.tsx` - Componente para restringir funcionalidades
+- `src/context/AuthContext.tsx` - Funciones `sendVerificationEmail()` y `reloadUser()`
+
+**Comits relevantes**:
+- `4ecc955` - Primer intento de verificación de email (WIP)
+- `56e68c5` - Manejar error auth/too-many-requests
 
 #### 3. Recuperación de Contraseña
 > **Permitir a usuarios recuperar acceso a su cuenta**
