@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -94,8 +94,16 @@ export default function LoginPage() {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Enviar email de verificación
+      await sendEmailVerification(userCredential.user, {
+        url: `${window.location.origin}/verify-email`,
+        handleCodeInApp: true,
+      });
+
+      // Redirigir a página de verificación
+      router.push("/verify-email");
     } catch (err: any) {
       if (err.code === "auth/email-already-in-use") {
         setError("Este email ya está registrado");

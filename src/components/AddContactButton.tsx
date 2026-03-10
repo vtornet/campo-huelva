@@ -47,14 +47,24 @@ export function AddContactButton({
   }, [user, propUserRole]);
 
   const handleAddContact = async () => {
+    if (!user) return;
+
+    // Verificar email antes de permitir añadir contactos
+    if (!user.emailVerified) {
+      showNotification({
+        type: "warning",
+        title: "Email no verificado",
+        message: "Debes verificar tu email para añadir contactos.",
+      });
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Añadir como contacto",
       message: "Esta persona recibirá una notificación y podrá ver tu perfil. ¿Deseas continuar?"
     });
 
     if (!confirmed) return;
-
-    if (!user) return;
 
     setLoading(true);
     try {

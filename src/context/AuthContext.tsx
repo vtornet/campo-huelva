@@ -1,7 +1,7 @@
 "use client"; // Esto es obligatorio porque usamos hooks de React
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User, sendEmailVerification, reload } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 // Definimos qué datos vamos a compartir
@@ -9,15 +9,40 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error?: string;
+  sendVerificationEmail: () => Promise<void>;
+  reloadUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  sendVerificationEmail: async () => {},
+  reloadUser: async () => {}
+});
 
 // El componente que envolverá a toda la app
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
+
+  // Función para enviar email de verificación
+  const sendVerificationEmail = async () => {
+    if (!auth?.currentUser) {
+      throw new Error("No hay usuario autenticado");
+    }
+    await sendEmailVerification(auth.currentUser, {
+      url: `${window.location.origin}/verify-email`,
+      handleCodeInApp: true,
+    });
+  };
+
+  // Función para recargar el usuario (actualizar emailVerified)
+  const reloadUser = async () => {
+    if (!auth?.currentUser) return;
+    await reload(auth.currentUser);
+    setUser(auth.currentUser);
+  };
 
   useEffect(() => {
     // Verificar que auth esté inicializado
@@ -58,6 +83,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Recargar usuario automáticamente cada 30s si no ha verificado email
+  useEffect(() => {
+    if (!user || user.emailVerified) return;
+
+    const interval = setInterval(async () => {
+      if (auth.currentUser) {
+        await reload(auth.currentUser);
+        setUser(auth.currentUser);
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Mientras carga, mostramos un spinner. Cuando termina, mostramos los hijos.
   // Importante: SIEMPRE renderizamos algo, nunca dejamos la pantalla en blanco.
   if (loading) {
@@ -72,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error }}>
+    <AuthContext.Provider value={{ user, loading, error, sendVerificationEmail, reloadUser }}>
       {children}
     </AuthContext.Provider>
   );

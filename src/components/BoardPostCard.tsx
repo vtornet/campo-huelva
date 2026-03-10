@@ -320,6 +320,17 @@ export default function BoardPostCard({ post, onUpdate, onDelete }: BoardPostCar
       return;
     }
 
+    // Verificar email antes de permitir contactar
+    if (!user.emailVerified) {
+      showNotification({
+        type: 'warning',
+        title: 'Email no verificado',
+        message: 'Debes verificar tu email para contactar con otros usuarios.',
+      });
+      router.push('/verify-email');
+      return;
+    }
+
     if (isOwner) {
       showNotification({
         type: 'warning',

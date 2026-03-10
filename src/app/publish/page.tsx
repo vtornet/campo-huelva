@@ -33,6 +33,12 @@ function PublishForm() {
     return null;
   }
 
+  // Verificar email antes de permitir publicar
+  if (!user.emailVerified) {
+    router.push("/verify-email");
+    return null;
+  }
+
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
   const [postType, setPostType] = useState<'DEMAND' | 'OFFER' | null>(null);

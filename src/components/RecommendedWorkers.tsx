@@ -87,6 +87,13 @@ export default function RecommendedWorkers({ postId, companyId }: RecommendedWor
       return;
     }
 
+    // Verificar email antes de permitir contactar
+    if (!user.emailVerified) {
+      alert('Debes verificar tu email para contactar con otros usuarios.');
+      router.push('/verify-email');
+      return;
+    }
+
     if (worker.id === user.uid) {
       return;
     }

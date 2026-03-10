@@ -141,6 +141,17 @@ export default function OfferDetailPage() {
       return;
     }
 
+    // Verificar email antes de permitir inscribirse
+    if (!user.emailVerified) {
+      showNotification({
+        type: 'warning',
+        title: 'Email no verificado',
+        message: 'Debes verificar tu email para inscribirte en ofertas.',
+      });
+      router.push('/verify-email');
+      return;
+    }
+
     // Las empresas no se inscriben
     if (isCompany) {
       showNotification({
@@ -240,6 +251,17 @@ export default function OfferDetailPage() {
   const handleContact = async () => {
     if (!user) {
       router.push('/login');
+      return;
+    }
+
+    // Verificar email antes de permitir contactar
+    if (!user.emailVerified) {
+      showNotification({
+        type: 'warning',
+        title: 'Email no verificado',
+        message: 'Debes verificar tu email para contactar con otros usuarios.',
+      });
+      router.push('/verify-email');
       return;
     }
 

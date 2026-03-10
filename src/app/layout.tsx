@@ -11,6 +11,7 @@ import { PushNotificationManager } from "@/components/PushNotificationManager";
 import Footer from "@/components/Footer";
 import { CookieBannerWrapper } from "@/components/CookieBannerWrapper";
 import { CookieSettings } from "@/components/CookieSettings";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -144,6 +145,7 @@ export default function RootLayout({
         <AuthProvider>
           <CookieProvider>
             <NotificationsProvider>
+              <EmailVerificationBanner />
               <div className="flex flex-col min-h-screen">
                 {children}
                 <Footer />
