@@ -702,13 +702,38 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 ### 🔵 DIFERIDOS (Post-Beta)
 
-#### 1. Verificación Automática de Empresas con AEAT
+#### 1. ✅ Verificación Automática de Empresas con AEAT (IMPLEMENTADA - 11/03/2026)
 > **Validar empresas usando el CIF a través de la API de AEAT**
 
-- [ ] Integración con API de AEAT usando certificado electrónico
-- [ ] Obtención automática de: razón social, dirección, localidad, provincia, situación
-- [ ] Estado: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
-- [ ] **Nota**: Actualmente la verificación de empresas es manual por admin.
+- [x] Integración con API de AEAT usando certificado electrónico (SOAP)
+- [x] Obtención automática de: razón social, dirección, localidad, provincia, código postal, situación
+- [x] **Componente `CompanyVerification`** en formulario de empresa
+- [x] **Endpoint `/api/companies/verify`** para verificar empresas
+- [x] Fallback a validación local (algoritmo CIF/NIF/NIE) si AEAT no está disponible
+- [x] Autocompletado de datos del formulario cuando AEAT responde correctamente
+- [x] Rate limiting (20 verificaciones por minuto)
+- [x] Modelo de datos en Prisma con campos de verificación AEAT
+
+**Cómo funciona:**
+1. Usuario introduce CIF en formulario de empresa (`/profile/company`)
+2. Botón "Verificar con AEAT" llama al endpoint
+3. Si hay credenciales configuradas (`AEAT_CERT_PEM`, `AEAT_KEY_PEM`), hace petición SOAP a AEAT
+4. Si AEAT responde con datos, autocompleta formulario y marca como verificado
+5. Si AEAT no está configurado o falla, hace fallback a validación local
+
+**Variables de entorno requeridas (opcionales - si no están, usa validación local):**
+```
+AEAT_CERT_PEM="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"
+AEAT_KEY_PEM="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+**Archivos clave:**
+- `src/lib/aeat-service.ts` - Servicio de comunicación con AEAT
+- `src/components/CompanyVerification.tsx` - Componente de verificación
+- `src/app/api/companies/verify/route.ts` - Endpoint API
+- `src/app/profile/company/page.tsx` - Integración en formulario
+
+**Estado actual**: Funcional con validación local. Para usar verificación AEAT real, hay que configurar las credenciales del certificado digital en Railway (`AEAT_CERT_PEM` y `AEAT_KEY_PEM`).
 
 #### 2. ✅ Recuperación de Contraseña (COMPLETADO - 11/03/2026)
 > **Permitir a usuarios recuperar acceso a su cuenta**
@@ -741,10 +766,56 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Algoritmo de compatibilidad candidato-oferta
 - [ ] Recomendaciones basadas en historial
 
-#### 5. Modelo de Monetización
-- [ ] Pagos para empresas por publicación de ofertas
-- [ ] Suscripción mensual/anual
-- [ ] Acceso a BBDD de candidatos
+#### 5. ✅ Modelo de Monetización (COMPLETADO - 11/03/2026)
+> **Sistema de suscripciones premium para empresas con Stripe**
+
+- [x] **Pagos con Stripe**: Integración completa con Stripe Checkout
+- [x] **Suscripción mensual**: 99€/mes para empresas
+- [x] **Opción anual**: 999€/año (2 meses gratis)
+- [x] **Periodo de prueba**: 7 días gratis sin compromiso
+- [x] **Webhook de Stripe**: Sincronización automática de pagos
+- [x] **Portal de gestión**: Las empresas pueden gestionar su suscripción
+- [x] **Modelo de datos completo**: Tablas `Subscription` y `SubscriptionHistory` en Prisma
+- [x] **Beneficios Premium**:
+  - Publicación de ofertas ilimitadas
+  - Acceso completo al buscador de candidatos
+  - Badge "Empresa Premium" en el perfil
+  - Prioridad en resultados de búsqueda
+  - Soporte prioritario
+
+**Cómo funciona:**
+1. Empresa accede a `/premium` y ve el pricing
+2. Al pulsar "Comenzar prueba gratis", se redirige a Stripe Checkout
+3. Stripe procesa el pago y envía webhook a la app
+4. El webhook activa la suscripción en la base de datos
+5. La empresa puede gestionar su suscripción desde el portal de Stripe
+
+**Variables de entorno requeridas:**
+```
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PREMIUM_PRICE_ID=price_...
+```
+
+**Archivos clave:**
+- `src/lib/stripe.ts` - Cliente de Stripe y funciones helper
+- `src/app/api/webhooks/stripe/route.ts` - Webhook para sincronizar pagos
+- `src/app/api/stripe/create-checkout/route.ts` - Crear sesión de checkout
+- `src/app/api/subscription/portal/route.ts` - Portal de gestión
+- `src/app/premium/page.tsx` - Página de ventas de premium
+- `src/app/api/subscription/status/route.ts` - Consultar estado de suscripción
+
+**Estados de suscripción:**
+- `ACTIVE` - Suscripción activa pagada
+- `TRIALING` - En periodo de prueba
+- `PAST_DUE` - Pago pendiente
+- `CANCELED` - Cancelada
+- `INCOMPLETE` - Incompleta (fallo en pago inicial)
+- `PAUSED` - Pausada
+
+**Gestión manual desde admin:**
+- Panel admin puede activar/extender/revocar suscripciones manualmente
+- Histórico de todos los cambios en `SubscriptionHistory`
 
 #### 6. Video Llamadas Integradas
 - [ ] Videollamadas dentro de la plataforma
@@ -772,6 +843,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Iconos profesionales actualizados
 - ✅ **Sistema de Validación de Email con Resend**
 - ✅ **Recuperación de Contraseña con Resend**
+- ✅ **Modelo de Monetización con Stripe** (suscripciones premium)
 
 ## Funcionalidades Ya Implementadas
 
@@ -849,7 +921,6 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 ## En Revisión / Pendientes Estratégicos
 
-- **Modelo de Monetización**: Empresas de pago por publicación de ofertas y acceso a BBDD.
 - **Sistema de Reputación/Valoraciones**: Valoraciones mutuas post-contratación.
 - **Matchmaking Inteligente**: Sugerir perfiles a empresas basándose en filtros y experiencia.
 - **Alertas Personalizadas**: Notificaciones push para nuevos empleos que coincidan con el perfil.
