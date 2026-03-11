@@ -710,14 +710,25 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Estado: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
 - [ ] **Nota**: Actualmente la verificación de empresas es manual por admin.
 
-#### 2. Recuperación de Contraseña (PENDIENTE)
+#### 2. ✅ Recuperación de Contraseña (COMPLETADO - 11/03/2026)
 > **Permitir a usuarios recuperar acceso a su cuenta**
 
-- [ ] Flujo de recuperación por email (Firebase Password Reset)
-- [ ] Página `/reset-password` para introducir nueva contraseña
-- [ ] Validación de nueva contraseña (longitud, complejidad)
-- [ ] Confirmación de contraseña
-- [ ] Email de notificación cuando se cambia la contraseña
+- [x] Flujo de recuperación por email (Firebase Password Reset)
+- [x] Página `/forgot-password` para solicitar recuperación
+- [x] Página `/reset-password` para introducir nueva contraseña
+- [x] Validación de nueva contraseña (mínimo 6 caracteres)
+- [x] Confirmación de contraseña
+- [x] Email enviado con Resend (template HTML personalizado)
+- [x] Rate limiting (5 solicitudes por hora)
+- [x] Enlace "¿Olvidaste tu contraseña?" en login
+- [x] Verificación de código oobCode de Firebase
+- [x] Redirección automática al login tras restablecer
+
+**Archivos clave**:
+- `src/app/api/auth/reset-password/send/route.ts` - Endpoint para enviar email
+- `src/app/forgot-password/page.tsx` - Página de solicitud
+- `src/app/reset-password/page.tsx` - Página de restablecimiento
+- `src/app/login/page.tsx` - Enlace añadido al formulario
 
 #### 3. Sistema de Reputación/Valoraciones
 - [ ] Valoraciones mutuas post-contratación
@@ -758,6 +769,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Carnet de carretillero en perfil y buscador
 - ✅ Iconos profesionales actualizados
 - ✅ **Sistema de Validación de Email con Resend**
+- ✅ **Recuperación de Contraseña con Resend**
 
 ## Funcionalidades Ya Implementadas
 
@@ -765,6 +777,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - Registro con Firebase (email/contraseña y Google)
 - Onboarding con selección de rol
 - **Verificación de email con Resend** (envío fiable desde servidor)
+- **Recuperación de contraseña con Resend** (flujo completo)
 - Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa, encargado, tractorista)
 - Verificación manual de empresas (etiqueta "Empresa Verificada")
 - Sistema de roles y permisos
