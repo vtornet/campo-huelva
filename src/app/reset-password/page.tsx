@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { verifyPasswordResetCode, confirmPasswordReset } from "firebase/auth";
@@ -18,9 +18,15 @@ export default function ResetPasswordPage() {
   const [messageType, setMessageType] = useState<"success" | "error">("success");
   const [codeValid, setCodeValid] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   // Verificar el código al cargar la página
   useEffect(() => {
+    // No verificar si ya cambiamos la contraseña o si estamos en proceso de cambio
+    if (passwordChanged) {
+      return;
+    }
+
     if (!oobCode) {
       setCodeValid(false);
       setMessage("Enlace inválido o expirado.");
@@ -48,7 +54,7 @@ export default function ResetPasswordPage() {
     };
 
     verifyCode();
-  }, [oobCode]);
+  }, [oobCode, passwordChanged]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,13 +77,15 @@ export default function ResetPasswordPage() {
 
     try {
       await confirmPasswordReset(auth, oobCode!, password);
-      setMessage("✅ Contraseña restablecida correctamente. Redirigiendo...");
+
+      // Marcar como cambiado para evitar re-verificar el código
+      setPasswordChanged(true);
+
+      setMessage("✅ Contraseña restablecida correctamente.");
       setMessageType("success");
 
-      // Redirigir al login después de 2 segundos
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+      // Redirigir inmediatamente al login
+      router.push("/login");
     } catch (error: any) {
       console.error("Error al restablecer contraseña:", error);
       setMessage(
@@ -92,6 +100,35 @@ export default function ResetPasswordPage() {
       setLoading(false);
     }
   };
+
+  // Si la contraseña ya se cambió, mostrar pantalla de éxito
+  if (passwordChanged) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            ¡Contraseña restablecida!
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Tu contraseña ha sido cambiada correctamente. Ya puedes iniciar sesión con tu nueva contraseña.
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full bg-emerald-600 text-white py-3 px-4 rounded-md hover:bg-emerald-700 transition font-medium"
+          >
+            Ir al inicio de sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Loading mientras se verifica el código
   if (codeValid === null) {
