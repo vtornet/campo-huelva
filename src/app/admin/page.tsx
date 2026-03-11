@@ -10,7 +10,7 @@ import { usePromptDialog } from "@/components/PromptDialog";
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
 
-type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs";
+type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs" | "analytics";
 type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA" | "banned" | "silenced";
 
 export default function AdminPage() {
@@ -149,6 +149,10 @@ export default function AdminPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Publicaciones
             </AdminTabButton>
+            <AdminTabButton active={activeTab === "analytics"} onClick={() => setActiveTab("analytics")}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              Estadísticas
+            </AdminTabButton>
             <AdminTabButton active={activeTab === "reports"} onClick={() => setActiveTab("reports")}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
               Denuncias
@@ -178,6 +182,9 @@ export default function AdminPage() {
             <button onClick={() => setActiveTab("posts")} className={`p-2 rounded ${activeTab === "posts" ? "bg-emerald-600" : ""}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             </button>
+            <button onClick={() => setActiveTab("analytics")} className={`p-2 rounded ${activeTab === "analytics" ? "bg-emerald-600" : ""}`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </button>
             <button onClick={() => setActiveTab("reports")} className={`p-2 rounded ${activeTab === "reports" ? "bg-emerald-600" : ""}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </button>
@@ -190,6 +197,7 @@ export default function AdminPage() {
           {activeTab === "users" && <AdminUsers onStatsUpdate={loadStats} adminId={user?.uid} />}
           {activeTab === "companies" && <AdminCompanies onStatsUpdate={loadStats} adminId={user?.uid} />}
           {activeTab === "posts" && <AdminPosts adminId={user?.uid} onStatsUpdate={loadStats} />}
+          {activeTab === "analytics" && <AdminAnalytics />}
           {activeTab === "reports" && <AdminReports onStatsUpdate={loadStats} adminId={user?.uid} />}
           {activeTab === "logs" && <AdminLogs />}
         </main>
@@ -1502,6 +1510,257 @@ function AdminLogs() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminAnalytics() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [period, setPeriod] = useState("30"); // días
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [period]);
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/analytics?period=${period}`);
+      if (res.ok) {
+        const analytics = await res.json();
+        setData(analytics);
+      }
+    } catch (error) {
+      console.error("Error loading analytics:", error);
+    }
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <div className="text-center py-8 text-slate-400">Error cargando estadísticas</div>;
+  }
+
+  // Encontrar valor máximo para gráficos
+  const maxDailyUsers = Math.max(...data.users.dailyActiveUsers.map((d: any) => d.count), 1);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold">Estadísticas de la Plataforma</h2>
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          className="px-4 py-2 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        >
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+      </div>
+
+      {/* Usuarios Activos */}
+      <div className="bg-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold mb-4 text-emerald-400">👥 Usuarios Activos</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Total usuarios</p>
+            <p className="text-2xl font-bold">{data.users.total}</p>
+          </div>
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Activos ({period} días)</p>
+            <p className="text-2xl font-bold text-emerald-400">{data.users.active}</p>
+            <p className="text-xs text-slate-400">{data.users.activePercentage}% del total</p>
+          </div>
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Activos hoy</p>
+            <p className="text-2xl font-bold">{data.users.dailyActiveUsers[data.users.dailyActiveUsers.length - 1]?.count || 0}</p>
+          </div>
+        </div>
+
+        {/* Gráfico de usuarios activos por día */}
+        <div className="h-40 flex items-end gap-1">
+          {data.users.dailyActiveUsers.map((day: any, index: number) => {
+            const height = (day.count / maxDailyUsers) * 100;
+            const isToday = index === data.users.dailyActiveUsers.length - 1;
+            return (
+              <div
+                key={day.date}
+                className="flex-1 flex flex-col items-center gap-1 group"
+                title={`${day.date}: ${day.count} usuarios`}
+              >
+                <div
+                  className={`w-full rounded-t transition-all ${isToday ? 'bg-emerald-500' : 'bg-emerald-600/60 hover:bg-emerald-500'}`}
+                  style={{ height: `${Math.max(height, 5)}%` }}
+                />
+                <span className="text-xs text-slate-500 rotate-45 origin-bottom-left hidden group-hover:block absolute -mt-4">
+                  {day.date.split('-').slice(1).join('/')}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-xs text-slate-500 mt-2">
+          <span>{data.users.dailyActiveUsers[0]?.date}</span>
+          <span>Hoy</span>
+        </div>
+      </div>
+
+      {/* Publicaciones */}
+      <div className="bg-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold mb-4 text-blue-400">📝 Publicaciones</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Total</p>
+            <p className="text-2xl font-bold">{data.posts.total}</p>
+          </div>
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Ofertas</p>
+            <p className="text-2xl font-bold text-emerald-400">{data.posts.official}</p>
+          </div>
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Tablón</p>
+            <p className="text-2xl font-bold text-indigo-400">{data.posts.board}</p>
+          </div>
+          <div className="bg-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-sm">Cubiertas</p>
+            <p className="text-2xl font-bold text-amber-400">{data.posts.filled}</p>
+            <p className="text-xs text-slate-400">{data.posts.fillRate}% de ofertas</p>
+          </div>
+        </div>
+
+        {/* Gráfico de estado de publicaciones */}
+        <div className="space-y-2">
+          {data.posts.byStatus.map((status: any) => {
+            const colors: Record<string, string> = {
+              ACTIVE: "bg-emerald-500",
+              HIDDEN: "bg-amber-500",
+              REMOVED: "bg-red-500",
+            };
+            const labels: Record<string, string> = {
+              ACTIVE: "Activas",
+              HIDDEN: "Ocultas",
+              REMOVED: "Eliminadas",
+            };
+            return (
+              <div key={status.status} className="flex items-center gap-4">
+                <span className="w-20 text-sm text-slate-400">{labels[status.status] || status.status}</span>
+                <div className="flex-1 h-6 bg-slate-700 rounded overflow-hidden">
+                  <div
+                    className={`h-full ${colors[status.status] || 'bg-slate-500'}`}
+                    style={{ width: `${(status.count / data.posts.total) * 100}%` }}
+                  />
+                </div>
+                <span className="w-12 text-right text-sm font-medium">{status.count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tiempo medio de contratación */}
+      <div className="bg-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold mb-4 text-amber-400">⏱️ Tiempo Medio de Contratación</h3>
+        <div className="flex items-center gap-6">
+          <div className="text-5xl font-bold text-amber-400">
+            {data.applications.avgHiringTime}
+            <span className="text-2xl text-slate-400 ml-2">días</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-slate-400 text-sm mb-2">Tiempo promedio desde que se publica una oferta hasta que alguien es aceptado</p>
+            <div className="bg-slate-700 rounded-full h-4 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-500"
+                style={{ width: `${Math.min(data.applications.avgHiringTime * 5, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-slate-500 mt-4">Basado en {data.applications.total} inscripciones aceptadas</p>
+      </div>
+
+      {/* Roles más activos */}
+      <div className="bg-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-semibold mb-4 text-purple-400">👤 Roles Más Activos</h3>
+        <div className="space-y-3">
+          {data.roles.active.map((role: any) => {
+            const roleLabels: Record<string, string> = {
+              USER: "Trabajadores",
+              FOREMAN: "Jefes de cuadrilla",
+              COMPANY: "Empresas",
+              ENGINEER: "Ingenieros",
+              ENCARGADO: "Encargados",
+              TRACTORISTA: "Tractoristas",
+              ADMIN: "Administradores",
+            };
+            const maxActive = Math.max(...data.roles.active.map((r: any) => r.active), 1);
+            return (
+              <div key={role.role} className="flex items-center gap-4">
+                <span className="w-32 text-sm text-slate-400 truncate">{roleLabels[role.role] || role.role}</span>
+                <div className="flex-1 h-6 bg-slate-700 rounded overflow-hidden">
+                  <div
+                    className="h-full bg-purple-500"
+                    style={{ width: `${(role.active / maxActive) * 100}%` }}
+                  />
+                </div>
+                <span className="w-20 text-right">
+                  <span className="text-sm font-medium">{role.active}</span>
+                  <span className="text-xs text-slate-500"> / {role.total}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Provincias con más actividad */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-slate-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold mb-4 text-orange-400">📍 Provincias (Ofertas)</h3>
+          <div className="space-y-2">
+            {data.provinces.posts.length > 0 ? (
+              data.provinces.posts.map((prov: any, index: number) => (
+                <div key={prov.province} className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                    index === 0 ? 'bg-orange-500' : 'bg-slate-600 text-slate-300'
+                  }`}>{index + 1}</span>
+                  <span className="flex-1 text-sm">{prov.province}</span>
+                  <span className="text-sm font-medium">{prov.count}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-400 text-sm">Sin datos suficientes</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold mb-4 text-teal-400">👷 Provincias (Trabajadores)</h3>
+          <div className="space-y-2">
+            {data.provinces.users.length > 0 ? (
+              data.provinces.users.map((prov: any, index: number) => (
+                <div key={prov.province} className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                    index === 0 ? 'bg-teal-500' : 'bg-slate-600 text-slate-300'
+                  }`}>{index + 1}</span>
+                  <span className="flex-1 text-sm">{prov.province}</span>
+                  <span className="text-sm font-medium">{prov.count}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-400 text-sm">Sin datos suficientes</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
