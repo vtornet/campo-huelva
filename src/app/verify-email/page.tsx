@@ -30,13 +30,14 @@ export default function VerifyEmailPage() {
     try {
       const result = await sendVerificationEmail();
 
-      if (result.success) {
-        setMessage("Email de verificación enviado. Revisa tu bandeja de entrada.");
+      if (result.emailSent) {
+        // Email enviado correctamente por Resend
+        setMessage("✅ Email de verificación enviado. Revisa tu bandeja de entrada.");
         setMessageType("success");
       } else if (result.link) {
         // No se pudo enviar el email, mostrar el enlace manualmente
         showModal(result.link);
-        setMessage("No se pudo enviar el email automáticamente.");
+        setMessage("⚠️ No se pudo enviar el email automáticamente. Usa el enlace del modal.");
         setMessageType("error");
       } else {
         setMessage(result.error || "Error al enviar el email.");

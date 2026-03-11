@@ -54,21 +54,21 @@ export default function VerificationLinkModal({ isOpen, link, onClose }: Verific
           </svg>
         </button>
 
-        {/* Icono de advertencia */}
+        {/* Icono de email */}
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
         </div>
 
         {/* Título y mensaje */}
         <h2 className="text-xl font-bold text-gray-800 text-center mb-2">
-          No se pudo enviar el email
+          Enlace de verificación
         </h2>
         <p className="text-gray-600 text-center mb-6">
-          Has realizado demasiadas solicitudes. Usa el siguiente enlace para verificar tu email:
+          Usa el siguiente enlace para verificar tu email:
         </p>
 
         {/* Enlace */}

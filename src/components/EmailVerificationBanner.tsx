@@ -25,13 +25,13 @@ export default function EmailVerificationBanner() {
     try {
       const result = await sendVerificationEmail();
 
-      if (result.success) {
-        setMessage("Email enviado. Revisa tu bandeja de entrada.");
+      if (result.emailSent) {
+        setMessage("✅ Email enviado. Revisa tu bandeja de entrada.");
         setTimeout(() => setMessage(""), 5000);
       } else if (result.link) {
         // Mostrar el modal con el enlace
         showModal(result.link);
-        setMessage("No se pudo enviar el email automáticamente.");
+        setMessage("⚠️ Usa el enlace del modal.");
         setTimeout(() => setMessage(""), 5000);
       } else {
         setMessage(result.error || "Error al enviar el email.");
