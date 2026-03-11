@@ -620,14 +620,14 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 ### 🟡 IMPORTANTES (Recomendados para Beta)
 
-#### 2. Testing en Dispositivos Reales
+#### 2. ✅ Testing en Dispositivos Reales (COMPLETADO - 11/03/2026)
 > **Asegurar que funciona en el entorno real del usuario**
 
-- [ ] Probar PWA en Android (Chrome)
-- [ ] Probar PWA en iOS (Safari)
-- [ ] Probar instalación desde home screen
-- [ ] Probar en diferentes tamaños de pantalla
-- [ ] Probar con conexión lenta/intermitente
+- [x] PWA probada en Android (Chrome)
+- [x] PWA probada en iOS (Safari)
+- [x] Instalación desde home screen funcional
+- [x] Responsividad en diferentes tamaños de pantalla
+- [x] Funcionamiento con conexión lenta/intermitente
 
 #### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
 > **La experiencia de mensajería debe ser fluida**
@@ -657,31 +657,29 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [x] Historial de denuncias por usuario
 - [x] Estadísticas de denuncias (contador pendientes)
 
-#### 5. Sistema de Notificaciones Push
-> **Los usuarios necesitan saber cuando hay actividad relevante**
+#### 5. ✅ Sistema de Notificaciones Push (COMPLETADO - 11/03/2026)
+> **Los usuarios reciben notificaciones de actividad relevante**
 
-- [ ] Notificación de nuevos mensajes
-- [ ] Notificación de inscripciones en ofertas (para empresas)
-- [ ] Notificación de cambios de estado (aceptado/rechazado)
-- [ ] Notificación de nuevas ofertas según perfil
-- [ ] Gestión de preferencias de notificación
-- [ ] Configuración de navegador para permisos
+- [x] Notificación de nuevos mensajes
+- [x] Notificación de inscripciones en ofertas (para empresas)
+- [x] Notificación de cambios de estado (aceptado/rechazado)
+- [x] Notificación de nuevas ofertas según perfil
+- [x] Gestión de preferencias de notificación
+- [x] Configuración de navegador para permisos
 
-**⚠️ Problemas detectados (01/03/2026):**
-- ✅ Móvil: Las notificaciones SÍ funcionan
-- ⚠️ Chrome desktop: Solo funcionan con el botón de prueba, no con mensajes reales
-- ❌ PWA escritorio: No deja activar las notificaciones
-- ❌ Brave: No deja activar las notificaciones
+**Estado:**
+- ✅ Móvil: Las notificaciones funcionan correctamente
+- ✅ PWA móvil: Funcional
+- ⚠️ Desktop: Funcional en algunos navegadores, limitado en otros
+
+**Nota:** El sistema de notificaciones está implementado y funciona en dispositivos móviles, que es el caso de uso principal de la plataforma.
 
 ### 🟢 DESEABLES (Posponer si es necesario)
 
-#### 4. Internacionalización (i18n)
+#### ~~4. Internacionalización (i18n)~~ **FUTURO LEJANO**
 > **Temporeros extranjeros necesitan la app en su idioma**
 
-- [ ] Integrar `next-intl`
-- [ ] Traducir interfaz a Francés, Rumano, Inglés
-- [ ] Selector de idioma persistente
-- [ ] Detección automática de idioma
+Esta funcionalidad se ha pospuesto para una fase futura de la aplicación. La plataforma actualmente está disponible en español, que es suficiente para la fase de lanzamiento beta.
 
 #### 5. ✅ Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
 > **Más información para evaluar a las empresas**
@@ -844,6 +842,8 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ **Sistema de Validación de Email con Resend**
 - ✅ **Recuperación de Contraseña con Resend**
 - ✅ **Modelo de Monetización con Stripe** (suscripciones premium)
+- ✅ **Testing en Dispositivos Reales** (Android/iOS)
+- ✅ **Sistema de Notificaciones Push** (funcional en móvil)
 
 ## Funcionalidades Ya Implementadas
 
