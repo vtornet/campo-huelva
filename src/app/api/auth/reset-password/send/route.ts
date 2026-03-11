@@ -3,17 +3,9 @@ import { initFirebaseAdmin } from "@/lib/firebase-admin";
 import { Resend } from "resend";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-// Inicializar Resend si hay API key
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
-// Email desde el que se envían los emails
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Agro Red <onboarding@resend.dev>";
 
-/**
- * Template HTML para el email de recuperación de contraseña
- */
 function createPasswordResetEmailHtml(email: string, resetLink: string) {
   return `
 <!DOCTYPE html>
@@ -76,75 +68,45 @@ function createPasswordResetEmailHtml(email: string, resetLink: string) {
   `.trim();
 }
 
-/**
- * Endpoint para enviar email de recuperación de contraseña
- *
- * Flujo:
- * 1. Recibe el email del usuario
- * 2. Genera enlace de reset con Firebase Admin SDK
- * 3. Envía el email usando Resend
- */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar rate limiting (5 emails por hora)
-    const rateLimitResult = checkRateLimit(
-      request,
-      'reset-password',
-      {
-        maxRequests: 5,
-        windowMs: 60 * 60 * 1000, // 1 hora
-        message: 'Has enviado demasiadas solicitudes. Por favor, espera unos minutos.',
-      }
-    );
+    const rateLimitResult = checkRateLimit(request, 'reset-password', {
+      maxRequests: 5,
+      windowMs: 60 * 60 * 1000,
+      message: 'Has enviado demasiadas solicitudes. Por favor, espera unos minutos.',
+    });
 
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: 'Has enviado demasiadas solicitudes. Por favor, espera unos minutos.' },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
-          },
-        }
+        { error: 'Has enviado demasiadas solicitudes.' },
+        { status: 429, headers: { 'Retry-After': Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString() } }
       );
     }
 
-    const body = await request.json();
-    const { email } = body;
+    const { email } = await request.json();
 
-    // Validar email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json(
-        { error: "Email inválido" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
-    // Inicializar Firebase Admin
     const adminAuth = initFirebaseAdmin();
     if (!adminAuth) {
-      return NextResponse.json(
-        { error: "Error de configuración del servidor" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Error de configuración" }, { status: 500 });
     }
 
-    // Generar enlace de reset de contraseña
-    // La URL es donde se procesa el reset (continueUrl es a donde va después)
+    // CAMBIO: Generar enlace que apunta a /login en lugar de /reset-password
+    // Esto evita que Firebase redirija de vuelta a /reset-password después del cambio
     const resetLink = await adminAuth.generatePasswordResetLink(
       email,
       {
-        url: `${process.env.NEXT_PUBLIC_APP_URL || "https://agroredjob.com"}/reset-password`,
-        handleCodeInApp: true, // Importante: evita redirección automática de Firebase
+        url: `${process.env.NEXT_PUBLIC_APP_URL || "https://agroredjob.com"}/login`,
+        handleCodeInApp: true,
       }
     );
 
-    console.log(`[reset-password] Enlace generado para ${email}: ${resetLink}`);
+    console.log(`[reset-password] Enlace generado para ${email}`);
 
-    // Enviar email usando Resend
     let emailSent = false;
-    let emailError: string | null = null;
-
     if (resend) {
       try {
         const { error } = await resend.emails.send({
@@ -152,53 +114,29 @@ export async function POST(request: NextRequest) {
           to: [email],
           subject: "Recupera tu contraseña - Agro Red",
           html: createPasswordResetEmailHtml(email, resetLink),
-          tags: [
-            { name: 'type', value: 'password_reset' },
-          ],
+          tags: [{ name: 'type', value: 'password_reset' }],
         });
-
-        if (error) {
-          console.error("[reset-password] Error al enviar email con Resend:", error);
-          emailError = error.message;
-        } else {
-          console.log(`[reset-password] Email enviado exitosamente a ${email}`);
+        if (!error) {
+          console.log(`[reset-password] Email enviado a ${email}`);
           emailSent = true;
         }
       } catch (emailErr: any) {
-        console.error("[reset-password] Excepción al enviar email:", emailErr);
-        emailError = emailErr?.message || "Error desconocido";
+        console.error("[reset-password] Error al enviar email:", emailErr);
       }
-    } else {
-      console.warn("[reset-password] RESEND_API_KEY no configurada. Email no enviado.");
-      emailError = "Servicio de email no configurado";
     }
 
-    // Por seguridad, siempre devolvemos éxito aunque el email no exista
-    // (para evitar que se averigüe qué emails están registrados)
     return NextResponse.json({
       success: true,
-      message: emailSent
-        ? "Si el email está registrado, recibirás un enlace para restablecer tu contraseña."
-        : "Solicitud procesada.",
+      message: emailSent ? "Si el email está registrado, recibirás un enlace." : "Solicitud procesada.",
       emailSent,
-      link: resetLink, // Para desarrollo
+      link: resetLink,
     });
 
   } catch (error: any) {
     console.error("[reset-password] Error:", error);
-
-    // Firebase devuelve "user-not-found" si el email no existe
-    // Por seguridad, devolvemos siempre el mismo mensaje
     if (error.code === "auth/user-not-found") {
-      return NextResponse.json({
-        success: true,
-        message: "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.",
-      });
+      return NextResponse.json({ success: true, message: "Si el email está registrado, recibirás un enlace." });
     }
-
-    return NextResponse.json(
-      { error: "Error al procesar la solicitud" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error al procesar" }, { status: 500 });
   }
 }

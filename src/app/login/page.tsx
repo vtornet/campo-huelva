@@ -3,16 +3,18 @@
 import { useState, useEffect } from "react";
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import LegalCheckboxes from "@/components/LegalCheckboxes";
+import { PasswordResetModal } from "@/components/PasswordResetModal";
 
 type TabType = "login" | "register";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("login");
   const [email, setEmail] = useState("");
@@ -31,6 +33,18 @@ export default function LoginPage() {
     age: false,
     communications: false,
   });
+
+  // Estado para modal de reset de contraseña
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  // Detectar si venimos de un enlace de reset de contraseña
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    const oobCode = searchParams.get("oobCode");
+    if (mode === "resetPassword" && oobCode) {
+      setShowResetModal(true);
+    }
+  }, [searchParams]);
 
   // Si ya está autenticado, redirigir al inicio
   useEffect(() => {
@@ -391,6 +405,11 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
+
+      {/* Modal de reset de contraseña */}
+      {showResetModal && (
+        <PasswordResetModal onClose={() => setShowResetModal(false)} />
+      )}
     </div>
   );
 }
