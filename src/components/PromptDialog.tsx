@@ -154,7 +154,7 @@ export function PromptDialog({
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={placeholder}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-slate-900 placeholder:text-slate-400"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.ctrlKey) {
                     handleConfirm();
@@ -169,7 +169,7 @@ export function PromptDialog({
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={placeholder}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder:text-slate-400"
               />
             )}
           </div>

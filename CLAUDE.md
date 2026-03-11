@@ -376,11 +376,10 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] Filtro en búsqueda de candidatos
 - [x] Badge en tarjetas de resultados y modal de perfil
 
-### ⏸️ 20. Verificación de Empresas con AEAT (DIFERIDO)
-- [ ] Verificación automática de empresas mediante CIF a través de API de AEAT
-- [ ] Uso de certificado electrónico para autenticación con AEAT
-- [ ] **Estado**: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
-- [ ] **Nota**: Dejar para más adelante. Actualmente la verificación de empresas es manual.
+### ✅ 20. Verificación de Empresas (VALIDACIÓN LOCAL - 11/03/2026)
+- [x] Validación de formato CIF/NIF/NIE mediante algoritmo local
+- [x] Integración con formulario de empresa
+- [x] **Nota**: La integración directa con AEAT se ha descartado porque Railway no puede resolver los DNS de www1.agenciatributaria.es. La verificación de empresas usa validación local de formato.
 
 ### ✅ 20. Tablón Social (COMPLETADO - 25/02/2026)
 - [x] Nueva pestaña "Tablón" junto a "Ofertas" y "Demandas"
@@ -700,38 +699,29 @@ Esta funcionalidad se ha pospuesto para una fase futura de la aplicación. La pl
 
 ### 🔵 DIFERIDOS (Post-Beta)
 
-#### 1. ✅ Verificación Automática de Empresas con AEAT (IMPLEMENTADA - 11/03/2026)
-> **Validar empresas usando el CIF a través de la API de AEAT**
+#### 1. Verificación de Empresas (VALIDACIÓN LOCAL - 11/03/2026)
+> **Validar formato de CIF/NIF/NIE de empresas**
 
-- [x] Integración con API de AEAT usando certificado electrónico (SOAP)
-- [x] Obtención automática de: razón social, dirección, localidad, provincia, código postal, situación
 - [x] **Componente `CompanyVerification`** en formulario de empresa
 - [x] **Endpoint `/api/companies/verify`** para verificar empresas
-- [x] Fallback a validación local (algoritmo CIF/NIF/NIE) si AEAT no está disponible
-- [x] Autocompletado de datos del formulario cuando AEAT responde correctamente
+- [x] Validación local de formato CIF/NIF/NIE (algoritmo oficial)
 - [x] Rate limiting (20 verificaciones por minuto)
-- [x] Modelo de datos en Prisma con campos de verificación AEAT
+- [x] Modelo de datos en Prisma con campos de verificación
 
 **Cómo funciona:**
 1. Usuario introduce CIF en formulario de empresa (`/profile/company`)
-2. Botón "Verificar con AEAT" llama al endpoint
-3. Si hay credenciales configuradas (`AEAT_CERT_PEM`, `AEAT_KEY_PEM`), hace petición SOAP a AEAT
-4. Si AEAT responde con datos, autocompleta formulario y marca como verificado
-5. Si AEAT no está configurado o falla, hace fallback a validación local
-
-**Variables de entorno requeridas (opcionales - si no están, usa validación local):**
-```
-AEAT_CERT_PEM="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"
-AEAT_KEY_PEM="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-```
+2. Botón "Verificar CIF" valida el formato usando algoritmo local
+3. Si el formato es válido, se marca como verificado
+4. La verificación manual por admin sigue siendo necesaria para aprobar empresas
 
 **Archivos clave:**
-- `src/lib/aeat-service.ts` - Servicio de comunicación con AEAT
+- `src/lib/aeat-service.ts` - Servicio de verificación (validación local)
+- `src/lib/cif-validator.ts` - Validador de formato CIF/NIF/NIE
 - `src/components/CompanyVerification.tsx` - Componente de verificación
 - `src/app/api/companies/verify/route.ts` - Endpoint API
 - `src/app/profile/company/page.tsx` - Integración en formulario
 
-**Estado actual**: Funcional con validación local. Para usar verificación AEAT real, hay que configurar las credenciales del certificado digital en Railway (`AEAT_CERT_PEM` y `AEAT_KEY_PEM`).
+**Nota**: La integración con AEAT mediante SOAP ha sido eliminada porque Railway no puede resolver los DNS de `www1.agenciatributaria.es`. La verificación de empresas se realiza ahora mediante validación local del formato de CIF.
 
 #### 2. ✅ Recuperación de Contraseña (COMPLETADO - 11/03/2026)
 > **Permitir a usuarios recuperar acceso a su cuenta**

@@ -1,9 +1,9 @@
 // src/app/api/companies/verify/route.ts
-// API para verificar empresas usando AEAT (con fallback a validación local)
+// API para verificar empresas usando validación local de CIF/NIF/NIE
 
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { verifyCompany, isAeatConfigured } from "@/lib/aeat-service";
+import { verifyCompany, isAeatConfigured, getAeatStatus } from "@/lib/aeat-service";
 import { rateLimitMiddleware } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient();
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Limpiar CIF
     const cleanCif = cif.replace(/[\s-]/g, "").toUpperCase();
 
-    // Verificar empresa con AEAT (o fallback a local)
+    // Verificar empresa (validación local de formato)
     const result = await verifyCompany(cleanCif);
 
     // Si la verificación fue exitosa, guardar los datos
@@ -44,19 +44,11 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingProfile) {
-        // Actualizar datos de verificación
+        // Actualizar datos de verificación (solo validación local)
         await prisma.companyProfile.update({
           where: { id: existingProfile.id },
           data: {
-            isVerified: result.method === "AEAT",
-            verificationMethod: result.method,
             aeatRazonSocial: result.company.razonSocial,
-            aeatDireccion: result.company.direccion,
-            aeatLocalidad: result.company.localidad,
-            aeatProvincia: result.company.provincia,
-            aeatCodigoPostal: result.company.codigoPostal,
-            aeatSituacion: result.company.situacion,
-            aeatVerifiedAt: result.method === "AEAT" ? new Date() : null,
             aeatLastCheck: new Date(),
           },
         });
@@ -65,7 +57,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         method: result.method,
-        aeatConfigured: isAeatConfigured(),
         company: result.company,
         existingCompany: !!existingProfile,
       });
@@ -75,7 +66,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       method: result.method,
-      aeatConfigured: isAeatConfigured(),
       error: result.error,
       validFormat: result.validFormat,
     });
@@ -88,14 +78,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: Obtener estado del servicio AEAT
+// GET: Obtener estado del servicio de verificación
 export async function GET() {
+  const status = getAeatStatus();
   return NextResponse.json({
-    aeatConfigured: isAeatConfigured(),
-    aeatAvailable: true, // Siempre true mientras tengamos el servicio implementado
+    aeatConfigured: status.configured,
+    note: status.note,
     methods: {
-      aeat: isAeatConfigured(),
-      local: true, // Siempre disponible como fallback
+      aeat: status.configured,
+      local: true, // Siempre disponible
     },
   });
 }

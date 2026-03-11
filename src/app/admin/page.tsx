@@ -920,7 +920,7 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "ACTIVE" | "HIDDEN" | "REMOVED">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "OFFICIAL" | "SHARED" | "DEMAND">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "OFFICIAL" | "SHARED" | "DEMAND" | "BOARD">("all");
 
   useEffect(() => {
     loadPosts();
@@ -981,9 +981,10 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
 
   const getPostTypeInfo = (type: string) => {
     switch (type) {
-      case "OFFICIAL": return { label: "Oficial", color: "bg-emerald-600" };
+      case "OFFICIAL": return { label: "Oferta", color: "bg-emerald-600" };
       case "SHARED": return { label: "Compartida", color: "bg-blue-600" };
       case "DEMAND": return { label: "Demanda", color: "bg-orange-600" };
+      case "BOARD": return { label: "Tablón", color: "bg-indigo-600" };
       default: return { label: type, color: "bg-slate-600" };
     }
   };
@@ -1020,9 +1021,10 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
             className="px-4 py-2 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             <option value="all">Todos los tipos</option>
-            <option value="OFFICIAL">Oficiales</option>
+            <option value="OFFICIAL">Ofertas (Oficiales)</option>
             <option value="SHARED">Compartidas</option>
             <option value="DEMAND">Demandas</option>
+            <option value="BOARD">Tablón</option>
           </select>
         </div>
       </div>

@@ -12,28 +12,58 @@ export async function POST(request: Request) {
   }
 
   try {
-    await prisma.post.update({
-      where: { id: postId },
-      data: {
-        status,
-        moderatedBy: adminId,
-        moderatedAt: new Date(),
-        moderationReason: reason,
-      },
-    });
+    // Intentar primero en Post
+    try {
+      await prisma.post.update({
+        where: { id: postId },
+        data: {
+          status,
+          moderatedBy: adminId,
+          moderatedAt: new Date(),
+          moderationReason: reason,
+        },
+      });
 
-    // Crear log
-    await prisma.adminLog.create({
-      data: {
-        adminId: adminId || "system",
-        action: status === "REMOVED" ? "REMOVE_POST" : status === "HIDDEN" ? "HIDE_POST" : "SHOW_POST",
-        targetType: "POST",
-        targetId: postId,
-        details: reason || "",
-      },
-    });
+      // Crear log
+      await prisma.adminLog.create({
+        data: {
+          adminId: adminId || "system",
+          action: status === "REMOVED" ? "REMOVE_POST" : status === "HIDDEN" ? "HIDE_POST" : "SHOW_POST",
+          targetType: "POST",
+          targetId: postId,
+          details: reason || "",
+        },
+      });
 
-    return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true });
+    } catch (postError: any) {
+      // Si no existe en Post, intentar en BoardPost
+      if (postError.code === "P2025") {
+        await prisma.boardPost.update({
+          where: { id: postId },
+          data: {
+            status,
+            moderatedBy: adminId,
+            moderatedAt: new Date(),
+            moderationReason: reason,
+          },
+        });
+
+        // Crear log
+        await prisma.adminLog.create({
+          data: {
+            adminId: adminId || "system",
+            action: status === "REMOVED" ? "REMOVE_POST" : status === "HIDDEN" ? "HIDE_POST" : "SHOW_POST",
+            targetType: "BOARD_POST",
+            targetId: postId,
+            details: reason || "",
+          },
+        });
+
+        return NextResponse.json({ success: true });
+      }
+      throw postError;
+    }
   } catch (error) {
     console.error("Error moderating post:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
