@@ -673,10 +673,10 @@ export default function OfferDetailPage() {
                 </button>
               )}
 
-              {!isOwner && !isSharedOffer && (
+              {!isOwner && (
                 <>
                   {/* Para ofertas OFICIALES: botón de inscribirse (no para empresas) */}
-                  {isOffer && !isCompany && (
+                  {isOffer && !isSharedOffer && !isCompany && (
                     offer.isClosed ? (
                       // Oferta cerrada: mostrar badge
                       <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 bg-slate-100 px-6 py-3 rounded-xl border border-slate-200 flex-1">
@@ -768,30 +768,30 @@ export default function OfferDetailPage() {
                     Contactar
                   </button>
                 )}
+                {/* Para ofertas compartidas: botón de enlace externo */}
+                {isSharedOffer && (
+                  offer.externalLink ? (
+                    <a
+                      href={offer.externalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 shadow-indigo-500/25"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Acceder a la oferta
+                    </a>
+                  ) : (
+                    <div className="flex-1 px-6 py-3 rounded-xl font-semibold bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Enlace no disponible
+                    </div>
+                  )
+                )}
               </>
-            )}
-            {/* Para ofertas compartidas: botón de enlace externo */}
-            {isSharedOffer && !isOwner && (
-              offer.externalLink ? (
-                <a
-                  href={offer.externalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center justify-center gap-2 flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 shadow-indigo-500/25"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Acceder a la oferta
-                </a>
-              ) : (
-                <div className="flex-1 px-6 py-3 rounded-xl font-semibold bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Enlace no disponible
-                </div>
-              )
             )}
           </div>
         </div>
