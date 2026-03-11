@@ -893,7 +893,7 @@ export default function Dashboard() {
                         )}
                     </div>
 
-                    <p className="mt-4 text-slate-600 text-sm line-clamp-3 bg-slate-50 p-4 rounded-xl italic border border-slate-100">
+                    <p className="mt-4 text-slate-600 text-sm line-clamp-3 bg-slate-50 p-4 rounded-xl italic border border-slate-100 whitespace-pre-wrap">
                       "{post.description}"
                     </p>
 

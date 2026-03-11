@@ -225,7 +225,7 @@ export default function MyApplicationsPage() {
                     <h3 className="font-semibold text-slate-800 text-lg mb-2">
                       {app.post.title}
                     </h3>
-                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-2 whitespace-pre-wrap">
                       {app.post.description}
                     </p>
 

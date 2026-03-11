@@ -1060,7 +1060,7 @@ function AdminPosts({ adminId, onStatsUpdate }: { adminId?: string; onStatsUpdat
                     </div>
                     <h3 className="font-bold text-lg">{post.title}</h3>
                     <p className="text-slate-400 text-sm mt-1">📍 {post.location} {post.province && `(${post.province})`}</p>
-                    <p className="text-slate-300 mt-2 line-clamp-2 text-sm">"{post.description}"</p>
+                    <p className="text-slate-300 mt-2 line-clamp-2 text-sm whitespace-pre-wrap">"{post.description}"</p>
                     <p className="text-slate-500 text-xs mt-2">
                       Por: {post.company?.companyName || post.publisher?.workerProfile?.fullName || post.publisher?.foremanProfile?.fullName || post.publisher?.engineerProfile?.fullName || post.publisher?.encargadoProfile?.fullName || post.publisher?.tractoristProfile?.fullName || "Usuario"}
                     </p>

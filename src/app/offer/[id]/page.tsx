@@ -512,7 +512,7 @@ export default function OfferDetailPage() {
           </div>
 
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-            <p className="text-slate-700 leading-relaxed">"{offer.description}"</p>
+            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">"{offer.description}"</p>
           </div>
 
           {/* === CONDICIONES LABORALES (Solo para ofertas) === */}

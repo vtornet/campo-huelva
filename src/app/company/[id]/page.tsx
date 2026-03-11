@@ -159,7 +159,7 @@ export default function CompanyPublicProfilePage() {
                 )}
               </div>
               {company.description && (
-                <p className="text-indigo-100 mt-1">{company.description}</p>
+                <p className="text-indigo-100 mt-1 whitespace-pre-wrap">{company.description}</p>
               )}
               <div className="flex flex-wrap gap-4 mt-2 text-sm text-indigo-100">
                 {company.city && company.province && (
@@ -266,7 +266,7 @@ export default function CompanyPublicProfilePage() {
                         )}
                       </div>
                       <h3 className="font-semibold text-slate-800 mt-2">{post.title}</h3>
-                      <p className="text-sm text-slate-600 mt-1 line-clamp-2">{post.description}</p>
+                      <p className="text-sm text-slate-600 mt-1 line-clamp-2 whitespace-pre-wrap">{post.description}</p>
                       <div className="flex flex-wrap gap-3 mt-3 text-sm text-slate-500">
                         <span className="flex items-center gap-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
