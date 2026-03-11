@@ -464,12 +464,19 @@ function PublishForm() {
             {/* Salario */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Salario bruto *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Salario bruto {formData.salaryPeriod !== "NO_ESPECIFICADO" ? "*" : "(opcional)"}
+                </label>
                 <input
                   type="text"
-                  required
-                  placeholder="Ej: 9,50€ o 1200€"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200"
+                  required={formData.salaryPeriod !== "NO_ESPECIFICADO"}
+                  disabled={formData.salaryPeriod === "NO_ESPECIFICADO"}
+                  placeholder={formData.salaryPeriod === "NO_ESPECIFICADO" ? "No se requiere salario" : "Ej: 9,50€ o 1200€"}
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 ${
+                    formData.salaryPeriod === "NO_ESPECIFICADO"
+                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "border-slate-200 bg-white focus:ring-emerald-500 focus:border-transparent"
+                  }`}
                   value={formData.salaryAmount}
                   onChange={(e) => setFormData({ ...formData, salaryAmount: e.target.value })}
                 />
@@ -480,7 +487,15 @@ function PublishForm() {
                   required
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200"
                   value={formData.salaryPeriod}
-                  onChange={(e) => setFormData({ ...formData, salaryPeriod: e.target.value })}
+                  onChange={(e) => {
+                    const newPeriod = e.target.value;
+                    setFormData({
+                      ...formData,
+                      salaryPeriod: newPeriod,
+                      // Limpiar salario si se selecciona NO_ESPECIFICADO
+                      salaryAmount: newPeriod === "NO_ESPECIFICADO" ? "" : formData.salaryAmount,
+                    });
+                  }}
                 >
                   <option value="">Periodo...</option>
                   {PERIODOS_SALARIALES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}

@@ -150,7 +150,8 @@ export const PERIODOS_SALARIALES = [
   { value: "MENSUAL", label: "Mensual" },
   { value: "ANUAL", label: "Anual" },
   { value: "TEMPORADA", label: "Por temporada" },
-  { value: "A_CONVENIR", label: "A convenir" }
+  { value: "A_CONVENIR", label: "A convenir" },
+  { value: "NO_ESPECIFICADO", label: "No especificado" }
 ];
 
 // Jornadas laborales

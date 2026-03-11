@@ -221,11 +221,12 @@ export async function POST(request: Request) {
       if (!contractType) {
         return NextResponse.json({ error: "El tipo de contrato es obligatorio para ofertas" }, { status: 400 });
       }
-      if (!salaryAmount) {
-        return NextResponse.json({ error: "El salario es obligatorio para ofertas" }, { status: 400 });
-      }
+      // El salario solo es obligatorio si el periodo NO es "NO_ESPECIFICADO"
       if (!salaryPeriod) {
         return NextResponse.json({ error: "El periodo de salario es obligatorio para ofertas" }, { status: 400 });
+      }
+      if (salaryPeriod !== "NO_ESPECIFICADO" && !salaryAmount) {
+        return NextResponse.json({ error: "El salario es obligatorio para ofertas (o selecciona 'No especificado')" }, { status: 400 });
       }
       if (!hoursPerWeek) {
         return NextResponse.json({ error: "Las horas semanales son obligatorias para ofertas" }, { status: 400 });

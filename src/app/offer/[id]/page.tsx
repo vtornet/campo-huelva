@@ -542,21 +542,27 @@ export default function OfferDetailPage() {
                 )}
 
                 {/* Salario */}
-                {offer.salaryAmount && (
+                {(offer.salaryAmount || offer.salaryPeriod === "NO_ESPECIFICADO") && (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${offer.salaryPeriod === "NO_ESPECIFICADO" ? "bg-slate-100" : "bg-green-100"}`}>
+                      <svg className={`w-5 h-5 ${offer.salaryPeriod === "NO_ESPECIFICADO" ? "text-slate-500" : "text-green-600"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Salario bruto</p>
                       <p className="font-medium text-slate-800">
-                        {offer.salaryAmount}
-                        {offer.salaryPeriod && (
-                          <span className="text-sm font-normal text-slate-600">
-                            /{offer.salaryPeriod === 'HORA' ? 'hora' : offer.salaryPeriod === 'JORNADA' ? 'jornada' : offer.salaryPeriod === 'MENSUAL' ? 'mes' : offer.salaryPeriod === 'ANUAL' ? 'año' : offer.salaryPeriod.toLowerCase()}
-                          </span>
+                        {offer.salaryPeriod === "NO_ESPECIFICADO" ? (
+                          <span className="text-slate-500">No especificado</span>
+                        ) : (
+                          <>
+                            {offer.salaryAmount}
+                            {offer.salaryPeriod && (
+                              <span className="text-sm font-normal text-slate-600">
+                                /{offer.salaryPeriod === 'HORA' ? 'hora' : offer.salaryPeriod === 'JORNADA' ? 'jornada' : offer.salaryPeriod === 'MENSUAL' ? 'mes' : offer.salaryPeriod === 'ANUAL' ? 'año' : offer.salaryPeriod.toLowerCase()}
+                              </span>
+                            )}
+                          </>
                         )}
                       </p>
                     </div>
