@@ -10,8 +10,10 @@ const resend = process.env.RESEND_API_KEY
   : null;
 
 // Email desde el que se envían los emails (configurado en Resend)
-const FROM_EMAIL = "Agro Red <onboarding@resend.dev>";
-// TODO: Configurar dominio personalizado en Resend y cambiar a noreply@agroredjob.com
+// NOTA: onboarding@resend.dev solo funciona para emails de prueba
+// Después de verificar el dominio, cambiar a noreply@agroredjob.com
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Agro Red <onboarding@resend.dev>";
+// Para usar dominio propio: noreply@agroredjob.com (requiere verificar dominio en Resend)
 
 /**
  * Template HTML para el email de verificación
