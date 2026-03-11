@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       email,
       {
         url: `${process.env.NEXT_PUBLIC_APP_URL || "https://agroredjob.com"}/reset-password`,
+        handleCodeInApp: true, // Importante: evita redirección automática de Firebase
       }
     );
 
