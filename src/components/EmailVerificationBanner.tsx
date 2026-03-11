@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useVerificationLinkModal } from "@/components/VerificationLinkModal";
 
 export default function EmailVerificationBanner() {
   const { user, sendVerificationEmail } = useAuth();
+  const { showModal, modalComponent } = useVerificationLinkModal();
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [message, setMessage] = useState("");
   const router = useRouter();
 
   // No mostrar si no hay usuario, si ya está verificado, o si fue cerrado
@@ -17,58 +20,80 @@ export default function EmailVerificationBanner() {
 
   const handleResend = async () => {
     setLoading(true);
+    setMessage("");
+
     try {
-      await sendVerificationEmail();
-      alert("Email de verificación enviado. Revisa tu bandeja de entrada.");
+      const result = await sendVerificationEmail();
+
+      if (result.success) {
+        setMessage("Email enviado. Revisa tu bandeja de entrada.");
+        setTimeout(() => setMessage(""), 5000);
+      } else if (result.link) {
+        // Mostrar el modal con el enlace
+        showModal(result.link);
+        setMessage("No se pudo enviar el email automáticamente.");
+        setTimeout(() => setMessage(""), 5000);
+      } else {
+        setMessage(result.error || "Error al enviar el email.");
+        setTimeout(() => setMessage(""), 5000);
+      }
     } catch (error: any) {
       console.error("Error al enviar email:", error);
-
-      // Manejo específico de errores comunes
-      if (error?.code === "auth/too-many-requests") {
-        alert("Has realizado demasiadas solicitudes. Espera unos minutos antes de reenviar.");
-      } else {
-        alert("Error al enviar el email. Inténtalo de nuevo más tarde.");
-      }
+      setMessage("Error al enviar el email. Inténtalo de nuevo más tarde.");
+      setTimeout(() => setMessage(""), 5000);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
-          <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <p className="text-sm text-yellow-800">
-            <strong>Verifica tu email</strong> para acceder a todas las funcionalidades.
-            <button
-              onClick={() => router.push("/verify-email")}
-              className="ml-2 underline hover:text-yellow-900"
-            >
-              Más información
-            </button>
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={handleResend}
-            disabled={loading}
-            className="text-sm bg-yellow-600 text-white px-3 py-1.5 rounded-md hover:bg-yellow-700 transition disabled:opacity-50"
-          >
-            {loading ? "Enviando..." : "Reenviar"}
-          </button>
-          <button
-            onClick={() => setDismissed(true)}
-            className="text-yellow-600 hover:text-yellow-800 p-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <>
+      {modalComponent}
+      <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-          </button>
+            <p className="text-sm text-yellow-800">
+              <strong>Verifica tu email</strong> para acceder a todas las funcionalidades.
+              <button
+                onClick={() => router.push("/verify-email")}
+                className="ml-2 underline hover:text-yellow-900"
+              >
+                Más información
+              </button>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+            {message && (
+              <span className={`text-xs px-2 py-1 rounded mr-2 ${
+                message.includes("enviado")
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}>
+                {message}
+              </span>
+            )}
+            <button
+              onClick={handleResend}
+              disabled={loading}
+              className="text-sm bg-yellow-600 text-white px-3 py-1.5 rounded-md hover:bg-yellow-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {loading ? "Enviando..." : "Reenviar"}
+            </button>
+            <button
+              onClick={() => setDismissed(true)}
+              className="text-yellow-600 hover:text-yellow-800 p-1"
+              aria-label="Cerrar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

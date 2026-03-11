@@ -57,23 +57,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`[verify-email] Enlace generado para ${user.email}: ${emailVerifiedLink}`);
 
-    // OPCIÓN 1: Usar el enlace generado directamente
-    // Podemos retornar el enlace para usarlo en el frontend, o enviarlo por email
-    // usando un servicio como Resend, SendGrid, etc.
-
-    // OPCIÓN 2: Usar el Client SDK como fallback (método actual)
-    // Retornamos una instrucción para que el frontend use el Client SDK
-
-    // Por ahora, usamos el enfoque híbrido:
-    // Generamos el enlace con Admin SDK y lo enviamos al frontend
-    // El frontend puede usar este enlace o hacer fallback al Client SDK
-
+    // Devolvemos el enlace para que el frontend lo pueda usar
+    // Si el envío por email falla, se puede mostrar al usuario
     return NextResponse.json({
       success: true,
       message: "Enlace de verificación generado",
-      // No enviamos el enlace por seguridad, el frontend usará el Client SDK
-      // pero este endpoint confirma que el backend está funcionando
-      useClientSDK: true,
+      link: emailVerifiedLink,
+      // Indicamos que el enlace se puede usar directamente
+      canShowLink: true,
     });
 
   } catch (error: any) {

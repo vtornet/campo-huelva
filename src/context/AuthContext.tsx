@@ -4,19 +4,26 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { onAuthStateChanged, User, sendEmailVerification, reload } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+// Resultado de enviar email de verificación
+interface VerificationEmailResult {
+  success: boolean;
+  link?: string; // Enlace de verificación (si se generó)
+  error?: string;
+}
+
 // Definimos qué datos vamos a compartir
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error?: string;
-  sendVerificationEmail: () => Promise<void>;
+  sendVerificationEmail: () => Promise<VerificationEmailResult>;
   reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  sendVerificationEmail: async () => {},
+  sendVerificationEmail: async () => ({ success: false }),
   reloadUser: async () => {}
 });
 
@@ -28,12 +35,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Función para enviar email de verificación
   // Ahora usa el endpoint API (más fiable, con logs en servidor)
-  const sendVerificationEmail = async () => {
+  // Devuelve el enlace de verificación para mostrarlo si falla el envío
+  const sendVerificationEmail = async (): Promise<VerificationEmailResult> => {
     if (!auth?.currentUser) {
       throw new Error("No hay usuario autenticado");
     }
 
-    // Primero intentamos usar el endpoint API (más fiable)
+    // Usar el endpoint API para generar el enlace
     const token = await auth.currentUser.getIdToken();
     try {
       const response = await fetch("/api/auth/send-verification-email", {
@@ -50,25 +58,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(data.error || "Error al enviar email");
       }
 
-      console.log("[AuthContext] Email de verificación enviado (API):", data);
+      console.log("[AuthContext] Email de verificación generado (API):", data);
 
-      // Si el API nos indica que usemos Client SDK, hacer fallback
-      if (data.useClientSDK) {
-        console.log("[AuthContext] Usando fallback a Client SDK");
+      // Intentar enviar por email usando Client SDK
+      try {
         await sendEmailVerification(auth.currentUser, {
           url: `${window.location.origin}/verify-email`,
           handleCodeInApp: true,
         });
+        return { success: true };
+      } catch (emailError: any) {
+        console.error("[AuthContext] Error al enviar email (Client SDK):", emailError);
+        // Si falla el envío, devolvemos el enlace para mostrarlo al usuario
+        return {
+          success: false,
+          link: data.link,
+          error: emailError.code === "auth/too-many-requests"
+            ? "Has realizado demasiadas solicitudes. Espera unos minutos o usa el enlace manual."
+            : "No se pudo enviar el email. Usa el enlace manual."
+        };
       }
     } catch (error: any) {
-      console.error("[AuthContext] Error al enviar email via API:", error);
-
-      // Fallback al Client SDK si falla el API
-      console.log("[AuthContext] Fallback a Client SDK");
-      await sendEmailVerification(auth.currentUser, {
-        url: `${window.location.origin}/verify-email`,
-        handleCodeInApp: true,
-      });
+      console.error("[AuthContext] Error al generar enlace:", error);
+      return {
+        success: false,
+        error: error.message || "Error al generar enlace de verificación"
+      };
     }
   };
 
