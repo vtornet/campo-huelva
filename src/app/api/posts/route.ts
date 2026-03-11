@@ -53,8 +53,7 @@ export async function GET(request: Request) {
   }
 
   // 4. Solo mostrar posts activos (no ocultos ni eliminados)
-  // Nota: Comentado temporalmente hasta que se migre la BD correctamente
-  // where.status = "ACTIVE";
+  where.status = "ACTIVE";
 
   try {
     const posts = await prisma.post.findMany({
