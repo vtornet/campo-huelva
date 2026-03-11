@@ -18,12 +18,12 @@ export default function ResetPasswordPage() {
   const [messageType, setMessageType] = useState<"success" | "error">("success");
   const [codeValid, setCodeValid] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
-  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Verificar el código al cargar la página
   useEffect(() => {
-    // No verificar si ya cambiamos la contraseña o si estamos en proceso de cambio
-    if (passwordChanged) {
+    // Si ya mostramos éxito, no hacer nada
+    if (isSuccess) {
       return;
     }
 
@@ -36,8 +36,8 @@ export default function ResetPasswordPage() {
 
     const verifyCode = async () => {
       try {
-        const email = await verifyPasswordResetCode(auth, oobCode);
-        setEmail(email);
+        const userEmail = await verifyPasswordResetCode(auth, oobCode);
+        setEmail(userEmail);
         setCodeValid(true);
       } catch (error: any) {
         console.error("Error al verificar código:", error);
@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
     };
 
     verifyCode();
-  }, [oobCode, passwordChanged]);
+  }, [oobCode, isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,16 +76,19 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
+      // Confirmar el reset de contraseña con Firebase
       await confirmPasswordReset(auth, oobCode!, password);
 
-      // Marcar como cambiado para evitar re-verificar el código
-      setPasswordChanged(true);
-
+      // Marcar como éxito ANTES de redirigir
+      setIsSuccess(true);
       setMessage("✅ Contraseña restablecida correctamente.");
       setMessageType("success");
 
-      // Redirigir inmediatamente al login
-      router.push("/login");
+      // Usar window.location.href para forzar la redirección
+      // Esto evita que Firebase intercepte la navegación
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 100);
     } catch (error: any) {
       console.error("Error al restablecer contraseña:", error);
       setMessage(
@@ -96,13 +99,12 @@ export default function ResetPasswordPage() {
           : "Error al restablecer la contraseña. Inténtalo de nuevo."
       );
       setMessageType("error");
-    } finally {
       setLoading(false);
     }
   };
 
-  // Si la contraseña ya se cambió, mostrar pantalla de éxito
-  if (passwordChanged) {
+  // Si la contraseña ya se cambió, mostrar pantalla de éxito y redirigir
+  if (isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
@@ -119,12 +121,7 @@ export default function ResetPasswordPage() {
           <p className="text-gray-600 mb-6">
             Tu contraseña ha sido cambiada correctamente. Ya puedes iniciar sesión con tu nueva contraseña.
           </p>
-          <button
-            onClick={() => router.push("/login")}
-            className="w-full bg-emerald-600 text-white py-3 px-4 rounded-md hover:bg-emerald-700 transition font-medium"
-          >
-            Ir al inicio de sesión
-          </button>
+          <p className="text-sm text-gray-500">Redirigiendo al inicio de sesión...</p>
         </div>
       </div>
     );

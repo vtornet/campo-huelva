@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar enlace de reset de contraseña
+    // La URL es donde se procesa el reset (continueUrl es a donde va después)
     const resetLink = await adminAuth.generatePasswordResetLink(
       email,
       {
