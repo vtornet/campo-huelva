@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuth } from "firebase-admin/auth";
 import { initFirebaseAdmin } from "@/lib/firebase-admin";
 
 /**
@@ -34,10 +35,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obtener Auth instance con los métodos correctos
+    const auth = getAuth();
+
     // Verificar el código primero (para obtener el email)
     let email: string;
     try {
-      email = await adminAuth.verifyPasswordResetCode(oobCode);
+      email = await auth.verifyPasswordResetCode(oobCode);
     } catch (error: any) {
       console.error("[reset-password] Error al verificar código:", error);
       return NextResponse.json(
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Confirmar el reset de contraseña
     try {
-      await adminAuth.confirmPasswordReset(oobCode, newPassword);
+      await auth.confirmPasswordReset(oobCode, newPassword);
       console.log(`[reset-password] Contraseña cambiada para ${email}`);
     } catch (error: any) {
       console.error("[reset-password] Error al confirmar reset:", error);
