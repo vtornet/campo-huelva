@@ -27,14 +27,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | undefined>(undefined);
 
   // Función para enviar email de verificación
+  // Ahora usa el endpoint API (más fiable, con logs en servidor)
   const sendVerificationEmail = async () => {
     if (!auth?.currentUser) {
       throw new Error("No hay usuario autenticado");
     }
-    await sendEmailVerification(auth.currentUser, {
-      url: `${window.location.origin}/verify-email`,
-      handleCodeInApp: true,
-    });
+
+    // Primero intentamos usar el endpoint API (más fiable)
+    const token = await auth.currentUser.getIdToken();
+    try {
+      const response = await fetch("/api/auth/send-verification-email", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al enviar email");
+      }
+
+      console.log("[AuthContext] Email de verificación enviado (API):", data);
+
+      // Si el API nos indica que usemos Client SDK, hacer fallback
+      if (data.useClientSDK) {
+        console.log("[AuthContext] Usando fallback a Client SDK");
+        await sendEmailVerification(auth.currentUser, {
+          url: `${window.location.origin}/verify-email`,
+          handleCodeInApp: true,
+        });
+      }
+    } catch (error: any) {
+      console.error("[AuthContext] Error al enviar email via API:", error);
+
+      // Fallback al Client SDK si falla el API
+      console.log("[AuthContext] Fallback a Client SDK");
+      await sendEmailVerification(auth.currentUser, {
+        url: `${window.location.origin}/verify-email`,
+        handleCodeInApp: true,
+      });
+    }
   };
 
   // Función para recargar el usuario (actualizar emailVerified)
