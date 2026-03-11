@@ -59,18 +59,38 @@ function analyzeCert(certPem: string): { type: string; subject?: string; issuer?
     const normalized = normalizePem(certPem);
 
     try {
-      const cert = crypto.createCertificate(normalized);
+      // Usar createPublicKey para validar el certificado
+      const publicKey = crypto.createPublicKey(normalized);
+
+      // Extraer información del certificado manualmente
+      const subjectMatch = normalized.match(/Subject:.*?CN=([^,\n]+)/i);
+      const issuerMatch = normalized.match(/Issuer:.*?O=([^,\n]+)/i);
+
+      // También buscar en el contenido base64
+      const certBase64 = normalized.match(/-----BEGIN CERTIFICATE-----([^-]+)-----END CERTIFICATE-----/)?.[1];
+      if (certBase64) {
+        const decoded = Buffer.from(certBase64.replace(/\s/g, ''), 'base64').toString('latin1');
+        const cnMatch = decoded.match(/CN=([^,\n]+)/i);
+        const oMatch = decoded.match(/O=([^,\n]+)/i);
+
+        return {
+          type: 'X.509 Certificate',
+          subject: cnMatch?.[1] || oMatch?.[1] || subjectMatch?.[1] || 'No disponible',
+          issuer: issuerMatch?.[1] || 'No disponible',
+          valid: true,
+        };
+      }
 
       return {
         type: 'X.509 Certificate',
-        subject: cert.subject?.CN || cert.subject?.O || 'No disponible',
-        issuer: cert.issuer?.O || cert.issuer?.CN || 'No disponible',
+        subject: subjectMatch?.[1] || 'No disponible',
+        issuer: issuerMatch?.[1] || 'No disponible',
         valid: true,
       };
     } catch (cryptoError) {
       return {
         type: 'X.509 Certificate',
-        error: `crypto.createCertificate falló: ${cryptoError}`,
+        error: `Validación falló: ${cryptoError}`,
         valid: false,
       };
     }
