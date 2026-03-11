@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 10 de marzo de 2026
+**Última actualización**: 11 de marzo de 2026
 
 ## Comandos de Desarrollo
 
@@ -572,6 +572,16 @@ El proyecto está en un estado avanzado. A continuación se detallan las tareas 
 - [x] Filtros para experiencia en almacén y habilidades de gestión (encargado)
 - [x] Badges en tarjetas de resultados y modal de perfil completo
 
+#### 7. ✅ Sistema de Validación de Email (COMPLETADO - 11/03/2026)
+- [x] Envío de email de verificación con Resend (más fiable)
+- [x] Página `/verify-email` con instrucciones y reenvío
+- [x] Banner recordatorio para usuarios no verificados
+- [x] Modal con enlace manual como fallback
+- [x] Restricciones en funcionalidades clave (publicar, inscribirse, contactar)
+- [x] Auto-recarga cada 30s para detectar verificación
+- [x] Rate limiting (5 emails por hora)
+- [x] Template HTML personalizado
+
 ### ✅ TODOS LOS BLOQUEANTES PARA BETA COMPLETADOS
 
 ---
@@ -700,36 +710,7 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Estado: En desarrollo. Se intentó implementar el 24/02/2026 pero quedó pendiente por problemas con la configuración del certificado electrónico.
 - [ ] **Nota**: Actualmente la verificación de empresas es manual por admin.
 
-#### 2. Sistema de Validación de Email (EN PROGRESO - 10/03/2026)
-> **Confirmar que los emails son reales y pertenecen al usuario**
-
-**Estado**: Primer intento implementado. Pendiente de testing en producción (deploys pausados en Railway).
-
-- [x] Envío de email de verificación al registro
-- [x] Página `/verify-email` con instrucciones y botón de reenvío
-- [x] Banner recordatorio para usuarios no verificados (`EmailVerificationBanner`)
-- [x] Restricciones en funcionalidades clave:
-  - [x] Publicar ofertas/demandas (`/publish`)
-  - [x] Ver candidatos inscritos (`/applications`)
-  - [x] Inscribirse en ofertas
-  - [x] Contactar usuarios
-  - [x] Añadir contactos
-- [x] Auto-recarga de usuario cada 30s para detectar verificación
-- [x] Manejo de error `auth/too-many-requests` gracefully
-- [ ] **PENDIENTE**: Límite de tiempo para verificar (24-48h)
-- [ ] **PENDIENTE**: Testing completo en producción
-
-**Archivos clave**:
-- `src/app/verify-email/page.tsx` - Página de verificación
-- `src/components/EmailVerificationBanner.tsx` - Banner recordatorio
-- `src/components/RequireEmailVerification.tsx` - Componente para restringir funcionalidades
-- `src/context/AuthContext.tsx` - Funciones `sendVerificationEmail()` y `reloadUser()`
-
-**Comits relevantes**:
-- `4ecc955` - Primer intento de verificación de email (WIP)
-- `56e68c5` - Manejar error auth/too-many-requests
-
-#### 3. Recuperación de Contraseña
+#### 2. Recuperación de Contraseña (PENDIENTE)
 > **Permitir a usuarios recuperar acceso a su cuenta**
 
 - [ ] Flujo de recuperación por email (Firebase Password Reset)
@@ -738,28 +719,28 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - [ ] Confirmación de contraseña
 - [ ] Email de notificación cuando se cambia la contraseña
 
-#### 4. Sistema de Reputación/Valoraciones
+#### 3. Sistema de Reputación/Valoraciones
 - [ ] Valoraciones mutuas post-contratación
 - [ ] Badge de "perfil verificado" por valoraciones positivas
 - [ ] Filtros por reputación en búsquedas
 
-#### 5. Matchmaking Inteligente Avanzado
+#### 4. Matchmaking Inteligente Avanzado
 - [ ] Algoritmo de compatibilidad candidato-oferta
 - [ ] Recomendaciones basadas en historial
 
-#### 6. Modelo de Monetización
+#### 5. Modelo de Monetización
 - [ ] Pagos para empresas por publicación de ofertas
 - [ ] Suscripción mensual/anual
 - [ ] Acceso a BBDD de candidatos
 
-#### 7. Video Llamadas Integradas
+#### 6. Video Llamadas Integradas
 - [ ] Videollamadas dentro de la plataforma
 - [ ] Agenda de entrevistas
 
-#### 8. Integración con Redes Sociales
+#### 7. Integración con Redes Sociales
 - [ ] Login adicional con LinkedIn, Facebook
 
-#### 9. Geolocalización de Ofertas
+#### 8. Geolocalización de Ofertas
 - [ ] Mapa interactivo con ofertas geolocalizadas
 
 ---
@@ -776,8 +757,18 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 - ✅ Panel de Gestión de Denuncias en admin
 - ✅ Carnet de carretillero en perfil y buscador
 - ✅ Iconos profesionales actualizados
+- ✅ **Sistema de Validación de Email con Resend**
 
 ## Funcionalidades Ya Implementadas
+
+### Autenticación y Usuarios
+- Registro con Firebase (email/contraseña y Google)
+- Onboarding con selección de rol
+- **Verificación de email con Resend** (envío fiable desde servidor)
+- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa, encargado, tractorista)
+- Verificación manual de empresas (etiqueta "Empresa Verificada")
+- Sistema de roles y permisos
+- Rol ADMIN con privilegios especiales
 
 ### Legal y Cumplimiento (RGPD)
 - Documentos legales completos (Privacidad, Términos, Cookies, Aviso Legal)
