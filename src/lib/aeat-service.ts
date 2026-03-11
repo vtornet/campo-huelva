@@ -35,28 +35,29 @@ export interface CompanyVerificationResult {
  * Normaliza un certificado o clave PEM para asegurar que tenga el formato correcto
  */
 function normalizePem(pem: string): string {
-  // Limpiar espacios en blanco al inicio y final
-  let cleaned = pem.trim();
+  // Primero: Si contiene \n literales, convertirlos a saltos de línea reales
+  let cleaned = pem.replace(/\\n/g, '\n');
 
-  // Si contiene \n literales, convertirlos a saltos de línea
-  cleaned = cleaned.replace(/\\n/g, '\n');
-
-  // Asegurar que cada línea del PEM no tenga espacios extra
+  // Eliminar TODOS los espacios en blanco al inicio y final de cada línea
+  // Esto incluye espacios, tabs, etc.
   const lines = cleaned.split('\n');
   const normalized = lines
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .join('\n');
+    .map(line => line.trim())  // trim() elimina espacios y tabs al inicio y final
+    .filter(line => line.length > 0);  // Eliminar líneas vacías
+
+  const result = normalized.join('\n');
 
   // Verificar que tenga los marcadores correctos
-  if (!normalized.includes('-----BEGIN')) {
+  if (!result.includes('-----BEGIN')) {
     throw new Error('El certificado no tiene el formato PEM válido (falta BEGIN)');
   }
-  if (!normalized.includes('-----END')) {
+  if (!result.includes('-----END')) {
     throw new Error('El certificado no tiene el formato PEM válido (falta END)');
   }
 
-  return normalized;
+  console.log("AEAT: Certificado normalizado, líneas:", normalized.length);
+
+  return result;
 }
 
 /**

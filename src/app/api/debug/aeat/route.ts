@@ -5,16 +5,29 @@ import { NextResponse } from "next/server";
 import { request as httpRequest } from 'https';
 
 /**
- * Normaliza un certificado o clave PEM
+ * Normaliza un certificado o clave PEM para asegurar que tenga el formato correcto
  */
 function normalizePem(pem: string): string {
-  let cleaned = pem.trim();
-  cleaned = cleaned.replace(/\\n/g, '\n');
+  // Primero: Si contiene \n literales, convertirlos a saltos de línea reales
+  let cleaned = pem.replace(/\\n/g, '\n');
+
+  // Eliminar TODOS los espacios en blanco al inicio y final de cada línea
   const lines = cleaned.split('\n');
-  return lines
+  const normalized = lines
     .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .join('\n');
+    .filter(line => line.length > 0);
+
+  const result = normalized.join('\n');
+
+  // Verificar que tenga los marcadores correctos
+  if (!result.includes('-----BEGIN')) {
+    throw new Error('El certificado no tiene el formato PEM válido (falta BEGIN)');
+  }
+  if (!result.includes('-----END')) {
+    throw new Error('El certificado no tiene el formato PEM válido (falta END)');
+  }
+
+  return result;
 }
 
 interface DebugInfo {
