@@ -715,20 +715,22 @@ Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
 
 - [x] Flujo de recuperación por email (Firebase Password Reset)
 - [x] Página `/forgot-password` para solicitar recuperación
-- [x] Página `/reset-password` para introducir nueva contraseña
+- [x] **Modal de reset en `/login`** (solución definitiva)
 - [x] Validación de nueva contraseña (mínimo 6 caracteres)
 - [x] Confirmación de contraseña
 - [x] Email enviado con Resend (template HTML personalizado)
 - [x] Rate limiting (5 solicitudes por hora)
+- [x] Endpoint `/api/auth/reset-password/confirm` con Admin SDK
 - [x] Enlace "¿Olvidaste tu contraseña?" en login
-- [x] Verificación de código oobCode de Firebase
-- [x] Redirección automática al login tras restablecer
+
+**Solución implementada**: El enlace del email apunta a `/login?mode=resetPassword&oobCode=XXX`, que abre automáticamente un modal en la página de login. Esto evita las redirecciones no deseadas de Firebase.
 
 **Archivos clave**:
-- `src/app/api/auth/reset-password/send/route.ts` - Endpoint para enviar email
+- `src/app/api/auth/reset-password/send/route.ts` - Envía email con Resend
+- `src/app/api/auth/reset-password/confirm/route.ts` - Confirma reset con Admin SDK
 - `src/app/forgot-password/page.tsx` - Página de solicitud
-- `src/app/reset-password/page.tsx` - Página de restablecimiento
-- `src/app/login/page.tsx` - Enlace añadido al formulario
+- `src/components/PasswordResetModal.tsx` - Modal en login
+- `src/app/login/page.tsx` - Detecta parámetros y muestra modal
 
 #### 3. Sistema de Reputación/Valoraciones
 - [ ] Valoraciones mutuas post-contratación
