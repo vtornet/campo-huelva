@@ -2,9 +2,20 @@
 // Endpoint de debug para verificar la configuración de AEAT
 
 import { NextResponse } from "next/server";
-import * as fs from 'fs';
-import * as path from 'path';
 import { request as httpRequest } from 'https';
+
+/**
+ * Normaliza un certificado o clave PEM
+ */
+function normalizePem(pem: string): string {
+  let cleaned = pem.trim();
+  cleaned = cleaned.replace(/\\n/g, '\n');
+  const lines = cleaned.split('\n');
+  return lines
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
 
 interface DebugInfo {
   environment: {
@@ -12,18 +23,21 @@ interface DebugInfo {
     hasKeyEnv: boolean;
     certLength: number;
     keyLength: number;
+    certPreview: string;
+    keyPreview: string;
   };
-  files: {
-    certExists: boolean;
-    keyExists: boolean;
+  normalization: {
+    certBefore: number;
+    certAfter: number;
+    keyBefore: number;
+    keyAfter: number;
+    error?: string;
   };
   certificate: {
     readable: boolean;
+    hasBegin: boolean;
+    hasEnd: boolean;
     subject?: string;
-    issuer?: string;
-    validFrom?: string;
-    validTo?: string;
-    expired?: boolean;
     error?: string;
   };
   connection: {
@@ -34,71 +48,51 @@ interface DebugInfo {
 }
 
 export async function GET() {
+  const certEnv = process.env.AEAT_CERT_PEM || '';
+  const keyEnv = process.env.AEAT_KEY_PEM || '';
+
   const debug: DebugInfo = {
     environment: {
-      hasCertEnv: !!process.env.AEAT_CERT_PEM,
-      hasKeyEnv: !!process.env.AEAT_KEY_PEM,
-      certLength: process.env.AEAT_CERT_PEM?.length || 0,
-      keyLength: process.env.AEAT_KEY_PEM?.length || 0,
+      hasCertEnv: !!certEnv,
+      hasKeyEnv: !!keyEnv,
+      certLength: certEnv.length,
+      keyLength: keyEnv.length,
+      certPreview: certEnv.substring(0, 100) + '...',
+      keyPreview: keyEnv.substring(0, 100) + '...',
     },
-    files: {
-      certExists: fs.existsSync(path.join(process.cwd(), 'certs', 'cert.pem')),
-      keyExists: fs.existsSync(path.join(process.cwd(), 'certs', 'key.pem')),
+    normalization: {
+      certBefore: certEnv.length,
+      certAfter: 0,
+      keyBefore: keyEnv.length,
+      keyAfter: 0,
     },
     certificate: {
       readable: false,
+      hasBegin: certEnv.includes('-----BEGIN'),
+      hasEnd: certEnv.includes('-----END'),
     },
     connection: {
       status: 'not_attempted',
     },
   };
 
-  // Obtener certificado desde variables de entorno
+  // Obtener y normalizar certificado
   let cert: string | null = null;
   let key: string | null = null;
 
-  const certEnv = process.env.AEAT_CERT_PEM;
-  const keyEnv = process.env.AEAT_KEY_PEM;
-
   if (certEnv && keyEnv) {
-    // Convertir \n a saltos de línea
-    cert = certEnv.replace(/\\n/g, '\n');
-    key = keyEnv.replace(/\\n/g, '\n');
-  }
-
-  // Intentar leer certificado para extraer información
-  if (cert) {
     try {
-      // Extraer información básica del certificado PEM
-      const certMatch = cert.match(/-----BEGIN CERTIFICATE-----([^-]+)-----END CERTIFICATE-----/);
-      if (certMatch) {
-        debug.certificate.readable = true;
+      cert = normalizePem(certEnv);
+      key = normalizePem(keyEnv);
 
-        // Intentar decodificar el certificado para obtener información
-        try {
-          const base64Cert = certMatch[1].replace(/\s/g, '');
-          const buffer = Buffer.from(base64Cert, 'base64');
+      debug.normalization.certAfter = cert.length;
+      debug.normalization.keyAfter = key.length;
 
-          // Extraer campos del certificado (formato DER/PEM básico)
-          const certStr = buffer.toString('latin1');
-
-          // Buscar patrones comunes en certificados
-          const cnMatch = cert.match(/CN=([^,\n]+)/i);
-          const oMatch = cert.match(/O=([^,\n]+)/i);
-          const ouMatch = cert.match(/OU=([^,\n]+)/i);
-
-          if (cnMatch || oMatch) {
-            debug.certificate.subject = `${oMatch?.[1] || ''} ${cnMatch?.[1] || ''}`.trim();
-          }
-        } catch (e) {
-          debug.certificate.error = `No se pudo decodificar: ${e}`;
-        }
-      }
+      debug.certificate.readable = true;
     } catch (e: any) {
+      debug.normalization.error = e.message;
       debug.certificate.error = e.message;
     }
-  } else {
-    debug.certificate.error = 'No hay certificado configurado';
   }
 
   // Probar conexión con AEAT
@@ -135,10 +129,13 @@ export async function GET() {
         const req = httpRequest(options, (res) => {
           let data = '';
           res.on('data', (chunk) => data += chunk);
-          res.on('end', () => resolve(`${res.statusCode}: ${res.statusMessage}\n\n${data.substring(0, 500)}`));
-          res.on('error', reject);
+          res.on('end', () => {
+            const preview = data.length > 500 ? data.substring(0, 500) + '...' : data;
+            resolve(`${res.statusCode}: ${res.statusMessage}\n\n${preview}`);
+          });
         });
-        req.on('error', reject);
+        req.on('error', (e: any) => reject(e));
+        req.setTimeout(10000, () => reject(new Error('Timeout after 10s')));
         req.write(testSoap);
         req.end();
       });
@@ -153,6 +150,5 @@ export async function GET() {
     debug.connection.status = 'no_credentials';
   }
 
-  // No incluir el certificado completo en la respuesta por seguridad
   return NextResponse.json(debug);
 }

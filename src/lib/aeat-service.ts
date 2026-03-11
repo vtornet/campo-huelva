@@ -32,6 +32,34 @@ export interface CompanyVerificationResult {
 }
 
 /**
+ * Normaliza un certificado o clave PEM para asegurar que tenga el formato correcto
+ */
+function normalizePem(pem: string): string {
+  // Limpiar espacios en blanco al inicio y final
+  let cleaned = pem.trim();
+
+  // Si contiene \n literales, convertirlos a saltos de línea
+  cleaned = cleaned.replace(/\\n/g, '\n');
+
+  // Asegurar que cada línea del PEM no tenga espacios extra
+  const lines = cleaned.split('\n');
+  const normalized = lines
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+
+  // Verificar que tenga los marcadores correctos
+  if (!normalized.includes('-----BEGIN')) {
+    throw new Error('El certificado no tiene el formato PEM válido (falta BEGIN)');
+  }
+  if (!normalized.includes('-----END')) {
+    throw new Error('El certificado no tiene el formato PEM válido (falta END)');
+  }
+
+  return normalized;
+}
+
+/**
  * Obtiene el certificado digital desde archivos
  */
 function getAeatCredentials(): { cert: string; key: string } | null {
@@ -40,10 +68,22 @@ function getAeatCredentials(): { cert: string; key: string } | null {
   const keyEnv = process.env.AEAT_KEY_PEM;
 
   if (certEnv && keyEnv) {
-    // Convertir \n a saltos de línea
-    const cert = certEnv.replace(/\\n/g, '\n');
-    const key = keyEnv.replace(/\\n/g, '\n');
-    return { cert, key };
+    try {
+      console.log("AEAT: Leyendo certificados desde variables de entorno");
+      console.log("AEAT: Certificado length:", certEnv.length, "Key length:", keyEnv.length);
+
+      // Normalizar ambos certificados
+      const cert = normalizePem(certEnv);
+      const key = normalizePem(keyEnv);
+
+      console.log("AEAT: Certificados normalizados correctamente");
+      return { cert, key };
+    } catch (error: any) {
+      console.error("AEAT: Error normalizando certificados desde variables de entorno:", error.message);
+      // Continuar a intentar desde archivos
+    }
+  } else {
+    console.log("AEAT: No hay variables de entorno AEAT_CERT_PEM o AEAT_KEY_PEM");
   }
 
   // Si no hay variables, intentar desde archivos
@@ -57,10 +97,11 @@ function getAeatCredentials(): { cert: string; key: string } | null {
       console.log("AEAT: Certificados leídos desde archivos");
       return { cert, key };
     }
-  } catch (error) {
-    console.error("AEAT: Error leyendo archivos de certificado:", error);
+  } catch (error: any) {
+    console.error("AEAT: Error leyendo archivos de certificado:", error.message);
   }
 
+  console.log("AEAT: No se encontraron credenciales");
   return null;
 }
 
