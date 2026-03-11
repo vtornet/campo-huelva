@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import LegalCheckboxes from "@/components/LegalCheckboxes";
@@ -243,6 +244,15 @@ export default function LoginPage() {
             >
               Entrar con Email
             </button>
+
+            <div className="text-center">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </form>
         )}
 
