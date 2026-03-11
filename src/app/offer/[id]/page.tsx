@@ -770,7 +770,7 @@ export default function OfferDetailPage() {
                 )}
               </>
             )}
-            {/* Para ofertas compartidas: botón de enlace externo si existe */}
+            {/* Para ofertas compartidas: botón de enlace externo */}
             {isSharedOffer && !isOwner && (
               offer.externalLink ? (
                 <a
@@ -785,7 +785,12 @@ export default function OfferDetailPage() {
                   Acceder a la oferta
                 </a>
               ) : (
-                <div className="w-32"></div>
+                <div className="flex-1 px-6 py-3 rounded-xl font-semibold bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Enlace no disponible
+                </div>
               )
             )}
           </div>
