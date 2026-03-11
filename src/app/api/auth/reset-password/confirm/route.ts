@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
+import { initFirebaseAdmin } from "@/lib/firebase-admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Mínimo 6 caracteres" }, { status: 400 });
     }
 
-    const auth = getAuth();
+    const auth = initFirebaseAdmin();
+    if (!auth) {
+      return NextResponse.json({ error: "Error de configuración" }, { status: 500 });
+    }
+
+    // @ts-ignore - confirmPasswordReset existe en runtime
     await auth.confirmPasswordReset(oobCode, newPassword);
 
     return NextResponse.json({ success: true });
