@@ -386,40 +386,39 @@ async function handleInvoicePaid(invoice: any) {
       where: { id: existing.id },
       data: updateData,
     });
-  }
 
-  // Enviar email de confirmación de cobro
-  try {
-    // Obtener datos de la empresa para el email
-    const companyWithUser = await prisma.companyProfile.findUnique({
-      where: { id: existing.companyId },
-      include: { user: true },
-    });
-
-    if (companyWithUser?.user?.email) {
-      const periodEndDate = updateData.currentPeriodEnd
-        ? new Date(updateData.currentPeriodEnd).toLocaleDateString("es-ES", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
-        : "Próximamente";
-
-      await sendInvoicePaidEmail({
-        email: companyWithUser.user.email,
-        companyName: companyWithUser.companyName || "Tu empresa",
-        amount: invoice.amount_paid / 100, // Stripe usa centimos
-        currency: invoice.currency.toUpperCase(),
-        periodEnd: periodEndDate,
-        invoiceUrl: invoice.hosted_invoice_url || "",
-        isRenewal: !invoice.billing_reason || invoice.billing_reason !== "subscription_create",
+    // Enviar email de confirmación de cobro
+    try {
+      // Obtener datos de la empresa para el email
+      const companyWithUser = await prisma.companyProfile.findUnique({
+        where: { id: existing.companyId },
+        include: { user: true },
       });
+
+      if (companyWithUser?.user?.email) {
+        const periodEndDate = updateData.currentPeriodEnd
+          ? new Date(updateData.currentPeriodEnd).toLocaleDateString("es-ES", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })
+          : "Próximamente";
+
+        await sendInvoicePaidEmail({
+          email: companyWithUser.user.email,
+          companyName: companyWithUser.companyName || "Tu empresa",
+          amount: invoice.amount_paid / 100, // Stripe usa centimos
+          currency: invoice.currency.toUpperCase(),
+          periodEnd: periodEndDate,
+          invoiceUrl: invoice.hosted_invoice_url || "",
+          isRenewal: !invoice.billing_reason || invoice.billing_reason !== "subscription_create",
+        });
+      }
+    } catch (emailError) {
+      console.error("[WEBHOOK] Error enviando email de factura pagada:", emailError);
+      // No fallar el webhook si falla el email
     }
-  } catch (emailError) {
-    console.error("[WEBHOOK] Error enviando email de factura pagada:", emailError);
-    // No fallar el webhook si falla el email
   }
-}
 
 // Manejar fallo de pago
 async function handleInvoicePaymentFailed(invoice: any) {
