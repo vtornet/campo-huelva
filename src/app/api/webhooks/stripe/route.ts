@@ -95,22 +95,28 @@ export async function POST(request: Request) {
 
 // Manejar checkout completado
 async function handleCheckoutCompleted(session: any) {
-  const { userId, companyId } = session.metadata;
+  const { userId, companyId, paymentType, offerPack } = session.metadata;
   const subscriptionId = session.subscription as string;
   const customerId = session.customer as string;
 
   console.log('[WEBHOOK] checkout.session.completed recibido');
   console.log('[WEBHOOK] userId:', userId);
   console.log('[WEBHOOK] companyId:', companyId);
+  console.log('[WEBHOOK] paymentType:', paymentType);
   console.log('[WEBHOOK] subscriptionId:', subscriptionId);
-  console.log('[WEBHOOK] customerId:', customerId);
-  console.log('[WEBHOOK] session metadata:', session.metadata);
 
   if (!userId || !companyId) {
     console.error("[WEBHOOK] Missing metadata in checkout session");
     return;
   }
 
+  // Si es pago de pack de ofertas
+  if (paymentType === 'offer_pack') {
+    await handleOfferPackPurchase(session, userId, companyId, offerPack);
+    return;
+  }
+
+  // Si no, es suscripción Premium
   try {
     // Obtener detalles de la suscripción
     const stripeInstance = getStripe();
@@ -118,8 +124,6 @@ async function handleCheckoutCompleted(session: any) {
     const subscription = subscriptionResponse as any;
 
     console.log('[WEBHOOK] Suscripción recuperada de Stripe:', subscription.status);
-    console.log('[WEBHOOK] current_period_start:', subscription.current_period_start);
-    console.log('[WEBHOOK] current_period_end:', subscription.current_period_end);
 
     // Determinar si está en periodo de prueba
     const hasTrial = Boolean(subscription.trial_end && subscription.trial_end > Date.now() / 1000);
@@ -165,6 +169,42 @@ async function handleCheckoutCompleted(session: any) {
     console.log('[WEBHOOK] Suscripción creada/actualizada:', createdSubscription.id);
   } catch (error) {
     console.error('[WEBHOOK] Error creando suscripción:', error);
+  }
+}
+
+// Manejar compra de pack de ofertas
+async function handleOfferPackPurchase(session: any, userId: string, companyId: string, offerPack: string) {
+  try {
+    const packSize = parseInt(offerPack || '1');
+    const amountTotal = session.amount_total || 0; // Importe en céntimos
+
+    console.log('[WEBHOOK] Procesando compra de pack de ofertas:', packSize);
+
+    // Crear registro de compra
+    await prisma.offerPackPurchase.create({
+      data: {
+        companyId,
+        packSize,
+        amountPaid: amountTotal,
+        currency: session.currency || 'eur',
+        stripeSessionId: session.id,
+        stripePaymentId: session.payment_intent as string,
+      },
+    });
+
+    // Añadir créditos a la empresa
+    await prisma.companyProfile.update({
+      where: { id: companyId },
+      data: {
+        offerCredits: {
+          increment: packSize,
+        },
+      },
+    });
+
+    console.log(`[WEBHOOK] Pack de ${packSize} ofertas añadido a la empresa ${companyId}`);
+  } catch (error) {
+    console.error('[WEBHOOK] Error procesando compra de pack de ofertas:', error);
   }
 }
 

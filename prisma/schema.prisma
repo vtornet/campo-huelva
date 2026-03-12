@@ -164,6 +164,9 @@ model CompanyProfile {
   website        String?
   description    String?
 
+  // Créditos de ofertas (compras de packs sin suscripción)
+  offerCredits   Int      @default(0) // Créditos disponibles para publicar ofertas
+
   // Aprobación de empresa (requerida para publicar ofertas)
   isApproved     Boolean  @default(false) // Debe ser aprobada por admin para publicar ofertas
   approvedAt     DateTime?            // Fecha de aprobación
@@ -194,6 +197,7 @@ model CompanyProfile {
 
   posts          Post[]
   subscription   Subscription?
+  offerPackPurchases OfferPackPurchase[]
 }
 
 model EngineerProfile {
@@ -917,4 +921,24 @@ enum SubscriptionAction {
   RESUMED            // Reactivación
   UPDATED            // Actualización genérica
   STATUS_CHANGED     // Cambio de estado
+}
+
+// Historial de compras de packs de ofertas (pagos únicos)
+model OfferPackPurchase {
+  id              String   @id @default(uuid())
+  companyId       String
+  company         CompanyProfile @relation(fields: [companyId], references: [id])
+
+  packSize        Int      // 1, 5 o 10 ofertas
+  amountPaid      Int      // Importe pagado en céntimos
+  currency        String   @default("eur")
+
+  stripeSessionId String?  // ID de la sesión de checkout
+  stripePaymentId String?  // ID del pago de Stripe
+
+  creditsUsed     Int      @default(0) // Créditos consumidos
+  createdAt       DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
 }

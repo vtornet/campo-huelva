@@ -29,6 +29,7 @@ export default function PremiumPage() {
   const [stripeConfig, setStripeConfig] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [purchasingOfferPack, setPurchasingOfferPack] = useState<string | null>(null);
 
   // Flag para evitar procesar múltiples veces los parámetros de URL
   const paramsProcessed = useRef(false);
@@ -163,6 +164,40 @@ export default function PremiumPage() {
   async function handleManageSubscription() {
     // Redirigir a la pestaña de suscripción del perfil
     router.push("/profile?tab=suscripcion");
+  }
+
+  async function handleBuyOfferPack(pack: '1' | '5' | '10') {
+    if (!user) return;
+
+    setPurchasingOfferPack(pack);
+    try {
+      const response = await fetch("/api/stripe/create-offer-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: user.uid,
+          offerPack: pack,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || "Error al iniciar el proceso de pago");
+      }
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo iniciar el proceso de pago",
+      });
+    } finally {
+      setPurchasingOfferPack(null);
+    }
   }
 
   if (authLoading || loading) {
@@ -421,6 +456,143 @@ export default function PremiumPage() {
             </div>
           </div>
         )}
+
+        {/* Sección: Publicar ofertas sin suscripción */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mt-8">
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+              Publica ofertas sin suscripción
+            </h2>
+            <p className="text-gray-600 text-center mb-8">
+              Si solo necesitas publicar unas pocas ofertas al año, esta opción es para ti
+            </p>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Pack 1 oferta */}
+              <div className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-400 transition">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">1 Oferta</h3>
+                  <p className="text-3xl font-bold text-gray-900">29€</p>
+                  <p className="text-sm text-gray-500">Válida 30 días</p>
+                </div>
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Publicación por 30 días</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Visible en el feed principal</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-500">
+                    <X className="w-4 h-4" />
+                    <span>Sin acceso a buscador</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleBuyOfferPack('1')}
+                  disabled={purchasingOfferPack !== null}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {purchasingOfferPack === '1' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      Procesando...
+                    </>
+                  ) : (
+                    "Comprar"
+                  )}
+                </button>
+              </div>
+
+              {/* Pack 5 ofertas */}
+              <div className="border-2 border-blue-400 rounded-xl p-6 relative bg-blue-50">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
+                  Popular
+                </div>
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">Pack 5 Ofertas</h3>
+                  <p className="text-3xl font-bold text-gray-900">120€</p>
+                  <p className="text-sm text-green-600 font-medium">Ahorras 25€</p>
+                  <p className="text-xs text-gray-500">24€ por oferta</p>
+                </div>
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>5 publicaciones por 30 días</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Visibles en el feed principal</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-500">
+                    <X className="w-4 h-4" />
+                    <span>Sin acceso a buscador</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleBuyOfferPack('5')}
+                  disabled={purchasingOfferPack !== null}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {purchasingOfferPack === '5' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      Procesando...
+                    </>
+                  ) : (
+                    "Comprar pack"
+                  )}
+                </button>
+              </div>
+
+              {/* Pack 10 ofertas */}
+              <div className="border-2 border-green-400 rounded-xl p-6 relative bg-green-50">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-3 py-1 rounded-full">
+                  Mejor valor
+                </div>
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">Pack 10 Ofertas</h3>
+                  <p className="text-3xl font-bold text-gray-900">200€</p>
+                  <p className="text-sm text-green-600 font-medium">Ahorras 90€</p>
+                  <p className="text-xs text-gray-500">20€ por oferta</p>
+                </div>
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>10 publicaciones por 30 días</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Visibles en el feed principal</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-gray-500">
+                    <X className="w-4 h-4" />
+                    <span>Sin acceso a buscador</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleBuyOfferPack('10')}
+                  disabled={purchasingOfferPack !== null}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {purchasingOfferPack === '10' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      Procesando...
+                    </>
+                  ) : (
+                    "Comprar pack"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-center text-sm text-gray-500 mt-6">
+              💡 Si necesitas publicar muchas ofertas, el plan Premium te sale más rentable
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

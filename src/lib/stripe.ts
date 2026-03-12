@@ -24,6 +24,18 @@ export const stripe = STRIPE_SECRET_KEY
 export const PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID || '';
 export const PREMIUM_PRICE_ID_YEARLY = process.env.STRIPE_PREMIUM_PRICE_ID_YEARLY || '';
 
+// ID de precios para publicación de ofertas individuales (payment)
+export const OFFER_PRICE_ID_1 = process.env.STRIPE_OFFER_PRICE_ID_1 || '';
+export const OFFER_PRICE_ID_5 = process.env.STRIPE_OFFER_PRICE_ID_5 || '';
+export const OFFER_PRICE_ID_10 = process.env.STRIPE_OFFER_PRICE_ID_10 || '';
+
+// Precios de ofertas (para mostrar en UI)
+export const OFFER_PRICES = {
+  '1': { price: 29, label: '1 oferta' },
+  '5': { price: 120, label: 'Pack 5 ofertas', savings: 'Ahorras 25€' },
+  '10': { price: 200, label: 'Pack 10 ofertas', savings: 'Ahorras 90€' },
+};
+
 // Configuración del plan premium
 export const PREMIUM_CONFIG = {
   name: 'Plan Premium Empresa',
@@ -100,6 +112,58 @@ export async function createCheckoutSession(
     return { sessionId: session.id, url: session.url };
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    throw error;
+  }
+}
+
+// Crear una sesión de checkout para pago de oferta (one-time payment)
+export async function createOfferCheckoutSession(
+  userId: string,
+  userEmail: string,
+  companyId: string,
+  successUrl: string,
+  cancelUrl: string,
+  offerPack: '1' | '5' | '10'
+) {
+  try {
+    const stripeInstance = getStripe();
+
+    // Seleccionar el price ID según el pack
+    const priceMap = {
+      '1': OFFER_PRICE_ID_1,
+      '5': OFFER_PRICE_ID_5,
+      '10': OFFER_PRICE_ID_10,
+    };
+
+    const priceId = priceMap[offerPack];
+
+    if (!priceId) {
+      throw new Error(`No hay configurado un price ID para el pack de ofertas: ${offerPack}`);
+    }
+
+    const session = await stripeInstance.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment', // Pago único, no suscripción
+      customer_email: userEmail,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId,
+        companyId,
+        offerPack,
+        paymentType: 'offer_pack',
+      },
+    });
+
+    return { sessionId: session.id, url: session.url };
+  } catch (error) {
+    console.error('Error creating offer checkout session:', error);
     throw error;
   }
 }
