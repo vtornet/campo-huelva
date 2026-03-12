@@ -1,990 +1,223 @@
 # CLAUDE.md - Guía del Proyecto Agro Red / Campo Huelva
 
-Este archivo proporciona orientación a Claude Code (o cualquier desarrollador) que trabaje en este repositorio. Contiene tanto las directrices técnicas como la visión estratégica del producto.
+Este archivo proporciona orientación a Claude Code (o cualquier desarrollador) que trabaje en este repositorio.
 
-## Descripción General del Proyecto
+## Descripción del Proyecto
 
-**Agro Red (nombre técnico: Campo Huelva)** es una plataforma de empleo agrícola que conecta a trabajadores, jefes de cuadrilla (manijeros), ingenieros y empresas del sector agrario español. Es una mezcla de Infojobs y red social vertical, construida como una PWA (Progressive Web App) para garantizar el acceso desde cualquier dispositivo móvil, incluso en zonas con baja cobertura.
+**Agro Red** es una plataforma de empleo agrícola que conecta a trabajadores, jefes de cuadrilla, ingenieros y empresas del sector agrario español. Es una mezcla de Infojobs y red social vertical, construida como una PWA.
 
-El proyecto nace de un grupo de Facebook con más de **34.000 usuarios activos en Huelva**, lo que proporciona una validación real y una tracción inicial inigualable.
+- **Origen**: Grupo de Facebook con +34.000 usuarios activos en Huelva
+- **Despliegue**: https://agroredjob.com (Railway)
+- **Última actualización**: 12 de marzo de 2026
 
 ### Visión de Producto
-Construir una red profesional y de empleo fiable, centrada exclusivamente en el sector agrícola español, priorizando:
-- Ofertas y demandas de empleo reales.
-- Perfiles de usuario verificados y adaptados a cada rol (trabajador, jefe de cuadrilla, ingeniero, empresa).
-- La figura del **jefe de cuadrilla** como elemento diferencial (equipos completos y formados, con un responsable único).
-- Confianza y transparencia entre todas las partes.
-- Simplicidad y usabilidad por encima de funciones sociales genéricas.
-- Escalabilidad para convertirse en la herramienta de referencia a nivel nacional.
 
-**Diferenciador clave**: El fundador tiene una dilatada experiencia como director de zona en importantes ETT del sector agroalimentario. Este conocimiento profundo de la legislación, las necesidades reales y los puntos de dolor del sector es el verdadero producto. Agro Red **no es una ETT ni una empresa de servicios**, sino un marketplace de conexión que respeta la legalidad (pago directo, convenios colectivos) y empodera a los profesionales del campo.
-
-## Estado del Proyecto
-
-Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones anteriores, pero cualquier cambio importante debe discutirse previamente.
-
-**Despliegue**: Railway con dominio propio https://agroredjob.com
-
-**Última actualización**: 12 de marzo de 2026
+Construir una red profesional y de empleo fiable para el sector agrícola español, priorizando:
+- Ofertas y demandas de empleo reales
+- Perfiles verificados y adaptados a cada rol
+- La figura del **jefe de cuadrilla** como elemento diferencial
+- Confianza y transparencia
+- Simplicidad y usabilidad
 
 ## Comandos de Desarrollo
 
+```bash
 # Desarrollo
 npm run dev
 
-# Construcción para producción
+# Producción
 npm run build
-
-# Iniciar servidor de producción
 npm start
 
-# Linting
-npm run lint
-
-# Operaciones de Base de Datos (tras cambios en schema.prisma)
+# Base de Datos
 npx prisma generate
 npx prisma db push
 
-# Forzar migración con pérdida de datos (cuando se eliminan columnas)
-npx prisma db push --accept-data-loss
+# Tests
+npm run test:e2e           # Todos los tests
+npm run test:e2e:ui        # Interfaz visual
 
-# Tests E2E con Playwright
-npm run test:e2e           # Ejecutar todos (headless)
-npm run test:e2e:ui        # Interfaz visual (recomendado)
-npm run test:e2e:chrome    # Solo Chromium
-npm run test:e2e:mobile    # Emulación móvil
-npm run test:e2e:report    # Ver reporte HTML
-
-# Scripts de datos de prueba
+# Scripts de prueba
 npm run test:users:create  # Crear usuarios en Firebase
-npm run test:profiles:complete  # Completar onboarding
-npm run test:seed          # Sembrar datos (posts, inscripciones)
+npm run test:seed          # Sembrar datos de prueba
+```
 
 ## Arquitectura Técnica
 
-### Sistema de Autenticación Dual
-La aplicación utiliza **Firebase Auth** para la autenticación en el frontend y **PostgreSQL (via Prisma)** para los datos persistentes de usuario.
-- El UID de Firebase (`user.uid`) es la clave primaria en la base de datos.
-- **Firebase**: Gestiona el estado de autenticación (inicio/cierre de sesión) a través de `src/lib/firebase.ts`.
-- **Prisma/PostgreSQL**: Almacena perfiles de usuario, publicaciones, solicitudes y conexiones.
-- **Sincronización**: Cuando los usuarios se registran mediante `/api/register`, su UID de Firebase se almacena como `User.id` en Prisma.
+### Autenticación
+- **Firebase Auth**: Gestiona sesiones en frontend
+- **PostgreSQL + Prisma**: Datos persistentes (UID de Firebase como clave primaria)
+- **Firebase Admin SDK**: Verificación de tokens en servidor
 
 ### Roles de Usuario
-Definidos en `prisma/schema.prisma`:
-- **USER** (Trabajador/Peón): Busca empleo individualmente.
-- **FOREMAN** (Manijero): Líder de cuadrilla, ofrece un equipo completo y formado.
-- **ENGINEER** (Ingeniero Técnico Agrícola): Asesoramiento, peritajes, gestión de cultivos.
-- **COMPANY** (Empresa): Contrata trabajadores o cuadrillas.
-- **ENCARGADO** (Capataz/Encargado): Responsable de finca, experiencia en cultivos y manejo de tractor.
-- **TRACTORISTA** (Tractorista): Especialista en maquinaria agrícola y aperos.
 
-Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, `EngineerProfile`, `CompanyProfile`, `EncargadoProfile`, `TractoristProfile`.
+| Rol | Descripción | Perfil |
+|-----|-------------|--------|
+| USER | Trabajador/Peón | WorkerProfile |
+| FOREMAN | Jefe de cuadrilla (manijero) | ForemanProfile |
+| ENGINEER | Ingeniero Técnico Agrícola | EngineerProfile |
+| COMPANY | Empresa | CompanyProfile |
+| ENCARGADO | Capataz/Encargado | EncargadoProfile |
+| TRACTORISTA | Tractorista | TractoristProfile |
 
-### Modelos de Datos Clave
+### Tipos de Publicación
 
-**Sistema de Publicaciones**:
-- `PostType.OFFICIAL`: Ofertas verificadas publicadas por empresas (de pago).
-- `PostType.SHARED`: Ofertas externas compartidas por usuarios (en revisión).
-- `PostType.DEMAND`: Demandas de empleo publicadas por trabajadores o jefes de cuadrilla.
+- `OFFICIAL`: Ofertas de empresas verificadas (de pago)
+- `SHARED`: Ofertas externas compartidas (solo admin)
+- `DEMAND`: Demandas de empleo (trabajadores/manijeros)
 
-**Perfiles Detallados**:
-- **Trabajador**: Datos personales, vehículo, disponibilidad, carnets (fitosanitario, manipulador de alimentos), experiencia por cultivos y tareas, años de campaña.
-- **Jefe de cuadrilla**: Todo lo anterior + número de componentes de la cuadrilla, disponibilidad de furgoneta/herramientas.
-- **Ingeniero**: Datos técnicos, especialidad, número ROPO/colegiado, experiencia en cultivos, servicios ofrecidos.
-- **Empresa**: Datos fiscales, y tras verificación manual, acceso a publicación de ofertas y BBDD.
+### Inscripciones (Applications)
 
-**Sistema de Inscripciones (Applications)**:
-- Los trabajadores se inscriben en ofertas.
-- Al inscribirse, **autorizan automáticamente** que la empresa vea sus datos de contacto (teléfono, email).
-- Las empresas pueden ver todos los datos de contacto de los inscritos.
-- Estados: PENDING, ACCEPTED, REJECTED, CONTACTED, WITHDRAWN.
+Estados: `PENDING` → `ACCEPTED` / `REJECTED` / `CONTACTED` / `WITHDRAWN`
 
-## Estructura de la Aplicación (App Router)
+Al inscribirse, el trabajador **autoriza automáticamente** que la empresa vea sus datos de contacto.
 
-- `src/app/`
-  - `page.tsx`: Dashboard principal con feed filtrable por provincia y tipo de publicación.
-  - `login/`: Autenticación con Firebase.
-  - `onboarding/`: Selección de rol para nuevos usuarios.
-  - `profile/worker/`, `profile/foreman/`, `profile/engineer/`, `profile/company/`, `profile/encargado/`, `profile/tractorista/`: Formularios de edición de perfil.
-  - `publish/`: Creación de publicaciones con selección de tipo.
-  - `applications/`: Gestión de candidatos para empresas (ver perfiles completos, datos de contacto).
-  - `my-applications/`: Lista de inscripciones del trabajador.
-- `src/app/api/`
-  - `register/`: Crea el usuario en Prisma a partir de la autenticación de Firebase.
-  - `user/me/`: Devuelve los datos del usuario con resolución de perfil.
-  - `posts/`: Obtiene el feed (GET) y crea publicaciones (POST).
-  - `posts/[id]/apply`: Inscribirse en una oferta (POST), ver inscritos (GET), retirarse (DELETE).
-  - `applications/[id]`: Actualizar estado de inscripción (PUT).
-  - `applications/`: Listar inscripciones del usuario (GET).
-- `src/context/AuthContext.tsx`: Provee el estado de autenticación mediante el hook `useAuth()`.
-- `src/lib/constants.ts`: Listas de provincias, tipos de cultivo, municipios de Huelva, etc.
+## Variables de Entorno
 
-### Patrones Importantes
-
-- **Comprobación de Perfil Completo**: En `page.tsx`, los usuarios son redirigidos a onboarding si su perfil carece de nombre (`fullName` o `companyName`).
-- **Asociación de Autor en Publicaciones**:
-  - Empresas → `companyId` + tipo OFFICIAL.
-  - Trabajadores/Jefes de cuadrilla → `publisherId` + tipo SHARED o DEMAND.
-- **Código de Colores por Rol**:
-  - Trabajadores: Tema verde (`bg-green-*`, `text-green-*`)
-  - Jefes de cuadrilla: Tema naranja (`bg-orange-*`, `text-orange-*`)
-  - Empresas: Tema azul
-
-### Variables de Entorno Requeridas
-
-**Para Firebase (públicas):**
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-
-**Para la Base de Datos (privadas):**
-- `DATABASE_URL`: Cadena de conexión a PostgreSQL (Railway).
-
-## Tareas Pendientes (Orden de Prioridad)
-
-### ✅ 1. PWA / Instalación (COMPLETADO)
-- [x] Manifest.json completo con nombre, iconos, colores
-- [x] Service Worker para modo offline
-- [x] Iconos de la app en múltiples tamaños (72, 96, 128, 144, 152, 192, 384, 512)
-- [x] Meta tags PWA (apple-touch-icon, theme-color, mobile-web-app-capable)
-- [x] Estrategia de caché para contenido estático y API
-- [x] Probado en escritorio y móvil - instalación funcional
-
-### ✅ 2. Nuevos Perfiles de Usuario (COMPLETADO)
-- [x] **Encargado/Capataz**: Nuevo rol con perfil específico
-  - Experiencia en cultivos específicos
-  - Capacidad de manejo de tractor
-  - Zona de trabajo preferente
-  - Carnets fitosanitarios y manipulador de alimentos
-- [x] **Tractorista**: Nuevo rol con perfil específico
-  - Tipos de maquinaria que maneja
-  - Tipos de aperos que utiliza
-  - Carnets específicos (tractor, pulverizadora, cosechadora)
-  - Experiencia por cultivo
-  - Disponibilidad para temporada completa y viajes
-
-### ✅ 3. Buscador de Candidatos por Categoría (COMPLETADO)
-- [x] Nueva página `/search` con selector inicial de perfil:
-  - Peón/Trabajador
-  - Tractorista
-  - Manijero
-  - Encargado
-  - Ingeniero
-- [x] Según selección, mostrar filtros específicos de esa categoría
-- [x] Resultados con cards de candidato y opción de contacto
-- [x] Modal de perfil completo con todos los datos del candidato
-- [x] Filtros corregidos (fitosanitario case-insensitive, especialidades de manijero)
-
-### ✅ 4. Gestión de Publicaciones para Todos los Usuarios (COMPLETADO)
-- [x] **Pestaña "Mis Publicaciones" integrada en `/profile`**
-  - Ver todas las publicaciones propias
-  - Editar publicaciones (redirige a `/publish?edit=id`)
-  - Eliminar publicaciones permanentemente
-  - Botones de acción directa desde la lista
-- [x] **API actualizada**
-  - PUT en `/api/posts/[id]` para editar
-  - DELETE en `/api/posts/[id]` para eliminar/archivar
-  - Incluir conteo de aplicaciones en respuesta
-- [x] **Redirecciones actualizadas** de `/publish` a `/profile` tras guardar/editar
-
-### ✅ 5. Filtros Avanzados en Gestión de Candidatos (COMPLETADO)
-- [x] Filtros en `/applications` para empresas:
-  - Por experiencia (años de campaña) - slider de 0 a 20+ años
-  - Por disponibilidad de vehículo propio
-  - Por carnet de manipulador de alimentos
-  - Por carnets fitosanitarios
-  - Por disponibilidad de reubicación
-  - Por provincia (se genera dinámicamente según candidatos)
-- [x] Ordenamiento por múltiples criterios (fecha, experiencia, nombre)
-- [x] Guardar filtros preferidos (localStorage)
-- [x] Panel de filtros colapsable con contador de filtros activos
-- [x] Mensaje de "sin resultados" cuando los filtros no coinciden
-
-### ✅ 6. SEO y Meta Tags (COMPLETADO)
-- [x] Títulos dinámicos por página (`<title>`, `<meta name="description">`) - configurado en layout.tsx con template
-- [x] Open Graph para compartir en redes (og:title, og:description, og:image) - imagen generada dinámicamente
-- [x] Twitter Cards - imagen generada dinámicamente
-- [x] Favicon en múltiples formatos - iconos en 72, 96, 128, 144, 152, 192, 384, 512px
-- [x] Sitemap.xml - sitemap.ts con rutas estáticas y preparado para dinámicas
-- [x] Robots.txt - robots.ts con reglas para crawlers
-
-### ✅ 7. Optimizaciones de Producción (COMPLETADO)
-- [x] Compresión de imágenes (next/image con AVIF/WebP)
-- [x] Configuración de imágenes Next.js (remotePatterns para Firebase Storage y dominio propio)
-- [x] Optimización de bundles (dynamic imports para RecommendedOffers en dashboard)
-- [x] Headers de seguridad mejorados (CSP, X-Frame-Options, etc.)
-- [x] Cache headers para assets estáticos (iconos, manifest, favicon)
-- [x] Variables de entorno de producción configuradas (NEXT_PUBLIC_APP_URL)
-- [x] Logging optimizado para producción
-
-### 8. Internacionalización (i18n)
-- [ ] **Soporte multiidioma para temporeros extranjeros**
-  - Español (idioma principal/predeterminado)
-  - Francés (temporeros de origen magrebí)
-  - Rumano (temporeros rumanos, muy comunes en la fresa)
-  - Inglés (idioma universal)
-- [ ] Sistema de traducción:
-  - Integrar `next-intl` o similar
-  - Archivos de traducción por idioma (JSON)
-  - Selector de idioma en la app con persistencia en preferencias de usuario
-- [ ] Traducción de:
-  - Interfaz de usuario (labels, botones, mensajes)
-  - Textos de onboarding por rol
-  - Errores y notificaciones
-  - Emails (si aplica)
-  - Política de privacidad y términos legales
-- [ ] Detección automática de idioma del navegador
-- [ ] URLs localizadas (/es, /fr, /ro, /en) o subdominios
-
-### ✅ 9. Validaciones y UX Final (COMPLETADO)
-- [x] Validaciones básicas en formularios (required, minLength, etc.)
-- [x] Mensajes de error más amigables (reemplazados alerts en publish/page.tsx)
-- [x] Estados de carga en todas las operaciones async (loading states)
-- [x] Pantallas de error personalizadas (404 not-found.tsx, 500 error.tsx)
-- [x] Componentes de Skeleton reutilizables (Skeleton.tsx con PostCardSkeleton, ProfileSkeleton, etc.)
-- [x] **Validaciones avanzadas** (teléfono +34, email, CIF/NIF/NIE)
-  - Módulo `src/lib/validations.ts` con validaciones RGPD
-  - Componente `PhoneInput` aplicado a 6 perfiles de usuario
-
-### ✅ 10. Componentes de UI Reutilizables (COMPLETADO)
-- [x] **ConfirmDialog** (`src/components/ConfirmDialog.tsx`): Modal de confirmación para reemplazar `window.confirm()`
-  - Hook `useConfirmDialog()` para fácil integración
-  - 4 tipos visuales: danger, warning, info, success
-  - Texto personalizable para botones
-- [x] **PromptDialog** (`src/components/PromptDialog.tsx`): Modal de entrada de texto para reemplazar `window.prompt()`
-  - Hook `usePromptDialog()` para fácil integración
-  - Soporta input de una línea o textarea (multiline)
-  - Validación de campo requerido
-- [x] **Notifications** (`src/components/Notifications.tsx`): Sistema de notificaciones toast
-  - Context `NotificationsProvider` y hook `useNotifications()`
-  - 4 tipos: success, error, warning, info
-  - Auto-dismiss con timeout configurable
-- [x] **Skeleton** (`src/components/Skeleton.tsx`): Componentes de loading
-  - PostCardSkeleton, ProfileSkeleton, etc.
-- [x] **MultiSelectDropdown**: Dropdown de selección múltiple con búsqueda
-- [x] **AIButton**, **AIBioGenerator**, **AIImprovedTextarea**: Componentes para funcionalidades IA
-
-### ✅ 11. Eliminación de Alerts Nativos (COMPLETADO)
-- [x] Todos los `window.alert()`, `window.confirm()` y `window.prompt()` reemplazados por componentes personalizados
-- [x] Integración en:
-  - `src/app/admin/page.tsx` (baneos, silencios, cambios de rol)
-  - `src/app/page.tsx` (inscripciones, retiros)
-  - `src/app/my-applications/page.tsx` (retirar inscripción)
-  - `src/app/profile/page.tsx` (eliminar publicación)
-  - `src/components/PostActions.tsx` (denuncias)
-  - `src/components/AIImprovedTextarea.tsx` (mejora con IA)
-
-### ✅ 12. Restricciones de Publicación por Rol (COMPLETADO)
-- [x] **Solo ADMIN puede publicar ofertas SHARED** (compartidas)
-  - Verificación en `/api/posts/route.ts`
-  - Botón "Compartir oferta" solo visible para admin en página principal
-  - Etiqueta "⚡ Oferta compartida" con estilo indigo
-- [x] **Solo COMPANY puede publicar ofertas OFICIALES**
-  - Verificación de aprobación de empresa requerida
-- [x] **Otros roles solo pueden publicar DEMANDAS**
-- [x] **Ofertas compartidas sin botones de acción** (no inscribirse/contactar)
-
-### ✅ 13. Corrección de Rol ADMIN (COMPLETADO)
-- [x] El rol ADMIN ahora se respeta correctamente en `/api/user/me/route.ts`
-  - Antes: El rol se sobrescribía si el admin tenía un perfil asociado (workerProfile, etc.)
-  - Ahora: El rol ADMIN siempre se mantiene, independientemente de los perfiles asociados
-- [x] Botón "Compartir oferta" visible para administradores
-
-### ✅ 14. Página de Detalle de Oferta Mejorada (COMPLETADO)
-- [x] Botón "Inscribirse" funcionando en `/offer/[id]/page.tsx`
-  - Estados visuales: Inscribirse → Inscrito → Aceptado/Rechazado/Contactado
-  - Confirmación antes de inscribirse (autoriza compartir datos de contacto)
-  - Posibilidad de retirar inscripción
-- [x] Botón "Contactar" para demandas y empresas
-- [x] Ofertas compartidas (SHARED) sin botón de acción
-
-### ✅ 15. Ofertas Recomendadas por IA (COMPLETADO)
-- [x] Al pulsar una oferta recomendada, navega a la página de detalle
-  - Antes: Iniciaba un chat directamente
-  - Ahora: Abre `/offer/[id]` para ver detalles completos e inscribirse
-
-### ✅ 16. Seguridad (COMPLETADO)
-- [x] Headers de seguridad (CSP, X-Frame-Options, HSTS implementados en next.config.ts)
-- [x] CSP actualizado para Google Auth (`apis.google.com` en script-src)
-- [x] CSP actualizado para Firebase iframe (`red-agricola-e06cc.firebaseapp.com` en frame-src)
-- [x] HSTS (Strict-Transport-Security) configurado
-- [x] CORS configurado (next.config.ts permite oríenes externos limitados)
-- [x] Sanitización básica de inputs (Next.js sanitiza por defecto en JSX)
-- [x] **Verificación de tokens de Firebase en servidor** (módulo `src/lib/firebase-admin.ts`)
-- [x] **Rate limiting en endpoints sensibles** (módulo `src/lib/rate-limit.ts`)
-  - Inscripciones: 20 por minuto
-  - Mensajes: 10 por minuto
-  - Denuncias: 5 por minuto
-- [x] **Middleware de autenticación centralizado** (función `authenticateRequest`)
-- [x] **Cliente HTTP para peticiones autenticadas** (`src/lib/api-client.ts`)
-
-**Nota**: Se ha implementado Firebase Admin SDK para verificación de tokens en servidor. Los endpoints de inscripciones, mensajes y denuncias ahora incluyen rate limiting. Durante la transición, se mantiene compatibilidad con el método anterior (userId en body) pero se recomienda migrar al uso de Authorization header.
-
-### ✅ 17. Testing E2E con Playwright (COMPLETADO)
-- [x] **Infraestructura de testing completa**
-  - Playwright configurado con soporte multi-browser (Chromium, Firefox, WebKit, Mobile)
-  - Tests organizados por funcionalidad (auth, worker, company, pwa)
-  - Helpers de autenticación reutilizables
-  - Scripts automáticos para crear usuarios, perfiles y datos de prueba
-- [x] **Tests implementados: 27/39 pasando (69%)**
-  - Autenticación: 5/5 ✅ (login, redirección, errores, Google Auth, logout)
-  - PWA: 10/10 ✅ (manifest, service worker, meta tags, responsive, performance)
-  - Onboarding: 3/3 ✅ (selección de rol, redirecciones)
-  - Empresa: 6/9 (dashboard, publicar, editar, eliminar, aceptar/rechazar)
-  - Trabajador: 5/7 (dashboard, feed, like, publicar demanda)
-- [x] **Scripts de datos de prueba**
-  - `scripts/create-test-users-simple.js` - Crear usuarios en Firebase
-  - `scripts/complete-profiles-direct.js` - Crear perfiles en Prisma
-  - `scripts/seed-test-data.js` - Crear posts de prueba
-- [x] **Documentación generada**
-  - `E2E_IMPLEMENTATION_SUMMARY.md` - Resumen de implementación
-  - `E2E_TEST_RESULTS_FINAL.md` - Resultados detallados
-- [ ] **Tests pendientes de completar** (requieren datos específicos o ajustes menores)
-  - Ver detalle de oferta (requiere click en post)
-  - Inscribirse en oferta (requiere click en post y botón)
-  - Ver mis inscripciones (ajuste de navegación)
-  - Ver lista de candidatos inscritos (requiere datos en BD)
-- [ ] Probar en dispositivos móviles reales (Android e iOS)
-- [ ] Probar en diferentes navegadores (Chrome, Safari, Firefox)
-- [ ] Probar en modo offline (PWA ya implementada)
-
-### ✅ 18. Legal / Comunicación (COMPLETADO - 25/02/2026)
-- [x] **Documentos legales RGPD compliant**
-  - Política de Privacidad (`/privacy`) - Responsable: Víctor José Tornet García, Appstracta
-  - Términos y Condiciones (`/terms`)
-  - Política de Cookies (`/cookies`)
-  - Aviso Legal (`/legal`) - Datos: NIF 77534989B, Lepe (Huelva)
-  - Registro de Actividades de Tratamiento (RAT) interno - `docs/RAT_INTERNO.md`
-- [x] **Footer global** (`src/components/Footer.tsx`) con enlaces a todos los documentos legales
-- [x] **Casillas de aceptación en registro** (`src/components/LegalCheckboxes.tsx`)
-  - Checkbox obligatorios: Privacidad, Términos, Edad mínima (16+)
-  - Checkbox opcional: Comunicaciones comerciales
-  - Validación antes de registro (email y Google Auth)
-
-### ✅ 19. Envío de Documentos PDF en Chat (COMPLETADO - 02/03/2026)
-- [x] Campo `DOCUMENT` añadido al enum `MessageType` en Prisma
-- [x] Carga y envío de archivos PDF en la mensajería interna
-- [x] Visualización de documentos con icono de PDF
-- [x] Descarga de documentos adjuntos
-
-### ✅ 20. Carnet de Carretillero (COMPLETADO - 28/02/2026)
-- [x] Campo `hasForkliftLicense` añadido en schema de WorkerProfile
-- [x] Checkbox en formulario de perfil de trabajador
-- [x] Filtro en búsqueda de candidatos
-- [x] Badge en tarjetas de resultados y modal de perfil
-
-### ✅ 20. Verificación de Empresas (VALIDACIÓN LOCAL - 11/03/2026)
-- [x] Validación de formato CIF/NIF/NIE mediante algoritmo local
-- [x] Integración con formulario de empresa
-- [x] **Nota**: La integración directa con AEAT se ha descartado porque Railway no puede resolver los DNS de www1.agenciatributaria.es. La verificación de empresas usa validación local de formato.
-
-### ✅ 20. Tablón Social (COMPLETADO - 25/02/2026)
-- [x] Nueva pestaña "Tablón" junto a "Ofertas" y "Demandas"
-- [x] Publicaciones tipo red social (compartir coche, buscar compañeros, etc.)
-- [x] Aviso al crear publicación: no se permiten ofertas/demandas de empleo
-- [x] Solo usuarios no empresas pueden publicar (trabajadores, manijeros, ingenieros, encargados, tractoristas)
-- [x] Botones en publicaciones: Like, Compartir, Denunciar, Contactar, Comentar
-- [x] Comentarios anidados con respuestas
-- [x] Botones en comentarios: Like, Responder, Denunciar
-- [x] Respuestas a comentarios también con Like y Denunciar
-- [x] **Botón Contactar crea conversación directamente** (sin mensaje automático)
-- [x] Endpoint `/api/messages/find-or-create` para reutilizar conversaciones existentes
-
-### ✅ 21. Eliminación de Mensajes Automáticos (COMPLETADO - 25/02/2026)
-- [x] **Eliminados todos los mensajes iniciales automáticos** al contactar
-- [x] Antes: Al contactar se enviaba "Hola, me interesa tu publicación..."
-- [x] Ahora: Se crea/navega a la conversación vacía para que el usuario escriba su propio mensaje
-- [x] Afecta a:
-  - Tablón social (`BoardPostCard.tsx`)
-  - Feed principal (`page.tsx`)
-  - Detalle de oferta (`offer/[id]/page.tsx`)
-  - Candidatos recomendados (`RecommendedWorkers.tsx`)
-- [x] Endpoint `/api/messages/find-or-create` para reutilizar conversaciones existentes
-
-### ✅ 22. Validaciones de Formularios (COMPLETADO - 25/02/2026)
-- [x] **Módulo de validaciones centralizado** (`src/lib/validations.ts`)
-  - `validatePhone()`: Formato español +34 XXX XXX XXX
-  - `formatPhone()`: Formateo automático
-  - `validateEmail()`: Validación robusta de email
-  - `validateTaxId()`: CIF/NIF/NIE con algoritmo oficial
-  - `formatTaxId()`: Formateo B-12345678 o B 12345678 0
-  - `validatePostalCode()`: 5 dígitos, 01-52
-  - Mensajes de error en español (`validationErrors`)
-- [x] **Componente PhoneInput** (`src/components/PhoneInput.tsx`)
-  - Validación en tiempo real (blur)
-  - Iconos de estado (✓/✗)
-  - Formateo automático
-  - Compatible con todos los perfiles
-- [x] **Aplicado a 6 perfiles de usuario**:
-  - Trabajador (`profile/worker/page.tsx`)
-  - Jefe de cuadrilla (`profile/foreman/page.tsx`)
-  - Ingeniero (`profile/engineer/page.tsx`)
-  - Encargado (`profile/encargado/page.tsx`)
-  - Tractorista (`profile/tractorista/page.tsx`)
-  - Empresa (`profile/company/page.tsx`)
-
-### ✅ 23. Fechas y Horas en Publicaciones (COMPLETADO - 01/03/2026)
-- [x] **Formato consistente**: "Publicado el 01/03/26 a las 16:08"
-- [x] **Función `formatPostDate`** en `src/lib/utils.ts`
-- [x] Aplicado en dashboard principal (ofertas y demandas)
-- [x] Aplicado en detalle de oferta
-- [x] Aplicado en "Mis Publicaciones" del perfil
-- [x] Aplicado en tablón social y comentarios
-- [x] Todas las publicaciones muestran ahora fecha y hora
-
-### ✅ 24. Secciones de Inscritos con Reversión de Estados (COMPLETADO - 01/03/2026)
-- [x] **Tabs en `/applications`** para dividir candidatos:
-  - 📥 Inscritos (PENDING) - borde azul
-  - ✅ Aceptados (ACCEPTED) - borde verde
-  - ❌ Rechazados (REJECTED) - borde rojo
-  - 💬 Contactados (CONTACTED) - borde índigo
-- [x] **Contadores visuales** en cada pestaña
-- [x] **Botones de acción reversibles** entre cualquier estado:
-  - Inscritos → Aceptar / Rechazar
-  - Aceptados → Contactar / Rechazar
-  - Rechazados → Recuperar / Aceptar
-  - Contactados → Volver a aceptados / Rechazar
-- [x] **Mensajes específicos** por pestaña cuando no hay candidatos
-- [x] Filtros avanzados se aplican dentro de cada pestaña
-
-### ✅ 25. Corrección de Errores (COMPLETADO - 01/03/2026)
-- [x] **Error al editar demandas**: Conversión de strings vacías a `null` en campos numéricos
-- [x] **Service Worker bucle infinito**: Eliminado `self.skipWaiting()` y `window.location.reload()`
-- [x] **Error CSP con Firebase**: Añadido `blob:` a directiva `script-src`
-
-### ✅ 26. Publicaciones del Tablón en Mis Publicaciones (COMPLETADO - 01/03/2026)
-- [x] Las publicaciones del tablón ahora aparecen en "Mis Publicaciones"
-- [x] Etiqueta "Tablón" con color azul para diferenciarlas
-- [x] Botón "Editar" con modal PromptDialog para editar contenido
-- [x] Endpoint DELETE `/api/board-posts/[id]` para eliminar
-- [x] Endpoint PUT `/api/board-posts/[id]` para editar
-
-### ✅ 27. Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
-- [x] **Galería de fotos**: Las empresas pueden añadir hasta 6 fotos de sus instalaciones, cultivos, etc.
-  - Subida de imágenes a ImgBB o Base64 como fallback
-  - Componente `CompanyPhotoGallery` reutilizable
-  - Vista previa y eliminación de fotos
-  - Texto de ayuda solo visible al editar (no en perfil público)
-- [x] **Logo de empresa**: Subida de logo usando `ProfileImageUpload`
-  - Logo visible en header del perfil público
-  - Logo visible en ofertas y lista de mensajes
-- [x] **Descripción extendida**: Campo adicional para información detallada sobre la empresa
-  - Historia, valores, tipos de cultivos, certificaciones, beneficios, etc.
-- [x] **Página pública de empresa** (`/company/[id]`):
-  - Logo y nombre de empresa
-  - Descripción y ubicación
-  - Galería de fotos visual (sin datos de contacto)
-  - Descripción extendida
-  - Historial de ofertas publicadas con conteo de inscritos
-  - Links a cada oferta para ver detalles e inscribirse
-- [x] **Enlace desde ofertas**: Click en nombre de empresa lleva a perfil público
-- [x] **Nuevos campos en Prisma**: `photos[]`, `extendedDescription`
-- [x] **API endpoints**:
-  - `GET /api/companies/[id]` - Obtener perfil público de empresa
-  - `GET /api/companies/[id]/posts` - Obtener ofertas de una empresa
-  - `POST /api/upload-image` - Subir imágenes genérico
-
-### ✅ 28. Gestión de Suscripciones Premium en Admin (COMPLETADO - 09/03/2026)
-- [x] **Nueva columna "Premium"** en tabla de empresas del panel admin
-  - Muestra estado visual: "No", "Inactiva", "🧪 Prueba (Xd)", "👑 Premium"
-  - Calcula días restantes en periodo de prueba
-- [x] **Filtros por estado premium**:
-  - `👑 Premium` - Todas las suscripciones activas (incluye prueba)
-  - `💰 Pagadas` - Solo suscripciones pagadas (fuera de trial)
-  - `🧪 En Prueba` - Solo empresas en periodo de prueba
-  - `❌ Sin Premium` - Empresas sin suscripción o inactivas
-- [x] **Botones de gestión manual de suscripciones**:
-  - Para empresas sin premium: `+1m` (activar 1 mes), `+3m` (activar 3 meses), `🧪` (resetear prueba)
-  - Para empresas con premium: `+1m` (extender 1 mes), `+3m` (extender 3 meses), `❌` (revocar)
-- [x] **API endpoint `/api/admin/companies/subscription`**:
-  - `activate` - Crear/activar suscripción por X meses (sin trial)
-  - `extend` - Extender suscripción existente
-  - `revoke` - Revocar/cancelar suscripción
-  - `reset_trial` - Reiniciar periodo de prueba de 7 días
-- [x] **Historial de cambios**: Todas las acciones quedan registradas en `SubscriptionHistory` con ID del admin
-
-### ✅ 29. Fix Visualización Mis Publicaciones en Móvil (COMPLETADO - 09/03/2026)
-- [x] Corregido layout de tarjetas en "Mis Publicaciones" del perfil
-- [x] `flex-col` en móvil para que los botones vayan debajo del contenido
-- [x] `break-all` en títulos para manejar palabras largas
-- [x] Los títulos ahora ocupan el ancho normal en móvil (antes mostraban 1-2 letras por línea)
-
-### ✅ 30. Mejoras en Ofertas Compartidas y Búsqueda (COMPLETADO - 12/03/2026)
-- [x] **Opción "Salario no especificado"** para ofertas compartidas (tipo SHARED)
-- [x] **Saltos de línea en descripciones**: `whitespace-pre-wrap` aplicado en feed, detalle y mis publicaciones
-- [x] **Botón "Acceder a la oferta"** visible en detalle de ofertas compartidas (redirige a enlace externo)
-- [x] **Eliminada pestaña "Buscar Perfiles"** del perfil de empresa
-- [x] Las empresas solo pueden acceder al buscador de candidatos desde la página principal
-- [x] **Restricción para periodo de prueba**: Empresas en trial pueden publicar pero no buscar candidatos
-
----
-
-## 🎯 Roadmap a Fase Beta
-
-El proyecto está en un estado avanzado. A continuación se detallan las tareas pendientes **ordenadas por prioridad** para llegar a fase Beta:
-
-### ✅ COMPLETADOS (Bloqueantes resueltos)
-
-#### 1. ✅ Legal y Cumplimiento Normativo (COMPLETADO)
-- [x] **Política de Privacidad** (RGPD compliant)
-- [x] **Términos y Condiciones de uso**
-- [x] **Política de Cookies**
-- [x] **Aviso Legal**
-- [x] **Registro de Actividades de Tratamiento (RAT)** interno
-- [x] **Casillas de aceptación** en registro
-- [x] **Política de privacidad actualizada para empresas** (texto profesional sobre datos de contacto)
-
-#### 2. ✅ Validaciones de Formularios (COMPLETADO)
-- [x] Validación de teléfono (formato español +34 XXX XXX XXX)
-- [x] Validación de email (robusta)
-- [x] Validación de CIF/NIF/NIE para empresas
-- [x] Componente PhoneInput aplicado a 6 perfiles
-
-#### 3. ✅ Banner de Cookies (COMPLETADO - 25/02/2026)
-- [x] Banner de cookies con botones "Aceptar", "Rechazar" y "Configurar"
-- [x] Modal de configuración lateral con toggles para cada categoría
-- [x] Persistencia de consentimiento en localStorage
-- [x] Panel en página /cookies para ver estado actual y cambiar preferencias
-- [x] Contexto CookieProvider con hook useCookies()
-- [x] Sistema de versiones para futuros cambios
-- [x] Cookies necesarias siempre activas (Firebase Auth, sesión)
-- [x] Categorías opcionales: Analíticas, Marketing
-
-#### 4. ✅ Página de Contacto/Soporte (COMPLETADO - 02/03/2026)
-- [x] Formulario de contacto (nombre, email, asunto, mensaje)
-- [x] Validaciones en tiempo real con mensajes de error
-- [x] Rate limiting (5 mensajes por hora) para prevenir spam
-- [x] **Envío de emails funcional** mediante Resend API
-- [x] Email de soporte visible (contact@appstracta.app)
-- [x] Política de respuesta: máximo 48 horas
-- [x] Información de ubicación y horario
-- [x] Nota legal RGPD sobre tratamiento de datos
-- [x] Enlace desde Footer
-
-#### 5. ✅ Perfiles Mejorados (COMPLETADO - 26/02/2026)
-- [x] **Worker**: Herramientas manuales (desbrozadora, motosierra, etc.) y experiencia en almacén
-- [x] **Foreman**: Carnet de manipulador de alimentos
-- [x] **Encargado**: Experiencia en almacén (checkbox), transformación de fincas, Office, informes
-- [x] **Encargado**: Texto corregido "Disponibilidad para alojarse en finca"
-- [x] **Layouts corregidos**: flex-wrap para evitar desbordamiento de textos largos
-- [x] **Opción "Otros"** añadida en todas las listas de selección (cultivos, herramientas, etc.)
-
-#### 6. ✅ Buscador Actualizado (COMPLETADO - 28/02/2026)
-- [x] Filtros para herramientas manuales y experiencia en almacén (worker)
-- [x] Filtro de carnet manipulador (manijero)
-- [x] Filtro de carnet de carretillero (worker)
-- [x] Filtros para experiencia en almacén y habilidades de gestión (encargado)
-- [x] Badges en tarjetas de resultados y modal de perfil completo
-
-#### 7. ✅ Sistema de Validación de Email (COMPLETADO - 11/03/2026)
-- [x] Envío de email de verificación con Resend (más fiable)
-- [x] Página `/verify-email` con instrucciones y reenvío
-- [x] Banner recordatorio para usuarios no verificados
-- [x] Modal con enlace manual como fallback
-- [x] Restricciones en funcionalidades clave (publicar, inscribirse, contactar)
-- [x] Auto-recarga cada 30s para detectar verificación
-- [x] Rate limiting (5 emails por hora)
-- [x] Template HTML personalizado
-
-### ✅ TODOS LOS BLOQUEANTES PARA BETA COMPLETADOS
-
----
-
-## 🎉 ESTADO ACTUAL: LISTO PARA FASE BETA
-
-Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
-- ✅ Legal y Cumplimiento Normativo (RGPD)
-- ✅ Validaciones de Formularios
-- ✅ Banner de Cookies
-- ✅ Página de Contacto/Soporte
-- ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
-
-### ✅ 1. Sistema de Contactos (COMPLETADO - 28/02/2026)
-> **Restringir mensajería para mejorar privacidad y reducir spam**
-
-- [x] **Modelo de datos en Prisma**: Tabla `Contact` con status (PENDING, ACCEPTED)
-- [x] **Botón "Añadir como contacto"** (`AddContactButton`):
-  - En publicaciones del TABLÓN
-  - En resultados del buscador
-  - Restringido para empresas (no pueden añadir contactos)
-- [x] **Gestión de solicitudes de contacto**:
-  - Panel de solicitudes pendientes en `/profile/contacts`
-  - Opciones: Aceptar, Rechazar
-- [x] **Pestaña "Contactos" en el perfil** (`/profile/contacts`):
-  - Lista de contactos aceptados
-  - Ver perfil completo, enviar mensaje, eliminar contacto
-- [x] **API endpoints implementados**:
-  - `POST /api/contacts` - Enviar solicitud de contacto
-  - `GET /api/contacts` - Listar contactos (con filtro ?requests=true)
-  - `PUT /api/contacts/[id]/accept` - Aceptar solicitud
-  - `DELETE /api/contacts/[id]` - Eliminar contacto/rechazar solicitud
-- [x] **Restricción de mensajería implementada** (`/api/messages/find-or-create`)
-  - Verifica relación de contacto aceptado antes de crear conversación
-  - Mensaje explicativo: "Para enviar mensajes, primero debes añadir a esta persona como contacto"
-
-### 🟡 IMPORTANTES (Recomendados para Beta)
-
-#### 2. ✅ Testing en Dispositivos Reales (COMPLETADO - 11/03/2026)
-> **Asegurar que funciona en el entorno real del usuario**
-
-- [x] PWA probada en Android (Chrome)
-- [x] PWA probada en iOS (Safari)
-- [x] Instalación desde home screen funcional
-- [x] Responsividad en diferentes tamaños de pantalla
-- [x] Funcionamiento con conexión lenta/intermitente
-
-#### 3. ✅ Mejoras de UX en Chat (COMPLETADO - 02/03/2026)
-> **La experiencia de mensajería debe ser fluida**
-
-- [x] Carga de imágenes en el chat
-- [x] Envío de documentos PDF en el chat
-- [ ] Indicador de "escribiendo..."
-- [ ] Confirmación de lectura (✓✓)
-- [ ] Envío de ubicación
-- [ ] Búsqueda en el historial de mensajes
-
-#### 3.5. Botón de Comentarios Destacado (PENDIENTE - 03/03/2026)
-> **El botón de comentarios en las publicaciones del tablón está demasiado camuflado**
-
-- **Problema identificado**: El botón de comentarios tiene el mismo estilo visual que los otros botones (Like, Compartir, Denunciar), lo que dificulta que los usuarios lo identifiquen como la acción principal para interactuar.
-- **Solución propuesta**: Destacar visualmente el botón de comentarios (color diferente, tamaño, posición)
-- **Archivo**: `src/components/BoardPostCard.tsx` (líneas 468-481)
-- **Prioridad**: Baja - valorar tras feedback de usuarios beta
-
-#### 4. ✅ Gestión de Denuncias (Admin) (COMPLETADO - 01/03/2026)
-> **Panel para moderar contenido reportado**
-
-- [x] Panel de denuncias pendientes en `/admin` (pestaña "Denuncias")
-- [x] Vista detallada de publicación/comentario denunciado
-- [x] Acciones: Resolver, Desestimar
-- [x] Información del reportante y denunciado
-- [x] Historial de denuncias por usuario
-- [x] Estadísticas de denuncias (contador pendientes)
-
-#### 5. ✅ Sistema de Notificaciones Push (COMPLETADO - 11/03/2026)
-> **Los usuarios reciben notificaciones de actividad relevante**
-
-- [x] Notificación de nuevos mensajes
-- [x] Notificación de inscripciones en ofertas (para empresas)
-- [x] Notificación de cambios de estado (aceptado/rechazado)
-- [x] Notificación de nuevas ofertas según perfil
-- [x] Gestión de preferencias de notificación
-- [x] Configuración de navegador para permisos
-
-**Estado:**
-- ✅ Móvil: Las notificaciones funcionan correctamente
-- ✅ PWA móvil: Funcional
-- ⚠️ Desktop: Funcional en algunos navegadores, limitado en otros
-
-**Nota:** El sistema de notificaciones está implementado y funciona en dispositivos móviles, que es el caso de uso principal de la plataforma.
-
-### 🟢 DESEABLES (Posponer si es necesario)
-
-#### ~~4. Internacionalización (i18n)~~ **FUTURO LEJANO**
-> **Temporeros extranjeros necesitan la app en su idioma**
-
-Esta funcionalidad se ha pospuesto para una fase futura de la aplicación. La plataforma actualmente está disponible en español, que es suficiente para la fase de lanzamiento beta.
-
-#### 5. ✅ Perfil de Empresa Mejorado (COMPLETADO - 02/03/2026)
-> **Más información para evaluar a las empresas**
-
-- [x] Galería de fotos (instalaciones, cultivos)
-- [x] Descripción extendida de la empresa
-- [ ] Valoraciones de trabajadores (cuando haya reputación)
-- [x] Historial de ofertas publicadas
-
-#### 6. Dashboard de Analytics
-> **Métricas para entender el uso de la plataforma**
-
-- [ ] Usuarios activos diarios/semanales/mensuales
-- [ ] Ofertas publicadas vs. cubiertas
-- [ ] Tiempo medio de contratación
-- [ ] Roles más activos
-- [ ] Provincias con más actividad
-
-### 🔵 DIFERIDOS (Post-Beta)
-
-#### 1. Verificación de Empresas (VALIDACIÓN LOCAL - 11/03/2026)
-> **Validar formato de CIF/NIF/NIE de empresas**
-
-- [x] **Componente `CompanyVerification`** en formulario de empresa
-- [x] **Endpoint `/api/companies/verify`** para verificar empresas
-- [x] Validación local de formato CIF/NIF/NIE (algoritmo oficial)
-- [x] Rate limiting (20 verificaciones por minuto)
-- [x] Modelo de datos en Prisma con campos de verificación
-
-**Cómo funciona:**
-1. Usuario introduce CIF en formulario de empresa (`/profile/company`)
-2. Botón "Verificar CIF" valida el formato usando algoritmo local
-3. Si el formato es válido, se marca como verificado
-4. La verificación manual por admin sigue siendo necesaria para aprobar empresas
-
-**Archivos clave:**
-- `src/lib/aeat-service.ts` - Servicio de verificación (validación local)
-- `src/lib/cif-validator.ts` - Validador de formato CIF/NIF/NIE
-- `src/components/CompanyVerification.tsx` - Componente de verificación
-- `src/app/api/companies/verify/route.ts` - Endpoint API
-- `src/app/profile/company/page.tsx` - Integración en formulario
-
-**Nota**: La integración con AEAT mediante SOAP ha sido eliminada porque Railway no puede resolver los DNS de `www1.agenciatributaria.es`. La verificación de empresas se realiza ahora mediante validación local del formato de CIF.
-
-#### 2. ✅ Recuperación de Contraseña (COMPLETADO - 11/03/2026)
-> **Permitir a usuarios recuperar acceso a su cuenta**
-
-- [x] Flujo de recuperación por email (Firebase Password Reset)
-- [x] Página `/forgot-password` para solicitar recuperación
-- [x] **Modal de reset en `/login`** (solución definitiva)
-- [x] Validación de nueva contraseña (mínimo 6 caracteres)
-- [x] Confirmación de contraseña
-- [x] Email enviado con Resend (template HTML personalizado)
-- [x] Rate limiting (5 solicitudes por hora)
-- [x] Endpoint `/api/auth/reset-password/confirm` con Admin SDK
-- [x] Enlace "¿Olvidaste tu contraseña?" en login
-
-**Solución implementada**: El enlace del email apunta a `/login?mode=resetPassword&oobCode=XXX`, que abre automáticamente un modal en la página de login. Esto evita las redirecciones no deseadas de Firebase.
-
-**Archivos clave**:
-- `src/app/api/auth/reset-password/send/route.ts` - Envía email con Resend
-- `src/app/api/auth/reset-password/confirm/route.ts` - Confirma reset con Admin SDK
-- `src/app/forgot-password/page.tsx` - Página de solicitud
-- `src/components/PasswordResetModal.tsx` - Modal en login
-- `src/app/login/page.tsx` - Detecta parámetros y muestra modal
-
-#### 3. Sistema de Reputación/Valoraciones
-- [ ] Valoraciones mutuas post-contratación
-- [ ] Badge de "perfil verificado" por valoraciones positivas
-- [ ] Filtros por reputación en búsquedas
-
-#### 4. Matchmaking Inteligente Avanzado
-- [ ] Algoritmo de compatibilidad candidato-oferta
-- [ ] Recomendaciones basadas en historial
-
-#### 5. ✅ Modelo de Monetización (COMPLETADO - 11/03/2026)
-> **Sistema de suscripciones premium para empresas con Stripe**
-
-- [x] **Pagos con Stripe**: Integración completa con Stripe Checkout
-- [x] **Suscripción mensual**: 99€/mes para empresas
-- [x] **Opción anual**: 999€/año (2 meses gratis)
-- [x] **Periodo de prueba**: 7 días gratis sin compromiso
-  - Durante el trial: pueden publicar ofertas pero NO buscar candidatos
-  - Tras suscripción de pago: acceso completo a todas las funcionalidades
-- [x] **Webhook de Stripe**: Sincronización automática de pagos
-- [x] **Portal de gestión**: Las empresas pueden gestionar su suscripción
-- [x] **Modelo de datos completo**: Tablas `Subscription` y `SubscriptionHistory` en Prisma
-- [x] **Beneficios Premium**:
-  - Publicación de ofertas ilimitadas
-  - Acceso completo al buscador de candidatos (solo suscripción pagada)
-  - Badge "Empresa Premium" en el perfil
-  - Prioridad en resultados de búsqueda
-  - Soporte prioritario
-
-**Cómo funciona:**
-1. Empresa accede a `/premium` y ve el pricing
-2. Al pulsar "Comenzar prueba gratis", se redirige a Stripe Checkout
-3. Stripe procesa el pago y envía webhook a la app
-4. El webhook activa la suscripción en la base de datos
-5. La empresa puede gestionar su suscripción desde el portal de Stripe
-
-**Variables de entorno requeridas:**
+**Firebase (públicas - NEXT_PUBLIC_*)**:
 ```
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PREMIUM_PRICE_ID=price_...
+FIREBASE_API_KEY
+FIREBASE_AUTH_DOMAIN
+FIREBASE_PROJECT_ID
+FIREBASE_STORAGE_BUCKET
+FIREBASE_MESSAGING_SENDER_ID
+FIREBASE_APP_ID
 ```
 
-**Archivos clave:**
-- `src/lib/stripe.ts` - Cliente de Stripe y funciones helper
-- `src/app/api/webhooks/stripe/route.ts` - Webhook para sincronizar pagos
-- `src/app/api/stripe/create-checkout/route.ts` - Crear sesión de checkout
-- `src/app/api/subscription/portal/route.ts` - Portal de gestión
-- `src/app/premium/page.tsx` - Página de ventas de premium
-- `src/app/api/subscription/status/route.ts` - Consultar estado de suscripción
+**Base de datos (privadas)**:
+```
+DATABASE_URL              # PostgreSQL (Railway)
+```
 
-**Estados de suscripción:**
-- `ACTIVE` - Suscripción activa pagada
-- `TRIALING` - En periodo de prueba
-- `PAST_DUE` - Pago pendiente
-- `CANCELED` - Cancelada
-- `INCOMPLETE` - Incompleta (fallo en pago inicial)
-- `PAUSED` - Pausada
+**Stripe**:
+```
+STRIPE_SECRET_KEY         # Clave secreta
+STRIPE_WEBHOOK_SECRET     # Webhook signature
+STRIPE_PREMIUM_PRICE_ID   # Precio suscripción premium
+```
 
-**Gestión manual desde admin:**
-- Panel admin puede activar/extender/revocar suscripciones manualmente
-- Histórico de todos los cambios en `SubscriptionHistory`
+**Email (Resend)**:
+```
+RESEND_API_KEY            # Clave de API
+RESEND_FROM_EMAIL         # Email remitente
+```
 
-#### 6. Mejoras de Suscripciones Premium (PENDIENTES)
-> **Funcionalidades adicionales para mejorar la gestión de suscripciones**
-
-- [ ] **Sincronización manual con Stripe**
-  - Endpoint `GET /api/subscription/sync-from-stripe` para recuperar el estado actual desde Stripe
-  - Útil si el webhook falla y la BD queda desincronizada
-  - Botón en la pestaña de suscripción para forzar sincronización
-- [ ] **Email de confirmación de cobro**
-  - Enviar email a la empresa cuando se procesa un pago exitoso (evento `invoice.paid`)
-  - Incluir detalles del cobro, fecha del próximo pago, enlace a factura
-- [ ] **Historial de pagos visible para empresas**
-  - Endpoint `GET /api/subscription/invoices` para listar facturas de Stripe
-  - Mostrar en la pestaña de suscripción con opción de descargar PDF
-  - Incluir fecha, importe, estado de cada factura
-
-#### 7. Video Llamadas Integradas
-- [ ] Videollamadas dentro de la plataforma
-- [ ] Agenda de entrevistas
-
-#### 8. Integración con Redes Sociales
-- [ ] Login adicional con LinkedIn, Facebook
-
-#### 9. Geolocalización de Ofertas
-- [ ] Mapa interactivo con ofertas geolocalizadas
-
----
-
-### 💎 Opcionales (Futuro - Post-Beta)
-
-#### 10. Mejoras de Monetización
-- [ ] **Cambiar plan (anual vs mensual)**
-  - Actualmente solo hay 99€/mes
-  - Añadir opción anual: 999€/año (2 meses gratis)
-  - Permitir cambiar entre planes desde el perfil
-- [ ] **Cupones de descuento**
-  - Integrar cupones de Stripe para promociones
-  - Códigos para primeros clientes, referidos, etc.
-- [ ] **Trial extendible para empresas verificadas**
-  - 14 días en lugar de 7 para empresas con verificación completa
-  - Incentivo para completar todo el perfil
-
-#### 11. Sistema de Reputación/Valoraciones
-- [ ] Valoraciones mutuas post-contratación
-- [ ] Badge de "perfil verificado" por valoraciones positivas
-- [ ] Filtros por reputación en búsquedas
-
-#### 12. Matchmaking Inteligente Avanzado
-- [ ] Algoritmo de compatibilidad candidato-oferta
-- [ ] Recomendaciones basadas en historial
-
-#### 13. Dashboard de Analytics
-
----
-
-## 🎉 ESTADO ACTUAL: LISTO PARA FASE BETA
-
-Todos los requisitos obligatorios para lanzar la fase Beta han sido completados:
-- ✅ Legal y Cumplimiento Normativo (RGPD)
-- ✅ Validaciones de Formularios
-- ✅ Banner de Cookies
-- ✅ Página de Contacto/Soporte
-- ✅ Perfiles mejorados con herramientas, almacén y opción "Otros"
-- ✅ Sistema de Contactos completo (restricción de mensajería implementada)
-- ✅ Panel de Gestión de Denuncias en admin
-- ✅ Carnet de carretillero en perfil y buscador
-- ✅ Iconos profesionales actualizados
-- ✅ **Sistema de Validación de Email con Resend**
-- ✅ **Recuperación de Contraseña con Resend**
-- ✅ **Modelo de Monetización con Stripe** (suscripciones premium)
-- ✅ **Testing en Dispositivos Reales** (Android/iOS)
-- ✅ **Sistema de Notificaciones Push** (funcional en móvil)
-
-## Funcionalidades Ya Implementadas
+## Funcionalidades Implementadas
 
 ### Autenticación y Usuarios
-- Registro con Firebase (email/contraseña y Google)
-- Onboarding con selección de rol
-- **Verificación de email con Resend** (envío fiable desde servidor)
-- **Recuperación de contraseña con Resend** (flujo completo)
-- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa, encargado, tractorista)
-- Verificación manual de empresas (etiqueta "Empresa Verificada")
-- Sistema de roles y permisos
-- Rol ADMIN con privilegios especiales
+- [x] Registro con Firebase (email/contraseña y Google)
+- [x] Onboarding con selección de rol
+- [x] Verificación de email con Resend
+- [x] Recuperación de contraseña con Resend
+- [x] Perfiles detallados por rol (6 tipos)
+- [x] Verificación manual de empresas
 
-### Legal y Cumplimiento (RGPD)
-- Documentos legales completos (Privacidad, Términos, Cookies, Aviso Legal)
-- Registro de Actividades de Tratamiento (RAT) interno
-- Footer global con enlaces a documentos
-- Casillas de aceptación en registro (obligatorias + opcional)
-- Validaciones de datos (teléfono, email, CIF/NIF/NIE)
-
-### Validaciones de Formularios
-- Módulo centralizado de validaciones (`src/lib/validations.ts`)
-- Validación de teléfono español (+34 XXX XXX XXX)
-- Validación de email robusta
-- Validación de CIF/NIF/NIE con algoritmo oficial
-- Componente PhoneInput aplicado a 6 perfiles de usuario
-
-### Autenticación y Usuarios
-- Registro con Firebase (email/contraseña y Google)
-- Onboarding con selección de rol
-- Perfiles detallados por rol (trabajador, manijero, ingeniero, empresa, encargado, tractorista)
-- Verificación manual de empresas (etiqueta "Empresa Verificada")
-- Sistema de roles y permisos
-- Rol ADMIN con privilegios especiales
+### Legal y RGPD
+- [x] Política de Privacidad, Términos, Cookies, Aviso Legal
+- [x] Registro de Actividades de Tratamiento (RAT)
+- [x] Footer global con enlaces legales
+- [x] Casillas de aceptación en registro
+- [x] Banner de cookies con configuración
 
 ### Publicaciones y Feed
-- Feed con filtros por provincia y tipo de publicación
-- Publicación de ofertas (empresas OFICIALES, admin SHARED)
-- Publicación de demandas (trabajadores/manijeros)
-- Etiquetas visuales: "Empresa verificada", "⚡ Oferta compartida", "Demanda"
-- Sistema de "Like", "Compartir", "Denunciar"
-- Recomendaciones de ofertas por IA para trabajadores
-- Gestión de publicaciones propias (ver, editar, eliminar)
+- [x] Feed con filtros por provincia y tipo
+- [x] Publicación de ofertas (empresas) y demandas (trabajadores)
+- [x] Sistema de Like, Compartir, Denunciar
+- [x] Recomendaciones de ofertas por IA
+- [x] "Mis Publicaciones" en perfil (ver, editar, eliminar)
+- [x] Fechas y horas en todas las publicaciones
 
 ### Inscripciones y Contacto
-- Sistema de inscripciones en ofertas con confirmación
-- Estados: PENDIENTE, ACEPTADO, RECHAZADO, CONTACTADO
-- Autorización explícita para compartir datos de contacto al inscribirse
-- Retiro de inscripciones
-- Chat/mensajería interna entre usuarios
-- Notificaciones a empresas cuando alguien se inscribe
-- **Contacto sin mensajes automáticos**: Al pulsar "Contactar" se crea/navega a conversación vacía
+- [x] Sistema de inscripciones con confirmación
+- [x] Estados reversibles (Aceptar/Rechazar/Contactar)
+- [x] Retiro de inscripciones
+- [x] Chat/mensajería interna (texto, imágenes, PDF)
+- [x] Sistema de contactos (aceptar solicitudes antes de chatear)
 
-### Interfaz y UX
-- Modales personalizados (ConfirmDialog, PromptDialog) - sin alerts nativos
-- Sistema de notificaciones toast
-- Componentes de carga (Skeleton)
-- Pantallas de error personalizadas (404, 500)
-- Diseño responsive (móvil y escritorio)
-- Dynamic imports para optimizar bundle
+### Buscador de Candidatos
+- [x] Página `/search` con 5 categorías
+- [x] Filtros específicos por categoría
+- [x] Modal de perfil completo
+- [x] Restricción: solo empresas Premium pueden buscar
 
-### IA y Recomendaciones
-- Mejora de descripciones de ofertas con IA
-- Generación de biografía de perfil con IA
-- Recomendaciones de ofertas para trabajadores
-- Recomendaciones de trabajadores para empresas
-- Sistema de cache para respuestas de IA
+### Empresa (Premium)
+- [x] Suscripciones con Stripe (99€/mes, 7 días trial)
+- [x] Sincronización automática con Stripe
+- [x] Emails de confirmación de pago
+- [x] Historial de facturas
+- [x] Gestión de suscripción en perfil
+- [x] Galería de fotos (hasta 6)
+- [x] Logo y descripción extendida
+- [x] Página pública de empresa
 
-### Testing E2E
-- Infraestructura completa con Playwright
-- 27/39 tests pasando (69% de cobertura)
-- Scripts automáticos para datos de prueba
-- Tests de autenticación, PWA, onboarding, dashboard
-- Reportes HTML y traces para debugging
+### Componentes de UI
+- [x] ConfirmDialog, PromptDialog (sin alerts nativos)
+- [x] Sistema de notificaciones toast
+- [x] Skeleton components
+- [x] PhoneInput con validación
+- [x] MultiSelectDropdown
 
-## En Revisión / Pendientes Estratégicos
+### Seguridad
+- [x] Headers de seguridad (CSP, HSTS, X-Frame-Options)
+- [x] Verificación de tokens Firebase en servidor
+- [x] Rate limiting en endpoints sensibles
+- [x] Cliente HTTP autenticado (`apiFetch`)
 
-- **Sistema de Reputación/Valoraciones**: Valoraciones mutuas post-contratación.
-- **Matchmaking Inteligente**: Sugerir perfiles a empresas basándose en filtros y experiencia.
-- **Alertas Personalizadas**: Notificaciones push para nuevos empleos que coincidan con el perfil.
+### Testing
+- [x] Playwright configurado (27/39 tests pasando)
+- [x] Scripts de datos de prueba
+- [x] Tests en dispositivos reales (Android/iOS)
 
-## Reglas de Idioma
+### PWA
+- [x] Manifest.json completo
+- [x] Service Worker para offline
+- [x] Iconos en todos los tamaños
+- [x] Instalación desde home screen
 
-- Todas las explicaciones, razonamientos y respuestas deben estar en **español**.
-- Los comentarios en el código deben estar en español, a menos que el archivo ya utilice inglés.
-- La salida de la terminal puede estar en inglés, pero las explicaciones siempre deben ser en español.
+### SEO
+- [x] Meta tags dinámicos
+- [x] Open Graph y Twitter Cards
+- [x] Sitemap.xml y Robots.txt
 
-## Política de Cambios
+## Tareas Pendientes
 
-Para mantener la coherencia del producto y la calidad del código, se deben seguir estas directrices:
+### Pendientes (sin fecha definida)
 
-- **No modificar la lógica de autenticación (Firebase)** sin una confirmación explícita.
-- **No cambiar los roles de usuario ni la lógica de resolución de perfiles** sin discutirlo antes.
-- **No modificar el esquema de Prisma** sin explicar el impacto de la migración.
-- **REGLA DE ORO**: No tocar lo que ya funciona. Asegurarse de probar antes de modificar.
-- Preferir cambios pequeños e incrementales.
-- Explicar los cambios propuestos **antes** de aplicarlos.
-- Preguntar antes de introducir nuevas dependencias.
-- **Cualquier cambio que afecte a la visión de producto o al modelo de negocio debe ser validado con el fundador.**
+- [ ] **Internacionalización (i18n)**
+  - Español, Francés, Rumano, Inglés
+  - Prioridad baja
+
+- [ ] **Sistema de Reputación/Valoraciones**
+  - Valoraciones mutuas post-contratación
+  - Badge de perfil verificado
+
+- [ ] **Matchmaking Inteligente**
+  - Algoritmo de compatibilidad candidato-oferta
+
+- [ ] **Dashboard de Analytics**
+  - Usuarios activos, ofertas cubiertas, etc.
+
+## Reglas de Desarrollo
+
+1. **REGLA DE ORO**: No tocar lo que ya funciona sin probar antes
+2. Usar `apiFetch` para peticiones autenticadas
+3. No modificar autenticación (Firebase) sin confirmación
+4. No cambiar roles ni lógica de perfiles sin discutir
+5. Preferir cambios pequeños e incrementales
+6. Preguntar antes de añadir dependencias
+7. **Cambios en visión de producto**: Validar con el fundador
+
+## Archivos Clave
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/lib/firebase.ts` | Cliente Firebase Auth |
+| `src/lib/firebase-admin.ts` | Admin SDK para verificación |
+| `src/lib/api-client.ts` | Cliente HTTP con autenticación |
+| `src/lib/stripe.ts` | Cliente Stripe y helpers |
+| `src/lib/validations.ts` | Validaciones centralizadas |
+| `src/context/AuthContext.tsx` | Contexto de autenticación |
+| `prisma/schema.prisma` | Esquema de base de datos |
 
 ---
 *Este documento es una guía viva. Se actualizará conforme el proyecto evolucione.*
