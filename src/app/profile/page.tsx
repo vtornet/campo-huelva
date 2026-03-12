@@ -253,11 +253,10 @@ function SubscriptionTabContent({
     );
   }
 
-  const hasSubscription = subscriptionData?.hasSubscription;
   const subscription = subscriptionData?.subscription;
 
   // Vista: Sin suscripción
-  if (!hasSubscription || !subscription) {
+  if (!subscriptionData?.isPremium || !subscription) {
     return (
       <div className="space-y-6">
         <div className="text-center py-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
@@ -831,7 +830,7 @@ export default function UserProfilePage() {
       const res = await apiFetch(`/api/subscription/status?userId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
-        setSubscriptionData(data.subscription || data);
+        setSubscriptionData(data);
       }
     } catch (error) {
       console.error("Error cargando suscripción:", error);
