@@ -69,16 +69,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si ya tiene una suscripción activa
+    // Verificar si ya tiene una suscripción activa (no CANCELED)
+    // Las suscripciones CANCELED pueden reactivarse
     if (user.companyProfile.subscription) {
       const sub = user.companyProfile.subscription;
-      if (
-        sub.status === "ACTIVE" ||
-        sub.status === "TRIALING" ||
-        (sub.status === "CANCELED" &&
-          sub.currentPeriodEnd &&
-          new Date(sub.currentPeriodEnd) > new Date())
-      ) {
+      // Solo bloquear si está ACTIVE o TRIALING
+      // CANCELED, PAST_DUE, INCOMPLETE, PAUSED pueden renovarse
+      if (sub.status === "ACTIVE" || sub.status === "TRIALING") {
         return NextResponse.json(
           {
             error: "Ya tienes una suscripción activa",
@@ -91,6 +88,8 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+
+      console.log("[CHECKOUT] Suscripción existente con estado:", sub.status, "- permitiendo renovación");
     }
 
     // Obtener URLs de redirección

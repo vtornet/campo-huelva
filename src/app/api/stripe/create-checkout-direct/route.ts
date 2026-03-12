@@ -69,6 +69,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar si ya tiene una suscripción activa (no CANCELED)
+    if (user.companyProfile.subscription) {
+      const sub = user.companyProfile.subscription;
+      if (sub.status === "ACTIVE" || sub.status === "TRIALING") {
+        return NextResponse.json(
+          {
+            error: "Ya tienes una suscripción activa",
+            subscription: {
+              status: sub.status,
+              trialEndsAt: sub.trialEndsAt,
+              currentPeriodEnd: sub.currentPeriodEnd,
+            },
+          },
+          { status: 400 }
+        );
+      }
+      console.log("[CHECKOUT-DIRECT] Suscripción existente con estado:", sub.status, "- permitiendo renovación");
+    }
+
     // Obtener URLs de redirección
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
     const successUrl = `${baseUrl}/premium?success=true&session_id={CHECKOUT_SESSION_ID}`;
