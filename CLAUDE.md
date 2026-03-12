@@ -815,15 +815,57 @@ STRIPE_PREMIUM_PRICE_ID=price_...
 - Panel admin puede activar/extender/revocar suscripciones manualmente
 - Histórico de todos los cambios en `SubscriptionHistory`
 
-#### 6. Video Llamadas Integradas
+#### 6. Mejoras de Suscripciones Premium (PENDIENTES)
+> **Funcionalidades adicionales para mejorar la gestión de suscripciones**
+
+- [ ] **Sincronización manual con Stripe**
+  - Endpoint `GET /api/subscription/sync-from-stripe` para recuperar el estado actual desde Stripe
+  - Útil si el webhook falla y la BD queda desincronizada
+  - Botón en la pestaña de suscripción para forzar sincronización
+- [ ] **Email de confirmación de cobro**
+  - Enviar email a la empresa cuando se procesa un pago exitoso (evento `invoice.paid`)
+  - Incluir detalles del cobro, fecha del próximo pago, enlace a factura
+- [ ] **Historial de pagos visible para empresas**
+  - Endpoint `GET /api/subscription/invoices` para listar facturas de Stripe
+  - Mostrar en la pestaña de suscripción con opción de descargar PDF
+  - Incluir fecha, importe, estado de cada factura
+
+#### 7. Video Llamadas Integradas
 - [ ] Videollamadas dentro de la plataforma
 - [ ] Agenda de entrevistas
 
-#### 7. Integración con Redes Sociales
+#### 8. Integración con Redes Sociales
 - [ ] Login adicional con LinkedIn, Facebook
 
-#### 8. Geolocalización de Ofertas
+#### 9. Geolocalización de Ofertas
 - [ ] Mapa interactivo con ofertas geolocalizadas
+
+---
+
+### 💎 Opcionales (Futuro - Post-Beta)
+
+#### 10. Mejoras de Monetización
+- [ ] **Cambiar plan (anual vs mensual)**
+  - Actualmente solo hay 99€/mes
+  - Añadir opción anual: 999€/año (2 meses gratis)
+  - Permitir cambiar entre planes desde el perfil
+- [ ] **Cupones de descuento**
+  - Integrar cupones de Stripe para promociones
+  - Códigos para primeros clientes, referidos, etc.
+- [ ] **Trial extendible para empresas verificadas**
+  - 14 días en lugar de 7 para empresas con verificación completa
+  - Incentivo para completar todo el perfil
+
+#### 11. Sistema de Reputación/Valoraciones
+- [ ] Valoraciones mutuas post-contratación
+- [ ] Badge de "perfil verificado" por valoraciones positivas
+- [ ] Filtros por reputación en búsquedas
+
+#### 12. Matchmaking Inteligente Avanzado
+- [ ] Algoritmo de compatibilidad candidato-oferta
+- [ ] Recomendaciones basadas en historial
+
+#### 13. Dashboard de Analytics
 
 ---
 

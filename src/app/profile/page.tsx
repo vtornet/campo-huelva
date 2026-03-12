@@ -22,6 +22,11 @@ interface SubscriptionTabContentProps {
   showNotification: (notification: any) => void;
   confirm: (options: any) => Promise<boolean>;
   loadSubscription: () => void;
+  invoices: any[];
+  invoicesLoading: boolean;
+  loadInvoices: () => void;
+  showInvoices: boolean;
+  setShowInvoices: (show: boolean) => void;
 }
 
 function SubscriptionTabContent({
@@ -31,6 +36,11 @@ function SubscriptionTabContent({
   showNotification,
   confirm,
   loadSubscription,
+  invoices,
+  invoicesLoading,
+  loadInvoices,
+  showInvoices,
+  setShowInvoices,
 }: SubscriptionTabContentProps) {
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
@@ -189,6 +199,46 @@ function SubscriptionTabContent({
         type: "error",
         title: "Error",
         message: error.message || "No se pudo cancelar la suscripción",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSyncSubscription = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/subscription/sync-from-stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (errorData.error === "NO_STRIPE_SUBSCRIPTION") {
+          showNotification({
+            type: "warning",
+            title: "Suscripción no encontrada",
+            message: "La suscripción no existe en Stripe. Puede que haya sido creada manualmente.",
+          });
+          return;
+        }
+        throw new Error(errorData.message || errorData.error || "Error al sincronizar");
+      }
+
+      const data = await res.json();
+      showNotification({
+        type: "success",
+        title: "Sincronización completada",
+        message: data.message || "Tu suscripción ha sido actualizada con el estado de Stripe.",
+      });
+
+      loadSubscription();
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo sincronizar la suscripción",
       });
     } finally {
       setProcessing(false);
@@ -432,7 +482,118 @@ function SubscriptionTabContent({
               Cancelar suscripción
             </button>
           )}
+
+          <button
+            onClick={handleSyncSubscription}
+            disabled={processing}
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+            title="Sincronizar estado con Stripe"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Sincronizar
+          </button>
+
+          <button
+            onClick={() => {
+              if (!showInvoices) {
+                loadInvoices();
+              }
+              setShowInvoices(!showInvoices);
+            }}
+            disabled={invoicesLoading}
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+            title="Ver historial de pagos"
+          >
+            {invoicesLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-400"></div>
+                Cargando...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2h2z" />
+                </svg>
+                {showInvoices ? "Ocultar" : "Facturas"}
+              </>
+            )}
+          </button>
         </div>
+
+        {/* Historial de facturas */}
+        {showInvoices && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h4 className="font-semibold text-slate-800">Historial de pagos</h4>
+              <button
+                onClick={() => setShowInvoices(false)}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {invoices.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2h2z" />
+                </svg>
+                <p>No hay facturas disponibles</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                {invoices.map((invoice) => (
+                  <div key={invoice.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-900">
+                          {invoice.number || "Factura"}
+                        </span>
+                        {invoice.isPaid ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Pagada
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                            {invoice.status}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        {new Date(invoice.created).toLocaleDateString("es-ES", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {invoice.amountPaid.toFixed(2)} {invoice.currency}
+                      </p>
+                      {invoice.hostedInvoiceUrl && (
+                        <a
+                          href={invoice.hostedInvoiceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 2h6m0 0L6 14m14 0L10 18" />
+                          </svg>
+                          Ver
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -525,6 +686,11 @@ export default function UserProfilePage() {
   // Datos de suscripción (solo para empresas)
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+
+  // Historial de facturas
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [showInvoices, setShowInvoices] = useState(false);
 
   // Estados para el modal de perfil de contacto
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -659,6 +825,22 @@ export default function UserProfilePage() {
       console.error("Error cargando suscripción:", error);
     } finally {
       setSubscriptionLoading(false);
+    }
+  };
+
+  const loadInvoices = async () => {
+    if (!user) return;
+    setInvoicesLoading(true);
+    try {
+      const res = await fetch(`/api/subscription/invoices`);
+      if (res.ok) {
+        const data = await res.json();
+        setInvoices(data.invoices || []);
+      }
+    } catch (error) {
+      console.error("Error cargando facturas:", error);
+    } finally {
+      setInvoicesLoading(false);
     }
   };
 
@@ -1763,6 +1945,11 @@ export default function UserProfilePage() {
                 showNotification={showNotification}
                 confirm={confirm}
                 loadSubscription={loadSubscription}
+                invoices={invoices}
+                invoicesLoading={invoicesLoading}
+                loadInvoices={loadInvoices}
+                showInvoices={showInvoices}
+                setShowInvoices={setShowInvoices}
               />
             )}
           </div>
