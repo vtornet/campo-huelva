@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { Check, Crown, X, Loader2 } from "lucide-react";
+import { Check, Crown, X, Loader2, Gift } from "lucide-react";
 
 type SubscriptionStatus = {
   isPremium: boolean;
@@ -356,13 +356,33 @@ export default function PremiumPage() {
           </div>
         ) : (
           // Vista de no suscriptor - mostrar pricing
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <>
+            {/* Banner: Solicitar cupón para probar gratis */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-8 mb-8 text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Gift className="w-12 h-12 text-purple-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                ¿Primera vez?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Solicita un cupón y publica tu primera oferta totalmente gratis
+              </p>
+              <button
+                onClick={() => router.push("/request-coupon")}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg transition"
+              >
+                Solicitar cupón gratis
+              </button>
+            </div>
+
+            {/* Planes de suscripción */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8">
               <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
-                  <span>🎁</span>
-                  <span>7 días de prueba gratis</span>
-                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  O elige un plan Premium para publicar ilimitado
+                </h3>
 
                 {/* Selector de periodo de facturación */}
                 <div className="flex items-center justify-center gap-4 mb-6">
@@ -445,16 +465,13 @@ export default function PremiumPage() {
                 ) : (
                   <>
                     <Crown className="w-5 h-5" />
-                    Comenzar prueba gratis
+                    Suscribirse ahora
                   </>
                 )}
               </button>
-
-              <p className="text-center text-sm text-gray-500 mt-4">
-                No se cobrará nada hasta finalices la prueba de 7 días
-              </p>
             </div>
           </div>
+          </>
         )}
 
         {/* Sección: Publicar ofertas sin suscripción */}
