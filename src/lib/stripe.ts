@@ -44,10 +44,26 @@ export async function createCheckoutSession(
   userEmail: string,
   companyId: string,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
+  skipTrial: boolean = false
 ) {
   try {
     const stripeInstance = getStripe();
+
+    // Construir datos de la suscripción
+    const subscriptionData: any = {
+      metadata: {
+        userId,
+        companyId,
+        skipTrial: skipTrial.toString(),
+      },
+    };
+
+    // Solo añadir trial_period_days si no se quiere saltar el trial
+    if (!skipTrial) {
+      subscriptionData.trial_period_days = PREMIUM_CONFIG.trialDays;
+    }
+
     const session = await stripeInstance.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
@@ -58,18 +74,13 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      subscription_data: {
-        trial_period_days: PREMIUM_CONFIG.trialDays,
-        metadata: {
-          userId,
-          companyId,
-        },
-      },
+      subscription_data: subscriptionData,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         userId,
         companyId,
+        skipTrial: skipTrial.toString(),
       },
     });
 

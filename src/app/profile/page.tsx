@@ -12,7 +12,475 @@ import { PushNotificationSettings } from "@/components/PushNotificationSettings"
 import { BackButton } from "@/components/BackButton";
 import { formatPostDate } from "@/lib/utils";
 
-type TabType = "profile" | "posts" | "contacts" | "settings";
+type TabType = "profile" | "posts" | "contacts" | "settings" | "subscription";
+
+// Componente de la pestaña de Suscripción
+interface SubscriptionTabContentProps {
+  subscriptionData: any;
+  subscriptionLoading: boolean;
+  user: any;
+  showNotification: (notification: any) => void;
+  confirm: (options: any) => Promise<boolean>;
+  loadSubscription: () => void;
+}
+
+function SubscriptionTabContent({
+  subscriptionData,
+  subscriptionLoading,
+  user,
+  showNotification,
+  confirm,
+  loadSubscription,
+}: SubscriptionTabContentProps) {
+  const router = useRouter();
+  const [processing, setProcessing] = useState(false);
+
+  const handleSkipTrial = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/stripe/create-checkout-direct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        if (error.error === "STRIPE_NOT_CONFIGURED") {
+          showNotification({
+            type: "warning",
+            title: "Sistema de pagos en mantenimiento",
+            message: "El sistema de pagos está siendo configurado. Contacta con soporte.",
+          });
+          return;
+        }
+        throw new Error(error.message || error.error || "Error al iniciar el proceso");
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo iniciar el proceso de suscripción",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        if (error.error === "STRIPE_NOT_CONFIGURED") {
+          showNotification({
+            type: "warning",
+            title: "Sistema de pagos en mantenimiento",
+            message: "El sistema de pagos está siendo configurado. Contacta con soporte.",
+          });
+          return;
+        }
+        throw new Error(error.message || error.error || "Error al iniciar el proceso");
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo iniciar el proceso de suscripción",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleManageStripe = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al acceder al portal de gestión");
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "No se pudo abrir el portal de gestión de Stripe",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    const confirmed = await confirm({
+      title: "¿Cancelar suscripción?",
+      message: "Tras cancelar, perderás acceso al buscador de candidatos al finalizar el periodo actual. ¿Deseas continuar?",
+      confirmText: "Cancelar suscripción",
+      cancelText: "Volver",
+      type: "danger",
+    });
+
+    if (!confirmed) return;
+
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Error al cancelar la suscripción");
+      }
+
+      showNotification({
+        type: "success",
+        title: "Suscripción cancelada",
+        message: "Tu suscripción se ha cancelado correctamente. Seguirás teniendo acceso hasta el final del periodo actual.",
+      });
+
+      loadSubscription();
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo cancelar la suscripción",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (subscriptionLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  const hasSubscription = subscriptionData?.hasSubscription;
+  const subscription = subscriptionData?.subscription;
+
+  // Vista: Sin suscripción
+  if (!hasSubscription || !subscription) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+          <svg className="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Suscríbete a Premium</h3>
+          <p className="text-slate-600 mb-6 max-w-md mx-auto">
+            Accede al buscador de candidatos y disfruta de todos los beneficios Premium para potenciar tu contratación.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <button
+              onClick={handleSubscribe}
+              disabled={processing}
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {processing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <span>🎁</span>
+                  Comenzar prueba gratis
+                </>
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mt-4">7 días de prueba gratis, luego 99€/mes</p>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-6">
+          <h4 className="font-semibold text-slate-800 mb-4">Beneficios Premium</h4>
+          <ul className="space-y-3">
+            {["Publicación de ofertas ilimitadas", "Acceso completo al buscador de candidatos", 'Badge "Empresa Premium" en tu perfil', "Prioridad en resultados de búsqueda", "Soporte prioritario"].map((benefit, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-slate-700">{benefit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: En trial
+  if (subscription.isTrial && subscription.status === "TRIALING") {
+    const daysRemaining = subscription.daysRemainingInTrial || 0;
+    const trialEndDate = subscription.trialEndsAt ? new Date(subscription.trialEndsAt).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }) : "";
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🧪</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-amber-900 mb-1">Periodo de prueba activo</h3>
+              <p className="text-amber-700 text-sm mb-4">
+                Tu prueba gratuita termina el <strong>{trialEndDate}</strong> ({daysRemaining} días restantes)
+              </p>
+              <div className="bg-white/70 rounded-lg p-3 mb-4">
+                <p className="text-sm text-amber-800">
+                  <strong>Beneficios activos durante la prueba:</strong>
+                </p>
+                <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                  <li>✓ Publicación de ofertas ilimitadas</li>
+                </ul>
+                <p className="text-xs text-amber-600 mt-2 font-medium">
+                  ⚠️ El buscador de candidatos estará disponible tras finalizar la prueba y suscribirte a Premium.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleSkipTrial}
+                  disabled={processing}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <span>⚡</span>
+                      Saltar prueba - 99€
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={processing}
+                  className="px-4 py-2 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar prueba
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-6">
+          <h4 className="font-semibold text-slate-800 mb-2">📋 Información de suscripción</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-slate-500">Estado:</span>
+              <span className="ml-2 font-medium text-amber-700">En prueba</span>
+            </div>
+            <div>
+              <span className="text-slate-500">Fin de prueba:</span>
+              <span className="ml-2 font-medium text-slate-800">{trialEndDate}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: Suscripción activa
+  if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
+    const isTrial = subscription.isTrial;
+    const statusText = isTrial ? "Prueba" : "Activa";
+    const statusColor = isTrial ? "text-amber-700" : "text-green-700";
+    const statusBg = isTrial ? "bg-amber-50" : "bg-green-50";
+
+    const nextBillingDate = subscription.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd).toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "Próximamente";
+
+    return (
+      <div className="space-y-6">
+        <div className={`${statusBg} rounded-2xl p-6 border border-${isTrial ? "amber" : "green"}-200`}>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">👑</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-slate-900 mb-1">
+                {isTrial ? "🧪 Periodo de prueba" : "Suscripción Premium Activa"}
+              </h3>
+              <p className="text-slate-700 text-sm mb-4">
+                Tu suscripción está {statusText.toLowerCase()}. Disfruta de todos los beneficios Premium.
+              </p>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-500">Estado:</span>
+                  <span className={`ml-2 font-medium ${statusColor}`}>{statusText}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Próxima renovación:</span>
+                  <span className="ml-2 font-medium text-slate-800">{nextBillingDate}</span>
+                </div>
+              </div>
+              {subscription.cancelAtPeriodEnd && (
+                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <p className="text-sm text-red-700">
+                    ⚠️ Tu suscripción se cancelará al finalizar el periodo actual.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-6">
+          <h4 className="font-semibold text-slate-800 mb-4">✅ Beneficios activos</h4>
+          <ul className="space-y-3">
+            {["Publicación de ofertas ilimitadas", isTrial ? "Buscador de candidatos (al finalizar prueba)" : "Acceso completo al buscador de candidatos", 'Badge "Empresa Premium" en tu perfil', "Prioridad en resultados de búsqueda", "Soporte prioritario"].map((benefit, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-slate-700">{benefit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {subscription.stripeCustomerId && (
+            <button
+              onClick={handleManageStripe}
+              disabled={processing}
+              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {processing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Gestionar en Stripe
+                </>
+              )}
+            </button>
+          )}
+          {!subscription.cancelAtPeriodEnd && (
+            <button
+              onClick={handleCancelSubscription}
+              disabled={processing}
+              className="px-4 py-3 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-red-200"
+            >
+              Cancelar suscripción
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: Suscripción cancelada
+  if (subscription.status === "CANCELED") {
+    const periodEndDate = subscription.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd).toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : null;
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 rounded-2xl p-6 border border-red-200">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-red-900 mb-1">Suscripción cancelada</h3>
+              <p className="text-red-700 text-sm">
+                {periodEndDate
+                  ? `Tu acceso a Premium finalizará el ${periodEndDate}.`
+                  : "Tu suscripción ha sido cancelada."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-6 text-center">
+          <p className="text-slate-700 mb-4">¿Quieres volver a disfrutar de los beneficios Premium?</p>
+          <button
+            onClick={handleSubscribe}
+            disabled={processing}
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+          >
+            {processing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Procesando...
+              </>
+            ) : (
+              <>
+                <span>👑</span>
+                Reactivar suscripción
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: Otro estado
+  return (
+    <div className="bg-slate-50 rounded-xl p-6 text-center">
+      <p className="text-slate-600">Estado de suscripción: {subscription.status}</p>
+    </div>
+  );
+}
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -36,6 +504,10 @@ export default function UserProfilePage() {
   const [contacts, setContacts] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+
+  // Datos de suscripción (solo para empresas)
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
   // Estados para el modal de perfil de contacto
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -65,7 +537,7 @@ export default function UserProfilePage() {
   // Leer parámetro 'tab' de la URL para cambiar de pestaña
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["profile", "posts", "contacts", "messages", "settings"].includes(tabParam)) {
+    if (tabParam && ["profile", "posts", "contacts", "messages", "settings", "subscription"].includes(tabParam)) {
       setActiveTab(tabParam as TabType);
     }
   }, [searchParams]);
@@ -81,6 +553,13 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (activeTab === "contacts" && user) {
       loadContacts();
+    }
+  }, [activeTab, user]);
+
+  // Cargar suscripción cuando se cambia a la pestaña de suscripción
+  useEffect(() => {
+    if (activeTab === "subscription" && user) {
+      loadSubscription();
     }
   }, [activeTab, user]);
 
@@ -147,6 +626,22 @@ export default function UserProfilePage() {
       console.error("Error cargando contactos:", error);
     } finally {
       setContactsLoading(false);
+    }
+  };
+
+  const loadSubscription = async () => {
+    if (!user) return;
+    setSubscriptionLoading(true);
+    try {
+      const res = await fetch(`/api/subscription?userId=${user.uid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionData(data);
+      }
+    } catch (error) {
+      console.error("Error cargando suscripción:", error);
+    } finally {
+      setSubscriptionLoading(false);
     }
   };
 
@@ -623,6 +1118,20 @@ export default function UserProfilePage() {
               </svg>
               <span className="hidden sm:inline">Ajustes</span>
             </button>
+            {/* Pestaña de Suscripción - Solo para empresas */}
+            {role === "COMPANY" && (
+              <button
+                onClick={() => setActiveTab("subscription")}
+                className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
+                  activeTab === "subscription" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                <span className="hidden sm:inline">Suscripción</span>
+              </button>
+            )}
           </div>
 
           <div className="p-6">
@@ -1226,6 +1735,18 @@ export default function UserProfilePage() {
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* Tab Suscripción - Solo para empresas */}
+            {activeTab === "subscription" && role === "COMPANY" && (
+              <SubscriptionTabContent
+                subscriptionData={subscriptionData}
+                subscriptionLoading={subscriptionLoading}
+                user={user}
+                showNotification={showNotification}
+                confirm={confirm}
+                loadSubscription={loadSubscription}
+              />
             )}
           </div>
         </div>

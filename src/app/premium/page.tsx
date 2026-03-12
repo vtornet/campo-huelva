@@ -157,29 +157,8 @@ export default function PremiumPage() {
   }
 
   async function handleManageSubscription() {
-    if (!user) return;
-    try {
-      const response = await fetch("/api/subscription/portal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: user.uid }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al acceder al portal de gestión");
-      }
-
-      const { url } = await response.json();
-      if (url) {
-        window.location.href = url;
-      }
-    } catch (error) {
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: "No se pudo abrir el portal de gestión",
-      });
-    }
+    // Redirigir a la pestaña de suscripción del perfil
+    router.push("/profile?tab=suscripcion");
   }
 
   if (authLoading || loading) {
