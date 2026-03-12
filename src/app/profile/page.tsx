@@ -178,9 +178,8 @@ function SubscriptionTabContent({
 
     setProcessing(true);
     try {
-      const res = await fetch("/api/subscription", {
+      const res = await apiFetch("/api/subscription", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
       });
 
       if (!res.ok) {

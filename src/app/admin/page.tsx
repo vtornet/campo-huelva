@@ -857,7 +857,26 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                       <div className="border-l border-slate-600 pl-2 flex gap-1">
                         {(() => {
                           const premium = getPremiumStatus(c);
-                          if (!premium.isActive) {
+                          const hasStripeId = c.subscription?.stripeSubscriptionId;
+                          const isCanceledWithStripe = premium.label === "Inactiva" && hasStripeId;
+
+                          if (isCanceledWithStripe) {
+                            // Caso especial: cancelada en BD pero activa en Stripe
+                            return (
+                              <>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "force_revoke")}
+                                  className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                  title="Cancelar en Stripe (desincronizado)"
+                                >⚠️ Cancelar Stripe</button>
+                                <button
+                                  onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                  title="Activar 1 mes"
+                                >+1m</button>
+                              </>
+                            );
+                          } else if (!premium.isActive) {
                             // Sin suscripción activa: botones para activar
                             return (
                               <>

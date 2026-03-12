@@ -150,6 +150,45 @@ export async function POST(request: Request) {
         });
       }
 
+      case "force_revoke": {
+        // Forzar revocación para casos donde la suscripción local está CANCELED
+        // pero sigue activa en Stripe
+        if (!company.subscription) {
+          return NextResponse.json({ error: "La empresa no tiene suscripción" }, { status: 400 });
+        }
+
+        // Solo proceder si hay ID de Stripe pero el estado local no es ACTIVE
+        if (!company.subscription.stripeSubscriptionId) {
+          return NextResponse.json({ error: "No hay suscripción en Stripe para cancelar" }, { status: 400 });
+        }
+
+        try {
+          const { getStripe } = await import("@/lib/stripe");
+          const stripe = getStripe();
+          // Cancelar en Stripe
+          await stripe.subscriptions.cancel(company.subscription.stripeSubscriptionId);
+
+          // Actualizar BD para quitar el ID de Stripe
+          await prisma.subscription.update({
+            where: { id: company.subscription.id },
+            data: {
+              stripeSubscriptionId: null,
+            }
+          });
+
+          return NextResponse.json({
+            success: true,
+            message: "Suscripción cancelada en Stripe. El estado local ya era CANCELED."
+          });
+        } catch (stripeError: any) {
+          console.error("Error en force_revoke:", stripeError);
+          return NextResponse.json({
+            error: "Error al cancelar en Stripe",
+            details: stripeError?.message
+          }, { status: 500 });
+        }
+      }
+
       case "extend": {
         // Extender suscripción existente
         if (!company.subscription) {
