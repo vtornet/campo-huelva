@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { Gift, Loader2, CheckCircle } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 
 export default function RequestCouponPage() {
   const { user, loading: authLoading } = useAuth();
@@ -38,9 +39,8 @@ export default function RequestCouponPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/coupons/request", {
+      const response = await apiFetch("/api/coupons/request", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
