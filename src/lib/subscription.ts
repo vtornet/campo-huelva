@@ -5,11 +5,11 @@ const prisma = new PrismaClient();
 /**
  * Verifica si una empresa tiene suscripción premium activa
  * @param userId - ID del usuario de Firebase
- * @returns true si tiene suscripción premium activa, false en caso contrario
+ * @returns Objeto con hasPremium, isTrial, o null si no tiene suscripción
  */
 export async function hasActivePremiumSubscription(
   userId: string
-): Promise<boolean> {
+): Promise<{ hasPremium: boolean; isTrial: boolean } | null> {
   try {
     console.log('[hasActivePremiumSubscription] Checking userId:', userId);
 
@@ -25,63 +25,51 @@ export async function hasActivePremiumSubscription(
       },
     });
 
-    console.log('[hasActivePremiumSubscription] user found:', !!user);
-    console.log('[hasActivePremiumSubscription] user.role:', user?.role);
-    console.log('[hasActivePremiumSubscription] companyProfile:', !!user?.companyProfile);
-
     // Verificar que sea empresa
     if (!user || user.role !== Role.COMPANY || !user.companyProfile) {
       console.log('[hasActivePremiumSubscription] Not a company or no profile');
-      return false;
+      return null;
     }
 
     // Verificar si tiene suscripción
     const subscription = user.companyProfile.subscription;
     if (!subscription) {
       console.log('[hasActivePremiumSubscription] No subscription found');
-      return false;
+      return null;
     }
 
-    console.log('[hasActivePremiumSubscription] subscription:', {
-      id: subscription.id,
-      status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      trialEndsAt: subscription.trialEndsAt,
-    });
-
-    // Verificar si está en periodo de prueba (prioridad sobre currentPeriodEnd)
-    const isTrial =
+    // Verificar si está en periodo de prueba
+    const isTrial = !!(
       subscription &&
       subscription.isTrial &&
       subscription.trialEndsAt &&
-      new Date(subscription.trialEndsAt) > new Date();
+      new Date(subscription.trialEndsAt) > new Date()
+    );
 
     // Verificar si la suscripción está activa
-    // Si está en prueba, usar trialEndsAt. Si no, usar currentPeriodEnd.
-    let isActive = false;
-    if (subscription) {
-      if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
-        // Si está en periodo de prueba, verificar por trialEndsAt
-        if (isTrial) {
-          isActive = true;
-        } else {
-          // Si no está en prueba, verificar por currentPeriodEnd
-          isActive = !subscription.currentPeriodEnd ||
-            new Date(subscription.currentPeriodEnd) > new Date();
-        }
-      }
-    }
+    const isActive = !!(
+      subscription &&
+      (subscription.status === "ACTIVE" || subscription.status === "TRIALING") &&
+      (isTrial || (!subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > new Date()))
+    );
 
-    console.log('[hasActivePremiumSubscription] isTrial:', isTrial);
-    console.log('[hasActivePremiumSubscription] isActive:', isActive);
-    console.log('[hasActivePremiumSubscription] status check:', subscription.status === "ACTIVE" || subscription.status === "TRIALING");
-    console.log('[hasActivePremiumSubscription] period check:', !subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > new Date());
-
-    return isActive;
+    return { hasPremium: isActive, isTrial };
   } catch (error) {
     console.error("Error checking premium subscription:", error);
-    return false;
+    return null;
   }
+}
+
+/**
+ * Versión boolean de compatibilidad para hasActivePremiumSubscription
+ * @param userId - ID del usuario de Firebase
+ * @returns true si tiene suscripción premium activa, false en caso contrario
+ */
+export async function hasActivePremiumSubscriptionBool(
+  userId: string
+): Promise<boolean> {
+  const result = await hasActivePremiumSubscription(userId);
+  return result?.hasPremium || false;
 }
 
 /**
@@ -154,7 +142,7 @@ export async function hasPaidSubscription(
  * (tiene suscripción premium activa, INCLUYENDO periodo de prueba)
  */
 export async function canPublishUnlimitedPosts(userId: string): Promise<boolean> {
-  return await hasActivePremiumSubscription(userId);
+  return await hasActivePremiumSubscriptionBool(userId);
 }
 
 /**

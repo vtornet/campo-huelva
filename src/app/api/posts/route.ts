@@ -269,20 +269,35 @@ export async function POST(request: Request) {
         }, { status: 403 });
       }
 
-      // Verificar si tiene suscripción Premium activa
+      // Verificar si tiene suscripción Premium activa O créditos de ofertas
       console.log('[POST CREATE] Verificando premium para userId:', user.id);
-      console.log('[POST CREATE] user.companyProfile:', user.companyProfile ? {
-        id: user.companyProfile.id,
-        isApproved: user.companyProfile.isApproved
-      } : 'NO COMPANY PROFILE');
       const hasPremium = await hasActivePremiumSubscription(user.id);
-      console.log('[POST CREATE] hasPremium:', hasPremium);
-      if (!hasPremium) {
+      const hasCredits = (user.companyProfile?.offerCredits || 0) > 0;
+      const isTrial = hasPremium?.isTrial || false;
+
+      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial);
+
+      // Solo permitir con:
+      // - Premium pagado (no trial) O
+      // - Créditos de ofertas
+      if ((!hasPremium || isTrial) && !hasCredits) {
         return NextResponse.json({
-          error: "PREMIUM_REQUIRED",
+          error: "PREMIUM_OR_CREDITS_REQUIRED",
           premiumRequired: true,
-          message: "Para publicar ofertas necesitas una suscripción Premium."
+          message: "Para publicar ofertas necesitas una suscripción Premium o créditos de ofertas. Solicita tu cupón gratis en /request-coupon",
         }, { status: 403 });
+      }
+
+      // Si tiene créditos, consumir 1 al publicar
+      if (hasCredits && !hasPremium) {
+        const credits = user.companyProfile.offerCredits || 0;
+        await prisma.companyProfile.update({
+          where: { id: user.companyProfile.id },
+          data: {
+            offerCredits: { decrement: 1 },
+          },
+        });
+        console.log(`[POST CREATE] Crédito consumido. Créditos restantes: ${credits - 1}`);
       }
     }
 

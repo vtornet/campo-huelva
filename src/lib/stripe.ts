@@ -58,7 +58,7 @@ export async function createCheckoutSession(
   companyId: string,
   successUrl: string,
   cancelUrl: string,
-  skipTrial: boolean = false,
+  skipTrial: boolean = true, // Por defecto SIN trial
   billingPeriod: 'monthly' | 'yearly' = 'monthly'
 ) {
   try {
@@ -78,12 +78,11 @@ export async function createCheckoutSession(
       metadata: {
         userId,
         companyId,
-        skipTrial: skipTrial.toString(),
         billingPeriod,
       },
     };
 
-    // Solo añadir trial_period_days si no se quiere saltar el trial
+    // Solo añadir trial_period_days si explícitamente se quiere trial
     if (!skipTrial) {
       subscriptionData.trial_period_days = PREMIUM_CONFIG.trialDays;
     }
@@ -104,7 +103,6 @@ export async function createCheckoutSession(
       metadata: {
         userId,
         companyId,
-        skipTrial: skipTrial.toString(),
         billingPeriod,
       },
     });

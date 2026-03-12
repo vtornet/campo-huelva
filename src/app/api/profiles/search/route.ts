@@ -1,7 +1,7 @@
 // API de búsqueda de perfiles para empresas
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { hasActivePremiumSubscription } from "@/lib/subscription";
+import { hasPaidSubscription } from "@/lib/subscription";
 
 const prisma = new PrismaClient();
 
@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verificar que la empresa tiene suscripción premium activa
-    const hasPremium = await hasActivePremiumSubscription(userId);
+    // Verificar que la empresa tiene suscripción premium PAGADA (no trial)
+    const hasPremium = await hasPaidSubscription(userId);
     if (!hasPremium) {
       return NextResponse.json({
         error: "El acceso al buscador de candidatos requiere una suscripción Premium",
