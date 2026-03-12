@@ -110,11 +110,25 @@ export async function POST(request: Request) {
 
         const oldStatus = company.subscription.status;
 
+        // Si hay suscripción en Stripe, cancelarla también
+        if (company.subscription.stripeSubscriptionId) {
+          try {
+            const { getStripe } = await import("@/lib/stripe");
+            const stripe = getStripe();
+            // Cancelar inmediatamente en Stripe (no al final del periodo)
+            await stripe.subscriptions.cancel(company.subscription.stripeSubscriptionId);
+          } catch (stripeError) {
+            console.error("Error cancelando en Stripe, continuando con cancelación local:", stripeError);
+          }
+        }
+
         await prisma.subscription.update({
           where: { id: company.subscription.id },
           data: {
             status: SubscriptionStatus.CANCELED,
             cancelAtPeriodEnd: true,
+            // Limpiar el ID de Stripe para que no se sincronice más
+            stripeSubscriptionId: null,
           }
         });
 
@@ -132,7 +146,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
           success: true,
-          message: "Suscripción revocada correctamente"
+          message: "Suscripción revocada correctamente (incluyendo en Stripe)"
         });
       }
 
