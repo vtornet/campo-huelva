@@ -12,7 +12,7 @@ import { PushNotificationSettings } from "@/components/PushNotificationSettings"
 import { BackButton } from "@/components/BackButton";
 import { formatPostDate } from "@/lib/utils";
 
-type TabType = "profile" | "posts" | "contacts" | "search" | "settings";
+type TabType = "profile" | "posts" | "contacts" | "settings";
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -65,7 +65,7 @@ export default function UserProfilePage() {
   // Leer parámetro 'tab' de la URL para cambiar de pestaña
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["profile", "posts", "contacts", "messages", "search", "settings"].includes(tabParam)) {
+    if (tabParam && ["profile", "posts", "contacts", "messages", "settings"].includes(tabParam)) {
       setActiveTab(tabParam as TabType);
     }
   }, [searchParams]);
@@ -623,20 +623,6 @@ export default function UserProfilePage() {
               </svg>
               <span className="hidden sm:inline">Ajustes</span>
             </button>
-            {/* Solo para empresas */}
-            {role === 'COMPANY' && (
-              <button
-                onClick={() => setActiveTab("search")}
-                className={`flex-shrink-0 py-4 px-3 sm:px-4 font-medium text-center transition-all duration-200 relative ${
-                  activeTab === "search" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <svg className="w-5 h-5 inline-block mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="hidden sm:inline">Buscar Perfiles</span>
-              </button>
-            )}
           </div>
 
           <div className="p-6">
@@ -1185,25 +1171,6 @@ export default function UserProfilePage() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Tab Buscar Perfiles (solo empresas) */}
-            {activeTab === "search" && role === 'COMPANY' && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">Buscar Trabajadores y Manijeros</h3>
-                <p className="text-slate-500 text-sm mb-4">Encuentra perfiles cualificados con filtros avanzados por experiencia, ubicación y disponibilidad.</p>
-                <button
-                  onClick={() => router.push("/profile/company/search")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-xl font-medium transition-all duration-200"
-                >
-                  Abrir Buscador
-                </button>
               </div>
             )}
 

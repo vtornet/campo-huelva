@@ -25,7 +25,7 @@ Proyecto en desarrollo activo. Aún no se garantiza compatibilidad con versiones
 
 **Despliegue**: Railway con dominio propio https://agroredjob.com
 
-**Última actualización**: 11 de marzo de 2026
+**Última actualización**: 12 de marzo de 2026
 
 ## Comandos de Desarrollo
 
@@ -512,6 +512,14 @@ Cada rol tiene una tabla de perfil dedicada: `WorkerProfile`, `ForemanProfile`, 
 - [x] `break-all` en títulos para manejar palabras largas
 - [x] Los títulos ahora ocupan el ancho normal en móvil (antes mostraban 1-2 letras por línea)
 
+### ✅ 30. Mejoras en Ofertas Compartidas y Búsqueda (COMPLETADO - 12/03/2026)
+- [x] **Opción "Salario no especificado"** para ofertas compartidas (tipo SHARED)
+- [x] **Saltos de línea en descripciones**: `whitespace-pre-wrap` aplicado en feed, detalle y mis publicaciones
+- [x] **Botón "Acceder a la oferta"** visible en detalle de ofertas compartidas (redirige a enlace externo)
+- [x] **Eliminada pestaña "Buscar Perfiles"** del perfil de empresa
+- [x] Las empresas solo pueden acceder al buscador de candidatos desde la página principal
+- [x] **Restricción para periodo de prueba**: Empresas en trial pueden publicar pero no buscar candidatos
+
 ---
 
 ## 🎯 Roadmap a Fase Beta
@@ -761,12 +769,14 @@ Esta funcionalidad se ha pospuesto para una fase futura de la aplicación. La pl
 - [x] **Suscripción mensual**: 99€/mes para empresas
 - [x] **Opción anual**: 999€/año (2 meses gratis)
 - [x] **Periodo de prueba**: 7 días gratis sin compromiso
+  - Durante el trial: pueden publicar ofertas pero NO buscar candidatos
+  - Tras suscripción de pago: acceso completo a todas las funcionalidades
 - [x] **Webhook de Stripe**: Sincronización automática de pagos
 - [x] **Portal de gestión**: Las empresas pueden gestionar su suscripción
 - [x] **Modelo de datos completo**: Tablas `Subscription` y `SubscriptionHistory` en Prisma
 - [x] **Beneficios Premium**:
   - Publicación de ofertas ilimitadas
-  - Acceso completo al buscador de candidatos
+  - Acceso completo al buscador de candidatos (solo suscripción pagada)
   - Badge "Empresa Premium" en el perfil
   - Prioridad en resultados de búsqueda
   - Soporte prioritario
