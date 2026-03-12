@@ -69,10 +69,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si ya tiene una suscripción activa (no CANCELED)
+    // Verificar si ya tiene una suscripción activa
+    // Para "saltar trial", permitimos TRIALING porque el usuario quiere pasar a pago inmediato
     if (user.companyProfile.subscription) {
       const sub = user.companyProfile.subscription;
-      if (sub.status === "ACTIVE" || sub.status === "TRIALING") {
+      // Solo bloquear si está ACTIVE (pagada y vigente)
+      // TRIALING se permite para poder saltar el trial
+      // CANCELED se permite para reactivar
+      if (sub.status === "ACTIVE") {
         return NextResponse.json(
           {
             error: "Ya tienes una suscripción activa",
@@ -85,7 +89,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      console.log("[CHECKOUT-DIRECT] Suscripción existente con estado:", sub.status, "- permitiendo renovación");
+      console.log("[CHECKOUT-DIRECT] Suscripción existente con estado:", sub.status, "- permitiendo checkout directo");
     }
 
     // Obtener URLs de redirección
