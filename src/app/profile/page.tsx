@@ -11,6 +11,7 @@ import { usePromptDialog } from "@/components/PromptDialog";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { BackButton } from "@/components/BackButton";
 import { formatPostDate } from "@/lib/utils";
+import { apiFetch } from "@/lib/api-client";
 
 type TabType = "profile" | "posts" | "contacts" | "settings" | "subscription";
 
@@ -208,9 +209,8 @@ function SubscriptionTabContent({
   const handleSyncSubscription = async () => {
     setProcessing(true);
     try {
-      const res = await fetch("/api/subscription/sync-from-stripe", {
+      const res = await apiFetch("/api/subscription/sync-from-stripe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
       });
 
       if (!res.ok) {
@@ -426,9 +426,12 @@ function SubscriptionTabContent({
                 </div>
               </div>
               {subscription.cancelAtPeriodEnd && (
-                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  <p className="text-sm text-red-700">
-                    ⚠️ Tu suscripción se cancelará al finalizar el periodo actual.
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <p className="text-sm text-amber-700">
+                    ⚠️ Has solicitado cancelar tu suscripción. Se mantendrá activa hasta el {nextBillingDate} y luego se cancelará automáticamente.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Si quieres mantener tu suscripción, ve a "Gestionar en Stripe" y reactiva el pago automático.
                   </p>
                 </div>
               )}
@@ -832,7 +835,7 @@ export default function UserProfilePage() {
     if (!user) return;
     setInvoicesLoading(true);
     try {
-      const res = await fetch(`/api/subscription/invoices`);
+      const res = await apiFetch(`/api/subscription/invoices`);
       if (res.ok) {
         const data = await res.json();
         setInvoices(data.invoices || []);
