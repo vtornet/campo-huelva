@@ -819,10 +819,19 @@ export default function UserProfilePage() {
     if (!user) return;
     setSubscriptionLoading(true);
     try {
-      const res = await fetch(`/api/subscription?userId=${user.uid}`);
+      // Primero sincronizar con Stripe para tener los datos más actualizados
+      try {
+        await apiFetch("/api/subscription/sync-from-stripe", { method: "POST" });
+      } catch (syncError) {
+        // Si falla la sincronización, continuamos con los datos locales
+        console.warn("No se pudo sincronizar con Stripe, usando datos locales:", syncError);
+      }
+
+      // Cargar los datos actualizados (pasando userId en query para compatibilidad)
+      const res = await apiFetch(`/api/subscription/status?userId=${user.uid}`);
       if (res.ok) {
         const data = await res.json();
-        setSubscriptionData(data);
+        setSubscriptionData(data.subscription || data);
       }
     } catch (error) {
       console.error("Error cargando suscripción:", error);
