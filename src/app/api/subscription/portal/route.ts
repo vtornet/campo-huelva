@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     // Obtener datos de la empresa
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: uid },
       include: {
         companyProfile: {
           include: {
