@@ -17,6 +17,7 @@ export async function GET() {
       pendingReports,
       pendingVerifications,
       pendingApprovals,
+      pendingCoupons,
       bannedUsers,
       silencedUsers,
     ] = await Promise.all([
@@ -32,6 +33,8 @@ export async function GET() {
       prisma.companyProfile.count({ where: { isVerified: false } }),
       // Empresas verificadas pero no aprobadas
       prisma.companyProfile.count({ where: { isVerified: true, isApproved: false } }),
+      // Cupones pendientes (estado ACTIVE pero que fueron solicitados por empresas)
+      prisma.coupon.count({ where: { status: "ACTIVE" } }),
       prisma.user.count({ where: { isBanned: true } }),
       prisma.user.count({ where: { isSilenced: true } }),
     ]);
@@ -48,6 +51,7 @@ export async function GET() {
       pendingReports,
       pendingVerifications,
       pendingApprovals,
+      pendingCoupons,
       bannedUsers,
       silencedUsers,
     });

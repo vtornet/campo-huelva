@@ -176,68 +176,6 @@ export async function POST(request: Request) {
         });
       }
 
-      case "reset_trial": {
-        // Resetear periodo de prueba
-        const trialEnd = new Date(now);
-        trialEnd.setDate(trialEnd.getDate() + 7); // 7 días de prueba
-
-        let subscription;
-
-        if (company.subscription) {
-          subscription = await prisma.subscription.update({
-            where: { id: company.subscription.id },
-            data: {
-              status: SubscriptionStatus.TRIALING,
-              isTrial: true,
-              trialEndsAt: trialEnd,
-              currentPeriodStart: now,
-              currentPeriodEnd: trialEnd,
-              cancelAtPeriodEnd: false,
-            }
-          });
-
-          // Registrar historial
-          await prisma.subscriptionHistory.create({
-            data: {
-              subscriptionId: subscription.id,
-              action: SubscriptionAction.TRIAL_STARTED,
-              fromStatus: company.subscription.status,
-              toStatus: SubscriptionStatus.TRIALING,
-              changedBy: userId,
-              changeReason: "Reset de prueba por admin"
-            }
-          });
-        } else {
-          subscription = await prisma.subscription.create({
-            data: {
-              companyId: company.id,
-              status: SubscriptionStatus.TRIALING,
-              isTrial: true,
-              trialEndsAt: trialEnd,
-              currentPeriodStart: now,
-              currentPeriodEnd: trialEnd,
-            }
-          });
-
-          // Registrar historial
-          await prisma.subscriptionHistory.create({
-            data: {
-              subscriptionId: subscription.id,
-              action: SubscriptionAction.TRIAL_STARTED,
-              toStatus: SubscriptionStatus.TRIALING,
-              changedBy: userId,
-              changeReason: "Creación de prueba por admin"
-            }
-          });
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: `Periodo de prueba reiniciado. Finaliza el ${trialEnd.toLocaleDateString()}`,
-          subscription
-        });
-      }
-
       default:
         return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     }

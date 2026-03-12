@@ -10,7 +10,7 @@ import { usePromptDialog } from "@/components/PromptDialog";
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
 
-type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs" | "analytics";
+type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs" | "analytics" | "coupons";
 type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA" | "banned" | "silenced";
 
 export default function AdminPage() {
@@ -34,6 +34,7 @@ export default function AdminPage() {
     pendingReports: 0,
     pendingVerifications: 0,
     pendingApprovals: 0,
+    pendingCoupons: 0,
     bannedUsers: 0,
     silencedUsers: 0,
   });
@@ -78,6 +79,7 @@ export default function AdminPage() {
         pendingReports: data.pendingReports || 0,
         pendingVerifications: data.pendingVerifications || 0,
         pendingApprovals: data.pendingApprovals || 0,
+        pendingCoupons: data.pendingCoupons || 0,
         bannedUsers: data.bannedUsers || 0,
         silencedUsers: data.silencedUsers || 0,
       });
@@ -160,6 +162,13 @@ export default function AdminPage() {
                 <span className="ml-auto bg-red-600 text-xs px-2 py-0.5 rounded-full">{stats.pendingReports}</span>
               )}
             </AdminTabButton>
+            <AdminTabButton active={activeTab === "coupons"} onClick={() => setActiveTab("coupons")}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+              Cupones
+              {stats.pendingCoupons > 0 && (
+                <span className="ml-auto bg-amber-600 text-xs px-2 py-0.5 rounded-full">{stats.pendingCoupons}</span>
+              )}
+            </AdminTabButton>
             <AdminTabButton active={activeTab === "logs"} onClick={() => setActiveTab("logs")}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               Historial
@@ -188,6 +197,9 @@ export default function AdminPage() {
             <button onClick={() => setActiveTab("reports")} className={`p-2 rounded ${activeTab === "reports" ? "bg-emerald-600" : ""}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </button>
+            <button onClick={() => setActiveTab("coupons")} className={`p-2 rounded ${activeTab === "coupons" ? "bg-emerald-600" : ""}`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+            </button>
           </div>
         </div>
 
@@ -199,6 +211,7 @@ export default function AdminPage() {
           {activeTab === "posts" && <AdminPosts adminId={user?.uid} onStatsUpdate={loadStats} />}
           {activeTab === "analytics" && <AdminAnalytics />}
           {activeTab === "reports" && <AdminReports onStatsUpdate={loadStats} adminId={user?.uid} />}
+          {activeTab === "coupons" && <AdminCoupons onStatsUpdate={loadStats} adminId={user?.uid} />}
           {activeTab === "logs" && <AdminLogs />}
         </main>
       </div>
@@ -600,7 +613,7 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
   const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved" | "premium" | "paid" | "trial" | "inactive">("all");
+  const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved" | "premium" | "paid" | "inactive">("all");
 
   // Función auxiliar para determinar el estado premium de una empresa
   const getPremiumStatus = (company: any) => {
@@ -610,20 +623,10 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     }
 
     const now = new Date();
-    const isActive = sub.status === "ACTIVE" || sub.status === "TRIALING";
-    const isTrial = sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > now;
+    const isActive = sub.status === "ACTIVE" && (!sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > now);
 
     if (!isActive) {
       return { label: "Inactiva", color: "bg-red-600", isActive: false };
-    }
-
-    if (isTrial) {
-      const daysLeft = Math.ceil((new Date(sub.trialEndsAt!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return {
-        label: `🧪 Prueba (${daysLeft}d)`,
-        color: "bg-amber-600",
-        isActive: true
-      };
     }
 
     return { label: "👑 Premium", color: "bg-emerald-600", isActive: true };
@@ -723,10 +726,6 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
       extend: {
         title: "Extender Suscripción",
         message: `¿Extender la suscripción ${months || 1} mes(es)?`
-      },
-      reset_trial: {
-        title: "Resetear Prueba",
-        message: "¿Reiniciar el periodo de prueba de 7 días?"
       }
     };
 
@@ -777,7 +776,6 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
           <FilterButton active={filter === "unapproved"} onClick={() => setFilter("unapproved")}>Por Aprobar</FilterButton>
           <FilterButton active={filter === "premium"} onClick={() => setFilter("premium")}>👑 Premium</FilterButton>
           <FilterButton active={filter === "paid"} onClick={() => setFilter("paid")}>💰 Pagadas</FilterButton>
-          <FilterButton active={filter === "trial"} onClick={() => setFilter("trial")}>🧪 En Prueba</FilterButton>
           <FilterButton active={filter === "inactive"} onClick={() => setFilter("inactive")}>❌ Sin Premium</FilterButton>
         </div>
       </div>
@@ -873,11 +871,6 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                                   className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
                                   title="Activar 3 meses"
                                 >+3m</button>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "reset_trial")}
-                                  className="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-xs"
-                                  title="Resetear periodo de prueba"
-                                >🧪</button>
                               </>
                             );
                           } else {
@@ -1761,6 +1754,472 @@ function AdminAnalytics() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
+  const { showNotification } = useNotifications();
+  const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
+  const { prompt, PromptDialogComponent } = usePromptDialog();
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "ACTIVE" | "USED" | "EXPIRED" | "REVOKED">("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCouponData, setNewCouponData] = useState({ code: "", maxUses: 1, notes: "" });
+
+  useEffect(() => {
+    loadCoupons();
+  }, [filter]);
+
+  const loadCoupons = async () => {
+    setLoading(true);
+    const url = filter === "all" ? "/api/admin/coupons" : `/api/admin/coupons?status=${filter}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      setCoupons(data.coupons || []);
+    } else {
+      console.error("Error loading coupons:", res.status);
+      setCoupons([]);
+    }
+    setLoading(false);
+  };
+
+  const handleCreateCoupon = async () => {
+    if (!newCouponData.code.trim()) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: "El código del cupón es obligatorio",
+      });
+      return;
+    }
+
+    const res = await fetch("/api/admin/coupons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCouponData),
+    });
+
+    if (res.ok) {
+      setShowCreateModal(false);
+      setNewCouponData({ code: "", maxUses: 1, notes: "" });
+      loadCoupons();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Cupón creado",
+        message: "El cupón se ha creado correctamente",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo crear el cupón",
+      });
+    }
+  };
+
+  const handleApproveRequest = async (couponId: string, code: string) => {
+    // Al aprobar, el cupón ya está creado, solo cambiamos el estado si es necesario
+    // En este caso, las solicitudes son cupones ACTIVE que pueden ser canjeados
+    // El admin puede rechazar (revocar) o dejar activo para que la empresa canjee
+
+    const confirmed = await confirmDialog({
+      title: "Aprobar solicitud de cupón",
+      message: `¿Aprobar la solicitud del cupón ${code}? La empresa podrá canjearlo.`,
+      type: "warning",
+    });
+
+    if (!confirmed) return;
+
+    // El cupón ya está ACTIVE, no necesitamos cambiar nada
+    // Solo enviamos email a la empresa
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "approve", userId: adminId }),
+    });
+
+    if (res.ok) {
+      loadCoupons();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Solicitud aprobada",
+        message: "Se ha enviado un email a la empresa con el código del cupón",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo aprobar la solicitud",
+      });
+    }
+  };
+
+  const handleRejectRequest = async (couponId: string, code: string) => {
+    const confirmed = await confirmDialog({
+      title: "Rechazar solicitud",
+      message: `¿Rechazar la solicitud del cupón ${code}?`,
+      type: "danger",
+    });
+
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "revoke", userId: adminId }),
+    });
+
+    if (res.ok) {
+      loadCoupons();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Solicitud rechazada",
+        message: "La solicitud ha sido rechazada",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo rechazar la solicitud",
+      });
+    }
+  };
+
+  const handleRevokeCoupon = async (couponId: string, code: string) => {
+    const confirmed = await confirmDialog({
+      title: "Revocar cupón",
+      message: `¿Revocar el cupón ${code}? Ya no podrá ser canjeado.`,
+      type: "danger",
+    });
+
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "revoke", userId: adminId }),
+    });
+
+    if (res.ok) {
+      loadCoupons();
+      showNotification({
+        type: "success",
+        title: "Cupón revocado",
+        message: "El cupón ha sido revocado",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo revocar el cupón",
+      });
+    }
+  };
+
+  const handleReactivateCoupon = async (couponId: string) => {
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reactivate", userId: adminId }),
+    });
+
+    if (res.ok) {
+      loadCoupons();
+      showNotification({
+        type: "success",
+        title: "Cupón reactivado",
+        message: "El cupón ha sido reactivado",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo reactivar el cupón",
+      });
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string, code: string) => {
+    const confirmed = await confirmDialog({
+      title: "Eliminar cupón",
+      message: `¿Eliminar permanentemente el cupón ${code}?`,
+      type: "danger",
+    });
+
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      loadCoupons();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Cupón eliminado",
+        message: "El cupón ha sido eliminado",
+      });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: data.error || "No se pudo eliminar el cupón",
+      });
+    }
+  };
+
+  // Separar solicitudes pendientes (cupones con notas que empiezan por "REQUEST:")
+  const pendingRequests = coupons.filter((c) =>
+    c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:")
+  );
+  const otherCoupons = coupons.filter((c) =>
+    !(c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:"))
+  );
+
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { color: string; label: string }> = {
+      ACTIVE: { color: "bg-emerald-600", label: "Activo" },
+      USED: { color: "bg-blue-600", label: "Usado" },
+      EXPIRED: { color: "bg-amber-600", label: "Caducado" },
+      REVOKED: { color: "bg-red-600", label: "Revocado" },
+    };
+    const badge = badges[status] || { color: "bg-slate-600", label: status };
+    return <span className={`${badge.color} px-2 py-1 rounded text-xs`}>{badge.label}</span>;
+  };
+
+  return (
+    <div>
+      <ConfirmDialogComponent />
+      <PromptDialogComponent />
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 className="text-xl md:text-2xl font-bold">Gestión de Cupones</h2>
+        <div className="flex flex-wrap gap-2">
+          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todos</FilterButton>
+          <FilterButton active={filter === "ACTIVE"} onClick={() => setFilter("ACTIVE")}>Activos</FilterButton>
+          <FilterButton active={filter === "USED"} onClick={() => setFilter("USED")}>Usados</FilterButton>
+          <FilterButton active={filter === "EXPIRED"} onClick={() => setFilter("EXPIRED")}>Caducados</FilterButton>
+          <FilterButton active={filter === "REVOKED"} onClick={() => setFilter("REVOKED")}>Revocados</FilterButton>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Cupón
+          </button>
+        </div>
+      </div>
+
+      {/* Solicitudes pendientes */}
+      {filter === "all" && pendingRequests.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4 text-amber-400 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Solicitudes Pendientes ({pendingRequests.length})
+          </h3>
+          <div className="bg-slate-800 rounded-xl overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Código</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Razón</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRequests.map((coupon) => (
+                  <tr key={coupon.id} className="border-t border-slate-700 hover:bg-slate-750">
+                    <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex flex-col">
+                        <span className="font-mono text-xs">{coupon.requestData?.companyId || "-"}</span>
+                        {coupon.requestData?.companySize && coupon.requestData.companySize !== "N/A" && (
+                          <span className="text-xs text-slate-400">{coupon.requestData.companySize}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm max-w-xs truncate" title={coupon.requestData?.reason || coupon.notes}>
+                      {coupon.requestData?.reason || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-400">
+                      {new Date(coupon.createdAt).toLocaleDateString("es-ES")}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleApproveRequest(coupon.id, coupon.code)}
+                          className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-xs"
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => handleRejectRequest(coupon.id, coupon.code)}
+                          className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Lista de cupones */}
+      <div className="bg-slate-800 rounded-xl overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-slate-700">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium">Código</th>
+              <th className="px-4 py-3 text-left text-xs font-medium">Estado</th>
+              <th className="px-4 py-3 text-left text-xs font-medium">Usos</th>
+              <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Creado por</th>
+              <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Notas</th>
+              <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
+                </td>
+              </tr>
+            ) : otherCoupons.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                  No hay cupones
+                </td>
+              </tr>
+            ) : (
+              otherCoupons.map((coupon) => (
+                <tr key={coupon.id} className="border-t border-slate-700 hover:bg-slate-750">
+                  <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
+                  <td className="px-4 py-3">{getStatusBadge(coupon.status)}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {coupon.usedCount}/{coupon.maxUses}
+                  </td>
+                  <td className="px-4 py-3 text-sm hidden md:table-cell">
+                    {coupon.createdBy || "-"}
+                  </td>
+                  <td className="px-4 py-3 text-sm hidden md:table-cell max-w-xs truncate" title={coupon.notes}>
+                    {coupon.notes || "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      {coupon.status === "ACTIVE" && (
+                        <button
+                          onClick={() => handleRevokeCoupon(coupon.id, coupon.code)}
+                          className="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-xs"
+                          title="Revocar"
+                        >
+                          Revocar
+                        </button>
+                      )}
+                      {coupon.status === "REVOKED" && (
+                        <button
+                          onClick={() => handleReactivateCoupon(coupon.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded text-xs"
+                          title="Reactivar"
+                        >
+                          Reactivar
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteCoupon(coupon.id, coupon.code)}
+                        className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                        title="Eliminar"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal de crear cupón */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Crear Nuevo Cupón</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Código</label>
+                <input
+                  type="text"
+                  value={newCouponData.code}
+                  onChange={(e) => setNewCouponData({ ...newCouponData, code: e.target.value.toUpperCase() })}
+                  placeholder="AGRO-XXXXX"
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Máximo de usos</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={newCouponData.maxUses}
+                  onChange={(e) => setNewCouponData({ ...newCouponData, maxUses: parseInt(e.target.value) || 1 })}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Notas (opcional)</label>
+                <textarea
+                  value={newCouponData.notes}
+                  onChange={(e) => setNewCouponData({ ...newCouponData, notes: e.target.value })}
+                  placeholder="Información adicional sobre este cupón..."
+                  rows={3}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewCouponData({ code: "", maxUses: 1, notes: "" });
+                }}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCoupon}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium"
+              >
+                Crear Cupón
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

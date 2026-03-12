@@ -26,28 +26,20 @@ export async function GET(request: Request) {
     }
     // Filtros por estado premium
     else if (filter === "premium") {
-      // Empresas con suscripción activa (incluye trial)
+      // Empresas con suscripción activa
       where.subscription = {
-        status: { in: ["ACTIVE", "TRIALING"] }
+        status: "ACTIVE"
       };
     } else if (filter === "paid") {
-      // Empresas con suscripción pagada (fuera de trial)
+      // Igual que premium (ya no hay trial)
       where.subscription = {
-        status: "ACTIVE",
-        isTrial: false
-      };
-    } else if (filter === "trial") {
-      // Empresas en periodo de prueba
-      where.subscription = {
-        status: { in: ["ACTIVE", "TRIALING"] },
-        isTrial: true,
-        trialEndsAt: { gt: new Date() }
+        status: "ACTIVE"
       };
     } else if (filter === "inactive") {
       // Empresas sin suscripción o con suscripción inactiva
       where.OR = [
         { subscription: null },
-        { subscription: { status: { notIn: ["ACTIVE", "TRIALING"] } } }
+        { subscription: { status: { not: "ACTIVE" } } }
       ];
     }
 

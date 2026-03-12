@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { code, maxUses = 1, expiresInDays = 30 } = body;
+    const { code, maxUses = 1, expiresInDays = 30, notes } = body;
 
     // Generar código si no se proporciona
     const finalCode = code || `AGRO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -100,6 +100,7 @@ export async function POST(request: Request) {
           ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
           : null,
         createdBy: userId,
+        notes: notes || null,
       },
     });
 
