@@ -46,7 +46,7 @@ export async function PUT(
       // Obtener datos de la empresa para enviar el email
       const company = await prisma.companyProfile.findUnique({
         where: { id: requestCompanyId },
-        include: { user: { select: { email: true, name: true } } },
+        include: { user: { select: { email: true } } },
       });
 
       // Aprobar: marcar como activo y limpiar notas
