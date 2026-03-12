@@ -197,6 +197,29 @@ RESEND_FROM_EMAIL         # Email remitente
 - [ ] **Dashboard de Analytics**
   - Usuarios activos, ofertas cubiertas, etc.
 
+### Mejoras de Suscripciones Premium (Futuras)
+
+Las funcionalidades básicas de suscripciones están completas. Estas son mejoras pendientes para cuando sea necesario:
+
+**Cambio de plan** (anual vs mensual):
+- [ ] Permitir cambiar entre plan mensual (99€/mes) y anual (999€/año - 2 meses gratis)
+- [ ] Prorrateo del precio al cambiar de plan
+- [ ] Actualización automática en Stripe
+
+**Cupones de descuento**:
+- [ ] Integrar cupones de Stripe para promociones
+- [ ] Códigos para primeros clientes, referidos, etc.
+- [ ] Validación de cupones en checkout
+
+**Trial extendido**:
+- [ ] 14 días en lugar de 7 para empresas verificadas
+- [ ] Incentivo para completar todo el perfil
+
+**Mejoras en la gestión**:
+- [ ] Botón "Saltar trial" para activar pago inmediato
+- [ ] Renovación automática con recordatorios antes del cobro
+- [ ] Alertas de pago fallido con instrucciones
+
 ## Reglas de Desarrollo
 
 1. **REGLA DE ORO**: No tocar lo que ya funciona sin probar antes
