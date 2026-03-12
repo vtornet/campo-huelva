@@ -22,6 +22,7 @@ export const stripe = STRIPE_SECRET_KEY
 
 // ID del precio de la suscripción premium (configurado en Stripe Dashboard)
 export const PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID || '';
+export const PREMIUM_PRICE_ID_YEARLY = process.env.STRIPE_PREMIUM_PRICE_ID_YEARLY || '';
 
 // Configuración del plan premium
 export const PREMIUM_CONFIG = {
@@ -45,10 +46,20 @@ export async function createCheckoutSession(
   companyId: string,
   successUrl: string,
   cancelUrl: string,
-  skipTrial: boolean = false
+  skipTrial: boolean = false,
+  billingPeriod: 'monthly' | 'yearly' = 'monthly'
 ) {
   try {
     const stripeInstance = getStripe();
+
+    // Seleccionar el price ID según el periodo de facturación
+    const priceId = billingPeriod === 'yearly'
+      ? PREMIUM_PRICE_ID_YEARLY
+      : PREMIUM_PRICE_ID;
+
+    if (!priceId) {
+      throw new Error(`No hay configurado un price ID para el periodo: ${billingPeriod}`);
+    }
 
     // Construir datos de la suscripción
     const subscriptionData: any = {
@@ -56,6 +67,7 @@ export async function createCheckoutSession(
         userId,
         companyId,
         skipTrial: skipTrial.toString(),
+        billingPeriod,
       },
     };
 
@@ -70,7 +82,7 @@ export async function createCheckoutSession(
       customer_email: userEmail,
       line_items: [
         {
-          price: PREMIUM_PRICE_ID,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -81,6 +93,7 @@ export async function createCheckoutSession(
         userId,
         companyId,
         skipTrial: skipTrial.toString(),
+        billingPeriod,
       },
     });
 

@@ -28,6 +28,7 @@ export default function PremiumPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [stripeConfig, setStripeConfig] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
   // Flag para evitar procesar múltiples veces los parámetros de URL
   const paramsProcessed = useRef(false);
@@ -122,7 +123,10 @@ export default function PremiumPage() {
       const response = await fetch("/api/stripe/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: user.uid }),
+        body: JSON.stringify({
+          uid: user.uid,
+          billingPeriod, // "monthly" o "yearly"
+        }),
       });
 
       if (!response.ok) {
@@ -324,13 +328,48 @@ export default function PremiumPage() {
                   <span>🎁</span>
                   <span>7 días de prueba gratis</span>
                 </div>
-                <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <span className="text-5xl font-bold text-gray-900">99€</span>
-                  <span className="text-gray-600">/mes</span>
+
+                {/* Selector de periodo de facturación */}
+                <div className="flex items-center justify-center gap-4 mb-6">
+                  <button
+                    onClick={() => setBillingPeriod("monthly")}
+                    className={`px-6 py-2 rounded-lg font-medium transition ${
+                      billingPeriod === "monthly"
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    Mensual
+                  </button>
+                  <button
+                    onClick={() => setBillingPeriod("yearly")}
+                    className={`px-6 py-2 rounded-lg font-medium transition relative ${
+                      billingPeriod === "yearly"
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    Anual
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      -20%
+                    </span>
+                  </button>
                 </div>
-                <p className="text-gray-600">
-                  O 999€/año (ahorras 2 meses)
-                </p>
+
+                {/* Precios */}
+                <div className="flex items-baseline justify-center gap-2 mb-2">
+                  <span className="text-5xl font-bold text-gray-900">
+                    {billingPeriod === "monthly" ? "99€" : "999€"}
+                  </span>
+                  <span className="text-gray-600">
+                    /{billingPeriod === "monthly" ? "mes" : "año"}
+                  </span>
+                </div>
+                {billingPeriod === "yearly" && (
+                  <p className="text-green-600 font-medium">
+                    Ahorras 189€ (2 meses gratis)
+                  </p>
+                )}
                 <p className="text-sm text-gray-500 mt-2">
                   Cancela cuando quieras. Sin compromisos.
                 </p>

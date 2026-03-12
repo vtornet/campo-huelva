@@ -23,9 +23,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Obtener userId del body
+    // Obtener userId y billingPeriod del body
     const body = await request.json();
-    const { uid } = body;
+    const { uid, billingPeriod = 'monthly' } = body;
 
     if (!uid) {
       return NextResponse.json(
@@ -104,7 +104,9 @@ export async function POST(request: Request) {
       user.email,
       user.companyProfile.id,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      false, // skipTrial
+      billingPeriod as 'monthly' | 'yearly'
     );
 
     return NextResponse.json(checkoutSession);
