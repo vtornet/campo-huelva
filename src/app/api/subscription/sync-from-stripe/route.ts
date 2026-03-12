@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // Recuperar suscripción desde Stripe
     const stripeInstance = getStripe();
-    const stripeSubscription = await stripeInstance.subscriptions.retrieve(subscription.stripeSubscriptionId);
+    const stripeSubscription = await stripeInstance.subscriptions.retrieve(subscription.stripeSubscriptionId) as any;
 
     console.log("[SYNC-STRIPE] Estado en Stripe:", stripeSubscription.status);
     console.log("[SYNC-STRIPE] current_period_end:", stripeSubscription.current_period_end);
