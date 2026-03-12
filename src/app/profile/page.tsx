@@ -119,18 +119,35 @@ function SubscriptionTabContent({
       });
 
       if (!res.ok) {
-        throw new Error("Error al acceder al portal de gestión");
+        const errorData = await res.json().catch(() => ({}));
+        if (errorData.error === "NO_STRIPE_CUSTOMER") {
+          showNotification({
+            type: "warning",
+            title: "Gestión no disponible",
+            message: "El portal de gestión de Stripe no está disponible. Tu suscripción puede estar en proceso de activación. Contacta con soporte si necesitas gestionar tu suscripción.",
+          });
+          return;
+        }
+        if (errorData.error === "STRIPE_NOT_CONFIGURED") {
+          showNotification({
+            type: "warning",
+            title: "Sistema de pagos en mantenimiento",
+            message: "El sistema de pagos está siendo configurado. Contacta con soporte.",
+          });
+          return;
+        }
+        throw new Error(errorData.message || errorData.error || "Error al acceder al portal de gestión");
       }
 
       const { url } = await res.json();
       if (url) {
         window.location.href = url;
       }
-    } catch (error) {
+    } catch (error: any) {
       showNotification({
         type: "error",
         title: "Error",
-        message: "No se pudo abrir el portal de gestión de Stripe",
+        message: error.message || "No se pudo abrir el portal de gestión de Stripe",
       });
     } finally {
       setProcessing(false);
@@ -322,7 +339,7 @@ function SubscriptionTabContent({
   // Vista: Suscripción activa
   if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
     const isTrial = subscription.isTrial;
-    const statusText = isTrial ? "Prueba" : "Activa";
+    const statusText = isTrial ? "en periodo de prueba" : "activa";
     const statusColor = isTrial ? "text-amber-700" : "text-green-700";
     const statusBg = isTrial ? "bg-amber-50" : "bg-green-50";
 
