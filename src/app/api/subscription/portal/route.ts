@@ -116,6 +116,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar si es un error de cliente inexistente en Stripe (suscripción manual)
+    if (errorMessage.includes("No such customer") || errorMessage.includes("resource_missing")) {
+      return NextResponse.json(
+        {
+          error: "NO_STRIPE_CUSTOMER",
+          message: "La suscripción fue creada manualmente y no tiene un cliente de Stripe asociado. Usa la gestión local o contacta con soporte."
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Error al crear sesión del portal", details: errorMessage },
       { status: 500 }

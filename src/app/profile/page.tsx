@@ -124,7 +124,7 @@ function SubscriptionTabContent({
           showNotification({
             type: "warning",
             title: "Gestión no disponible",
-            message: "El portal de gestión de Stripe no está disponible. Tu suscripción puede estar en proceso de activación. Contacta con soporte si necesitas gestionar tu suscripción.",
+            message: "Esta suscripción fue creada manualmente y no tiene gestión online en Stripe. Para gestionar tu suscripción, contacta con soporte.",
           });
           return;
         }
