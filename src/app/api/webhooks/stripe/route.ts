@@ -419,6 +419,7 @@ async function handleInvoicePaid(invoice: any) {
       // No fallar el webhook si falla el email
     }
   }
+}
 
 // Manejar fallo de pago
 async function handleInvoicePaymentFailed(invoice: any) {
