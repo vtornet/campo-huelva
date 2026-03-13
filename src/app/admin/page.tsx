@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { usePromptDialog } from "@/components/PromptDialog";
+import { apiFetch } from "@/lib/api-client";
 
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
@@ -1794,7 +1795,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   const loadCoupons = async () => {
     setLoading(true);
     // Siempre cargar todos los cupones para incluir solicitudes pendientes
-    const res = await fetch("/api/admin/coupons");
+    const res = await apiFetch("/api/admin/coupons");
     if (res.ok) {
       const data = await res.json();
       setCoupons(data.coupons || []);
@@ -1815,7 +1816,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
       return;
     }
 
-    const res = await fetch("/api/admin/coupons", {
+    const res = await apiFetch("/api/admin/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newCouponData),
@@ -1856,7 +1857,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
 
     // El cupón ya está ACTIVE, no necesitamos cambiar nada
     // Solo enviamos email a la empresa
-    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "approve", userId: adminId }),
@@ -1889,7 +1890,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
 
     if (!confirmed) return;
 
-    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "revoke", userId: adminId }),
@@ -1922,7 +1923,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
 
     if (!confirmed) return;
 
-    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "revoke", userId: adminId }),
@@ -1946,7 +1947,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   };
 
   const handleReactivateCoupon = async (couponId: string) => {
-    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "reactivate", userId: adminId }),
@@ -1978,7 +1979,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
 
     if (!confirmed) return;
 
-    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
       method: "DELETE",
     });
 
