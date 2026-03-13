@@ -40,16 +40,39 @@ export async function PUT(
     // Si es una solicitud pendiente y se aprueba
     if (coupon.notes?.startsWith("REQUEST:") && action === "approve") {
       // Extraer userId y companyId de las notas
-      // Formato: REQUEST:userId|companyId|reason|companySize
+      // Formato nuevo: REQUEST:userId|companyId|reason|companySize
+      // Formato viejo: REQUEST:companyId|reason|companySize
       const parts = coupon.notes.substring(9).split("|");
-      const requestUserId = parts[0];
-      const requestCompanyId = parts[1];
+
+      let requestUserId: string | undefined;
+      let requestCompanyId: string;
+      let reason: string;
+
+      if (parts.length >= 4) {
+        // Formato nuevo: userId|companyId|reason|companySize
+        requestUserId = parts[0];
+        requestCompanyId = parts[1];
+        reason = parts[2];
+      } else {
+        // Formato viejo: companyId|reason|companySize
+        requestCompanyId = parts[0];
+        reason = parts[1];
+        // Obtener userId de la empresa
+        const company = await prisma.companyProfile.findUnique({
+          where: { id: requestCompanyId },
+          select: { userId: true },
+        });
+        requestUserId = company?.userId;
+      }
 
       // Obtener email del usuario directamente
-      const user = await prisma.user.findUnique({
-        where: { id: requestUserId },
-        select: { email: true },
-      });
+      let user = null;
+      if (requestUserId) {
+        user = await prisma.user.findUnique({
+          where: { id: requestUserId },
+          select: { email: true },
+        });
+      }
 
       // Obtener datos de la empresa
       const company = requestCompanyId ? await prisma.companyProfile.findUnique({
@@ -57,6 +80,7 @@ export async function PUT(
       }) : null;
 
       console.log("[APPROVE COUPON] Data:", {
+        format: parts.length >= 4 ? "new" : "old",
         requestUserId,
         requestCompanyId,
         companyFound: !!company,
@@ -70,7 +94,7 @@ export async function PUT(
         where: { id },
         data: {
           status: "ACTIVE",
-          notes: `Aprobado por ${userId}. Razón: ${parts[2] || ''}`,
+          notes: `Aprobado por ${userId}. Razón: ${reason || ''}`,
         },
       });
 

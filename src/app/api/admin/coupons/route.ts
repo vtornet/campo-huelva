@@ -31,17 +31,29 @@ export async function GET(request: Request) {
     });
 
     // Procesar los cupones para extraer info de solicitudes pendientes
-    // Formato de notes: REQUEST:userId|companyId|reason|companySize
+    // Formato nuevo: REQUEST:userId|companyId|reason|companySize
+    // Formato viejo: REQUEST:companyId|reason|companySize
     const processedCoupons = coupons.map(coupon => {
       let requestData = null;
       if (coupon.notes?.startsWith("REQUEST:")) {
         const parts = coupon.notes.substring(9).split("|");
-        requestData = {
-          userId: parts[0] || "",
-          companyId: parts[1] || "",
-          reason: parts[2] || "",
-          companySize: parts[3] || "N/A",
-        };
+        if (parts.length >= 4) {
+          // Formato nuevo: userId|companyId|reason|companySize
+          requestData = {
+            userId: parts[0] || "",
+            companyId: parts[1] || "",
+            reason: parts[2] || "",
+            companySize: parts[3] || "N/A",
+          };
+        } else {
+          // Formato viejo: companyId|reason|companySize
+          requestData = {
+            userId: "",
+            companyId: parts[0] || "",
+            reason: parts[1] || "",
+            companySize: parts[2] || "N/A",
+          };
+        }
       }
 
       return {
