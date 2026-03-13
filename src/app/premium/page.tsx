@@ -403,7 +403,7 @@ export default function PremiumPage() {
                   {[
                     "Publicación de ofertas ilimitadas",
                     "Acceso completo al buscador de candidatos con filtros avanzados",
-                    "Badge "Empresa Premium" que destaca tu perfil",
+                    "Badge \"Empresa Premium\" que destaca tu perfil",
                     "Prioridad en los resultados de búsqueda",
                     "Soporte prioritario via email y chat",
                   ].map((feature, index) => (
