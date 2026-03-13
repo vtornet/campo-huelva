@@ -206,11 +206,6 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
 - [ ] Prorrateo del precio al cambiar de plan
 - [ ] Actualización automática en Stripe
 
-**Cupones de descuento**:
-- [ ] Integrar cupones de Stripe para promociones
-- [ ] Códigos para primeros clientes, referidos, etc.
-- [ ] Validación de cupones en checkout
-
 **Trial extendido**:
 - [ ] 14 días en lugar de 7 para empresas verificadas
 - [ ] Incentivo para completar todo el perfil
@@ -219,6 +214,86 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
 - [ ] Botón "Saltar trial" para activar pago inmediato
 - [ ] Renovación automática con recordatorios antes del cobro
 - [ ] Alertas de pago fallido con instrucciones
+
+---
+
+## Sistema de Prueba Gratuita (En Desarrollo)
+
+**Objetivo**: Simplificar el onboarding de empresas permitiendo una publicación gratuita tras aprobación del admin.
+
+### Flujo
+1. Empresa solicita prueba gratuita → Indica solo **volumen de trabajadores**
+2. Admin recibe solicitud en panel → Aprueba/Rechaza
+3. Empresa recibe email con **enlace directo** para publicar oferta gratis
+4. Enlace es **token único** de un solo uso
+5. Empresa no puede solicitar prueba nuevamente
+
+### Pasos de Implementación
+
+- [ ] **1. Crear modelo `FreeTrialRequest` en Prisma**
+  ```prisma
+  model FreeTrialRequest {
+    id          String   @id @default(uuid())
+    companyId   String
+    company     CompanyProfile @relation(fields: [companyId], references: [id])
+    companySize String   // Volumen de trabajadores
+    status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, USED
+    token       String?  @unique // Token único para publicar
+    approvedAt  DateTime?
+    usedAt      DateTime?
+    createdAt   DateTime @default(now())
+
+    @@index([status])
+    @@index([companyId])
+  }
+  ```
+
+- [ ] **2. Crear `/api/trials/request`** (sustituye a `/api/coupons/request`)
+  - POST con `{ companySize }`
+  - Verifica que empresa no tenga solicitud previa (PENDING/APPROVED)
+  - Crea solicitud con status PENDING
+
+- [ ] **3. Crear endpoints de admin para pruebas**
+  - `GET /api/admin/trials` - Listar solicitudes pendientes
+  - `PUT /api/admin/trials/[id]/approve` - Aprobar (genera token, envía email)
+  - `DELETE /api/admin/trials/[id]` - Rechazar solicitud
+
+- [ ] **4. Modificar panel admin**
+  - Cambiar pestaña "Cupones" → "Pruebas gratuitas"
+  - Mostrar lista con: Empresa, Tamaño, Fecha, Acciones
+  - Agregar modal con perfil completo al hacer clic en nombre empresa
+
+- [ ] **5. Sistema de tokens seguros**
+  - Generar token UUID único al aprobar
+  - Endpoint `/api/publish-with-trial?token=xxx`
+  - Token se marca como USED después de publicar
+
+- [ ] **6. Email de aprobación**
+  - Asunto: "¡Tu prueba gratuita está lista!"
+  - Enlace: `${APP_URL}/publish?trialToken=xxx`
+  - Botón CTA: "Publicar mi oferta ahora"
+
+- [ ] **7. Modificar `/publish` para aceptar token de prueba**
+  - Leer `trialToken` de searchParams
+  - Validar token con API
+  - Permitir publicación sin Premium si token válido
+
+- [ ] **8. Modificar `/api/posts` para aceptar token**
+  - Validar token antes de crear post
+  - Marcar solicitud como USED
+  - Incrementar `usedCount` del post
+
+- [ ] **9. Eliminar sistema de cupones (obsoleto)**
+  - Eliminar modelo `Coupon` de Prisma
+  - Eliminar `/api/coupons/*` endpoints
+  - Eliminar `/api/admin/coupons/*` endpoints
+  - Eliminar componentes de UI de cupones
+  - Actualizar CLAUDE.md
+
+- [ ] **10. Actualizar documentación**
+  - Actualizar sección "Funcionalidades Implementadas"
+  - Agregar nueva sección "Sistema de Prueba Gratuita"
+  - Marcar cupones como obsoleto
 
 ## Reglas de Desarrollo
 
