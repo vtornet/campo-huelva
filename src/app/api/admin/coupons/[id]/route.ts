@@ -39,55 +39,50 @@ export async function PUT(
 
     // Si es una solicitud pendiente y se aprueba
     if (coupon.notes?.startsWith("REQUEST:") && action === "approve") {
-      // Extraer userId y companyId de las notas
-      // Formato nuevo: REQUEST:userId|companyId|reason|companySize
+      // Extraer datos de las notas
+      // Formato definitivo: REQUEST:email|companyId|companyName|reason
+      // Formato anterior: REQUEST:userId|companyId|reason|companySize
       // Formato viejo: REQUEST:companyId|reason|companySize
       const parts = coupon.notes.substring(9).split("|");
 
-      let requestUserId: string | undefined;
-      let requestCompanyId: string;
+      let email: string;
+      let companyId: string;
+      let companyName: string;
       let reason: string;
 
-      if (parts.length >= 4) {
-        // Formato nuevo: userId|companyId|reason|companySize
-        requestUserId = parts[0];
-        requestCompanyId = parts[1];
+      if (parts[0]?.includes("@")) {
+        // Formato definitivo: email|companyId|companyName|reason
+        email = parts[0];
+        companyId = parts[1];
+        companyName = parts[2];
+        reason = parts[3];
+      } else if (parts.length >= 4) {
+        // Formato anterior: userId|companyId|reason|companySize - intentar obtener email
+        const requestUserId = parts[0];
+        companyId = parts[1];
         reason = parts[2];
-      } else {
-        // Formato viejo: companyId|reason|companySize
-        requestCompanyId = parts[0];
-        reason = parts[1];
-        // Obtener userId de la empresa
-        const company = await prisma.companyProfile.findUnique({
-          where: { id: requestCompanyId },
-          select: { userId: true },
-        });
-        requestUserId = company?.userId;
-      }
-
-      // Obtener email del usuario directamente
-      let user = null;
-      if (requestUserId) {
-        user = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: { id: requestUserId },
           select: { email: true },
         });
+        email = user?.email || "";
+        const company = await prisma.companyProfile.findUnique({
+          where: { id: companyId },
+        });
+        companyName = company?.companyName || "";
+      } else {
+        // Formato viejo: companyId|reason|companySize
+        companyId = parts[0];
+        reason = parts[1];
+        const company = await prisma.companyProfile.findUnique({
+          where: { id: companyId },
+          include: { user: { select: { email: true } } },
+        });
+        email = company?.user?.email || "";
+        companyName = company?.companyName || "";
       }
 
-      // Obtener datos de la empresa
-      const company = requestCompanyId ? await prisma.companyProfile.findUnique({
-        where: { id: requestCompanyId },
-      }) : null;
-
-      console.log("[APPROVE COUPON] Data:", {
-        format: parts.length >= 4 ? "new" : "old",
-        requestUserId,
-        requestCompanyId,
-        companyFound: !!company,
-        companyName: company?.companyName,
-        userFound: !!user,
-        userEmail: user?.email,
-      });
+      console.log("[APPROVE COUPON] Data:", { email, companyId, companyName, reason });
 
       // Aprobar: marcar como activo y limpiar notas
       const updated = await prisma.coupon.update({
@@ -99,12 +94,12 @@ export async function PUT(
       });
 
       // Enviar email al usuario con el código
-      if (resend && user?.email) {
+      if (resend && email) {
         try {
-          console.log("[APPROVE COUPON] Sending email to:", user.email);
+          console.log("[APPROVE COUPON] Sending email to:", email);
           const result = await resend.emails.send({
             from: FROM_EMAIL,
-            to: user.email,
+            to: email,
             subject: "¡Tu cupón de Agro Red ha sido aprobado!",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -112,7 +107,7 @@ export async function PUT(
                   <h1 style="color: white; margin: 0;">🎉 ¡Buenas noticias!</h1>
                 </div>
                 <div style="padding: 30px; background-color: #f9fafb;">
-                  <p style="font-size: 16px; color: #374151;">Hola ${company?.companyName || 'Empresa'},</p>
+                  <p style="font-size: 16px; color: #374151;">Hola ${companyName || 'Empresa'},</p>
                   <p style="font-size: 16px; color: #374151;">Tu solicitud de cupón ha sido aprobada. Ya puedes publicar tu primera oferta en Agro Red.</p>
 
                   <div style="background: white; border: 2px dashed #047857; padding: 20px; text-align: center; margin: 30px 0; border-radius: 8px;">
@@ -151,14 +146,14 @@ export async function PUT(
           console.error("[APPROVE COUPON] Error sending email:", emailError);
         }
       } else {
-        console.log("[APPROVE COUPON] Email not sent. Resend:", !!resend, "User email:", user?.email);
+        console.log("[APPROVE COUPON] Email not sent. Resend:", !!resend, "Email:", email);
       }
 
       return NextResponse.json({
         success: true,
         coupon: updated,
-        message: user?.email
-          ? `Solicitud aprobada. Email enviado a ${user.email}`
+        message: email
+          ? `Solicitud aprobada. Email enviado a ${email}`
           : "Solicitud aprobada",
       });
     }

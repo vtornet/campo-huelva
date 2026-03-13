@@ -82,14 +82,14 @@ export async function POST(request: Request) {
     // Generar código único
     const code = `AGRO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // Crear cupón pendiente (marcado con el userId y companyId en notes para identificación)
+    // Crear cupón pendiente (marcado con email y companyId en notes para identificación)
     const coupon = await prisma.coupon.create({
       data: {
         code,
         status: "ACTIVE",
         maxUses: 1,
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
-        notes: `REQUEST:${userId}|${user.companyProfile.id}|${reason.substring(0, 100)}|${companySize || 'N/A'}`,
+        notes: `REQUEST:${user.email}|${user.companyProfile.id}|${user.companyProfile.companyName}|${reason.substring(0, 100)}`,
       },
     });
 

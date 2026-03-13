@@ -2065,6 +2065,7 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium">Código</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Razón</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Fecha</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
@@ -2076,11 +2077,12 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
                     <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex flex-col">
-                        <span className="font-mono text-xs">{coupon.requestData?.companyId || "-"}</span>
-                        {coupon.requestData?.companySize && coupon.requestData.companySize !== "N/A" && (
-                          <span className="text-xs text-slate-400">{coupon.requestData.companySize}</span>
-                        )}
+                        <span className="text-sm">{coupon.requestData?.companyName || "-"}</span>
+                        <span className="font-mono text-xs text-slate-400">{coupon.requestData?.companyId || ""}</span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className="text-xs">{coupon.requestData?.email || "-"}</span>
                     </td>
                     <td className="px-4 py-3 text-sm max-w-xs truncate" title={coupon.requestData?.reason || coupon.notes}>
                       {coupon.requestData?.reason || "-"}
