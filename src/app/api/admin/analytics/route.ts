@@ -194,7 +194,7 @@ export async function GET(request: Request) {
         })),
         users: usersByProvince.filter(p => p.province).map(p => ({
           province: p.province!,
-          count: (p._count as any)._all || 0,
+          count: (p._count as any).province || 0,
         })),
       },
     });
