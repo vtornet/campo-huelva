@@ -230,7 +230,7 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
 
 ### Pasos de Implementación
 
-- [ ] **1. Crear modelo `FreeTrialRequest` en Prisma**
+- [x] **1. Crear modelo `FreeTrialRequest` en Prisma**
   ```prisma
   model FreeTrialRequest {
     id          String   @id @default(uuid())

@@ -198,6 +198,7 @@ model CompanyProfile {
   posts          Post[]
   subscription   Subscription?
   offerPackPurchases OfferPackPurchase[]
+  freeTrialRequests FreeTrialRequest[]
 }
 
 model EngineerProfile {
@@ -969,4 +970,21 @@ model Coupon {
   @@index([code])
   @@index([status])
   @@index([expiresAt])
+}
+
+// Solicitudes de prueba gratuita para empresas
+model FreeTrialRequest {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     CompanyProfile @relation(fields: [companyId], references: [id])
+  companySize String   // Volumen de trabajadores
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, USED
+  token       String?  @unique // Token único para publicar (una vez usado, no se puede reusar)
+  approvedAt  DateTime?
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([status])
+  @@index([companyId])
+  @@index([token])
 }
