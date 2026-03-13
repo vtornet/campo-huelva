@@ -711,7 +711,7 @@ export default function Dashboard() {
                   Buscar candidatos
                </button>
              </>
-           ) : (
+           ) : role ? (
              <>
                {/* Trabajadores, Manijeros, Ingenieros, Encargados y Tractoristas ven esto */}
                <button onClick={() => handlePublish("DEMAND")} className="bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3 px-5 rounded-xl font-semibold hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-sm shadow-orange-500/25 flex items-center gap-2">
@@ -732,7 +732,7 @@ export default function Dashboard() {
                  </button>
                )}
              </>
-           )}
+           ) : null}
         </div>
         )}
 
