@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
 import { Check, Crown, X, Loader2, Gift } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 
 type SubscriptionStatus = {
   isPremium: boolean;
@@ -217,7 +218,7 @@ export default function PremiumPage() {
 
     setRequestingTrial(true);
     try {
-      const response = await fetch("/api/trials/request", {
+      const response = await apiFetch("/api/trials/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companySize: companySize.trim() }),
