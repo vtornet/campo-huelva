@@ -45,7 +45,7 @@ export async function PUT(
       console.log("[APPROVE COUPON] Notes length:", coupon.notes?.length);
       console.log("[APPROVE COUPON] Notes substring(9):", coupon.notes?.substring(9));
 
-      const parts = coupon.notes.substring(9).split("|");
+      const parts = coupon.notes.substring(8).split("|");
       console.log("[APPROVE COUPON] Parts:", parts);
 
       let email: string;
