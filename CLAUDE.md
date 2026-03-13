@@ -152,12 +152,16 @@ RESEND_FROM_EMAIL         # Email remitente
 
 ### Sistema de Prueba Gratuita
 - [x] Empresas pueden solicitar prueba gratuita (solo tamaño empresa)
+- [x] Modal en /premium para solicitar prueba
 - [x] Admin aprueba/rechaza solicitudes desde panel
 - [x] Email a empresa con enlace único de publicación
 - [x] Token UUID de un solo uso
+- [x] Endpoint `/api/trials/validate` para verificar token
+- [x] Validación de token al cargar /publish (evita bloqueo Premium)
 - [x] Validación de token al publicar oferta
 - [x] Solicitud marcada como USED tras publicar
 - [x] Panel admin: "Pruebas gratuitas" con lista y modal empresa
+- [x] Sistema de cupones eliminado completamente
 
 ### Componentes de UI
 - [x] ConfirmDialog, PromptDialog (sin alerts nativos)
