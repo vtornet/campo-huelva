@@ -31,14 +31,16 @@ export async function GET(request: Request) {
     });
 
     // Procesar los cupones para extraer info de solicitudes pendientes
+    // Formato de notes: REQUEST:userId|companyId|reason|companySize
     const processedCoupons = coupons.map(coupon => {
       let requestData = null;
       if (coupon.notes?.startsWith("REQUEST:")) {
         const parts = coupon.notes.substring(9).split("|");
         requestData = {
-          companyId: parts[0],
-          reason: parts[1] || "",
-          companySize: parts[2] || "N/A",
+          userId: parts[0] || "",
+          companyId: parts[1] || "",
+          reason: parts[2] || "",
+          companySize: parts[3] || "N/A",
         };
       }
 

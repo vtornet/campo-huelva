@@ -39,26 +39,28 @@ export async function PUT(
 
     // Si es una solicitud pendiente y se aprueba
     if (coupon.notes?.startsWith("REQUEST:") && action === "approve") {
-      // Extraer companyId de las notas
+      // Extraer userId y companyId de las notas
+      // Formato: REQUEST:userId|companyId|reason|companySize
       const parts = coupon.notes.substring(9).split("|");
-      const requestCompanyId = parts[0];
-
-      // Obtener datos de la empresa para enviar el email
-      const company = await prisma.companyProfile.findUnique({
-        where: { id: requestCompanyId },
-      });
+      const requestUserId = parts[0];
+      const requestCompanyId = parts[1];
 
       // Obtener email del usuario directamente
-      const user = company ? await prisma.user.findUnique({
-        where: { id: company.userId },
+      const user = await prisma.user.findUnique({
+        where: { id: requestUserId },
         select: { email: true },
+      });
+
+      // Obtener datos de la empresa
+      const company = requestCompanyId ? await prisma.companyProfile.findUnique({
+        where: { id: requestCompanyId },
       }) : null;
 
       console.log("[APPROVE COUPON] Data:", {
+        requestUserId,
         requestCompanyId,
         companyFound: !!company,
         companyName: company?.companyName,
-        userId: company?.userId,
         userFound: !!user,
         userEmail: user?.email,
       });
@@ -68,7 +70,7 @@ export async function PUT(
         where: { id },
         data: {
           status: "ACTIVE",
-          notes: `Aprobado por ${userId}. Razón: ${parts[1] || ''}`,
+          notes: `Aprobado por ${userId}. Razón: ${parts[2] || ''}`,
         },
       });
 
