@@ -114,7 +114,7 @@ export async function GET(request: Request) {
     });
 
     // 5. Provincias con más actividad
-    const activeProvinces = await prisma.post.groupBy({
+    const allActiveProvinces = await prisma.post.groupBy({
       by: ['province'],
       _count: {
         _all: true,
@@ -123,28 +123,28 @@ export async function GET(request: Request) {
         createdAt: { gte: startDate },
         province: { not: null },
       },
-      orderBy: {
-        _count: {
-          province: 'desc',
-        },
-      },
-      take: 10,
     });
 
-    // Usuarios por provincia
-    const usersByProvince = await prisma.workerProfile.groupBy({
+    // Ordenar manualmente por count (descendente) y tomar top 10
+    const activeProvinces = allActiveProvinces.sort((a, b) =>
+      (b._count as any)._all - (a._count as any)._all
+    ).slice(0, 10);
+
+    // Usuarios por provincia - contar todos y luego ordenar manualmente
+    const allUsersByProvince = await prisma.workerProfile.groupBy({
       by: ['province'],
-      _count: true,
+      _count: {
+        _all: true,
+      },
       where: {
         province: { not: null },
       },
-      orderBy: {
-        _count: {
-          province: 'desc',
-        },
-      },
-      take: 10,
     });
+
+    // Ordenar manualmente por count (descendente)
+    const usersByProvince = allUsersByProvince.sort((a, b) =>
+      (b._count as any)._all - (a._count as any)._all
+    ).slice(0, 10);
 
     // Estadísticas adicionales
     const [totalApplications, pendingApplications, boardPosts] = await Promise.all([
@@ -194,7 +194,7 @@ export async function GET(request: Request) {
         })),
         users: usersByProvince.filter(p => p.province).map(p => ({
           province: p.province!,
-          count: (p._count as any).province || 0,
+          count: (p._count as any)._all || 0,
         })),
       },
     });
