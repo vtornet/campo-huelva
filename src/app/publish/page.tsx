@@ -50,6 +50,7 @@ function PublishForm() {
   const [isPremium, setIsPremium] = useState<boolean | null>(null); // null = cargando
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showPremiumBlock, setShowPremiumBlock] = useState(false);
+  const [trialTokenValid, setTrialTokenValid] = useState(false); // Token de prueba válido
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
@@ -79,6 +80,21 @@ function PublishForm() {
 
     const loadUserData = async () => {
       try {
+        // Si hay token de prueba, validarlo primero
+        if (trialToken) {
+          console.log('[PUBLISH DEBUG] Validando trialToken:', trialToken);
+          try {
+            const trialRes = await fetch(`/api/trials/validate?token=${trialToken}`);
+            const trialData = await trialRes.json();
+            if (trialData.valid) {
+              console.log('[PUBLISH DEBUG] Token de prueba válido');
+              setTrialTokenValid(true);
+            }
+          } catch (err) {
+            console.error('[PUBLISH DEBUG] Error validando token:', err);
+          }
+        }
+
         // Cargar datos del usuario (incluye rol)
         const userRes = await fetch(`/api/user/me?uid=${user.uid}`);
         const userData = await userRes.json();
@@ -90,7 +106,7 @@ function PublishForm() {
           }
         }
 
-        // Solo verificar premium si es empresa
+        // Solo verificar premium si es empresa Y no hay token válido
         if (userData.role === 'COMPANY') {
           const subRes = await fetch(`/api/subscription/status?userId=${user.uid}`);
           const subData = await subRes.json();
@@ -109,7 +125,7 @@ function PublishForm() {
     };
 
     loadUserData();
-  }, [user]);
+  }, [user, trialToken]);
 
   // Cargar datos de la publicación si estamos en modo edición
   useEffect(() => {
@@ -261,8 +277,8 @@ function PublishForm() {
   }
 
   // Mostrar bloqueo Premium para empresas sin suscripción (solo para nuevas ofertas OFICIAL)
-  // Solo mostrar si YA hemos terminado de verificar (isPremium no es null)
-  if (showPremiumBlock || (userRole === 'COMPANY' && !isEditMode && isPremium === false && postType === 'OFFER' && !checkingAuth)) {
+  // Solo mostrar si YA hemos terminado de verificar (isPremium no es null) Y NO hay token válido
+  if (showPremiumBlock || (userRole === 'COMPANY' && !isEditMode && isPremium === false && postType === 'OFFER' && !checkingAuth && !trialTokenValid)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
