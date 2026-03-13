@@ -253,7 +253,7 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
   - Verifica que empresa no tenga solicitud previa (PENDING/APPROVED)
   - Crea solicitud con status PENDING
 
-- [ ] **3. Crear endpoints de admin para pruebas**
+- [x] **3. Crear endpoints de admin para pruebas**
   - `GET /api/admin/trials` - Listar solicitudes pendientes
   - `PUT /api/admin/trials/[id]/approve` - Aprobar (genera token, envía email)
   - `DELETE /api/admin/trials/[id]` - Rechazar solicitud
