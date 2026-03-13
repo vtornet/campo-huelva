@@ -41,12 +41,7 @@ export async function PUT(
     if (coupon.notes?.startsWith("REQUEST:") && action === "approve") {
       // Extraer datos de las notas
       // Formato definitivo: REQUEST:email|companyId|companyName|reason
-      console.log("[APPROVE COUPON] Raw notes:", coupon.notes);
-      console.log("[APPROVE COUPON] Notes length:", coupon.notes?.length);
-      console.log("[APPROVE COUPON] Notes substring(9):", coupon.notes?.substring(9));
-
       const parts = coupon.notes.substring(8).split("|");
-      console.log("[APPROVE COUPON] Parts:", parts);
 
       let email: string;
       let companyId: string;
@@ -85,8 +80,6 @@ export async function PUT(
         companyName = company?.companyName || "";
       }
 
-      console.log("[APPROVE COUPON] Data:", { email, companyId, companyName, reason });
-
       // Aprobar: marcar como activo y limpiar notas
       const updated = await prisma.coupon.update({
         where: { id },
@@ -99,7 +92,6 @@ export async function PUT(
       // Enviar email al usuario con el código
       if (resend && email) {
         try {
-          console.log("[APPROVE COUPON] Sending email to:", email);
           const result = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
@@ -144,12 +136,9 @@ export async function PUT(
               </div>
             `,
           });
-          console.log("[APPROVE COUPON] Email sent successfully:", result);
         } catch (emailError) {
-          console.error("[APPROVE COUPON] Error sending email:", emailError);
+          console.error("Error enviando email de aprobación:", emailError);
         }
-      } else {
-        console.log("[APPROVE COUPON] Email not sent. Resend:", !!resend, "Email:", email);
       }
 
       return NextResponse.json({

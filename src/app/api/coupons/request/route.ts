@@ -83,7 +83,6 @@ export async function POST(request: Request) {
     const code = `AGRO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // Crear cupón pendiente (marcado con email y companyId en notes para identificación)
-    console.log("[COUPON REQUEST] User email:", user.email, "userId:", userId);
     const coupon = await prisma.coupon.create({
       data: {
         code,
@@ -93,7 +92,6 @@ export async function POST(request: Request) {
         notes: `REQUEST:${user.email}|${user.companyProfile.id}|${user.companyProfile.companyName}|${reason.substring(0, 100)}`,
       },
     });
-    console.log("[COUPON REQUEST] Saved notes:", coupon.notes);
 
     // Enviar email al admin con la solicitud
     if (resend) {
