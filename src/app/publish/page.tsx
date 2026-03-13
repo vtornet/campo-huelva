@@ -336,7 +336,7 @@ function PublishForm() {
           </div>
 
           <p className="text-xs text-slate-500 mt-4">
-            99€/mes • 7 días de prueba gratis
+            99€/mes • Sin permanencia
           </p>
         </div>
       </div>

@@ -785,7 +785,7 @@ export default function ProfileSearchPage() {
             Buscador Premium
           </h1>
           <p className="text-slate-600 mb-6">
-            El acceso al buscador de candidatos está disponible tras finalizar tu periodo de prueba de 7 días y suscribirte a Premium.
+            El acceso al buscador de candidatos está disponible con una suscripción Premium.
           </p>
 
           <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-6 text-left border border-yellow-200">
@@ -831,7 +831,7 @@ export default function ProfileSearchPage() {
           </div>
 
           <p className="text-xs text-slate-500 mt-4">
-            7 días de prueba gratis • Cancela cuando quieras
+            Cancela cuando quieras
           </p>
         </div>
       </div>

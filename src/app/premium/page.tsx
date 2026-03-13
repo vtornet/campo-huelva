@@ -4,15 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { Check, Crown, X, Loader2, Gift } from "lucide-react";
+import { Check, Crown, X, Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 type SubscriptionStatus = {
   isPremium: boolean;
-  isTrial: boolean;
   subscription: {
     status: string;
-    trialEndsAt: string | null;
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
   } | null;
@@ -31,11 +29,6 @@ export default function PremiumPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [purchasingOfferPack, setPurchasingOfferPack] = useState<string | null>(null);
-
-  // Estados para modal de prueba gratuita
-  const [showTrialModal, setShowTrialModal] = useState(false);
-  const [companySize, setCompanySize] = useState("");
-  const [requestingTrial, setRequestingTrial] = useState(false);
 
   // Flag para evitar procesar múltiples veces los parámetros de URL
   const paramsProcessed = useRef(false);
@@ -206,47 +199,6 @@ export default function PremiumPage() {
     }
   }
 
-  async function handleRequestFreeTrial() {
-    if (!user || !companySize.trim()) {
-      showNotification({
-        type: "error",
-        title: "Datos incompletos",
-        message: "Por favor indica el tamaño de tu empresa.",
-      });
-      return;
-    }
-
-    setRequestingTrial(true);
-    try {
-      const response = await apiFetch("/api/trials/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companySize: companySize.trim() }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || error.message || "Error al solicitar la prueba gratuita");
-      }
-
-      setShowTrialModal(false);
-      setCompanySize("");
-      showNotification({
-        type: "success",
-        title: "Solicitud enviada",
-        message: "Recibirás un email cuando tu solicitud sea aprobada.",
-      });
-    } catch (error: any) {
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: error.message || "No se pudo enviar la solicitud",
-      });
-    } finally {
-      setRequestingTrial(false);
-    }
-  }
-
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -278,7 +230,6 @@ export default function PremiumPage() {
   }
 
   const isPremium = subscriptionStatus?.isPremium;
-  const isTrial = subscriptionStatus?.isTrial;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4">
@@ -302,22 +253,10 @@ export default function PremiumPage() {
             <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-8 text-white text-center">
               <Crown className="w-16 h-16 mx-auto mb-4" />
               <h2 className="text-3xl font-bold mb-2">
-                ¡Eres Premium{isTrial ? " (Prueba)" : ""}!
+                ¡Eres Premium!
               </h2>
               <p className="text-yellow-100">
-                {isTrial
-                  ? `Tu prueba gratuita termina el ${
-                      subscriptionStatus?.subscription?.trialEndsAt
-                        ? new Date(
-                            subscriptionStatus.subscription.trialEndsAt
-                          ).toLocaleDateString("es-ES", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })
-                        : "pronto"
-                    }`
-                  : "Disfruta de todos los beneficios"}
+                Disfruta de todos los beneficios
               </p>
             </div>
 
@@ -355,9 +294,7 @@ export default function PremiumPage() {
                     <div>
                       <dt className="text-gray-600">Estado</dt>
                       <dd className="font-medium text-blue-900 capitalize">
-                        {subscriptionStatus?.subscription?.status === "TRIALING"
-                          ? "En prueba"
-                          : "Activa"}
+                        Activa
                       </dd>
                     </div>
                     {subscriptionStatus?.subscription?.currentPeriodEnd && (
@@ -404,25 +341,6 @@ export default function PremiumPage() {
         ) : (
           // Vista de no suscriptor - mostrar pricing
           <>
-            {/* Banner: Solicitar prueba gratuita */}
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-8 mb-8 text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Gift className="w-12 h-12 text-emerald-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                ¿Primera vez?
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Solicita una prueba gratuita y publica tu primera oferta totalmente gratis
-              </p>
-              <button
-                onClick={() => setShowTrialModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition"
-              >
-                Solicitar prueba gratis
-              </button>
-            </div>
-
             {/* Planes de suscripción */}
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8">
@@ -658,77 +576,6 @@ export default function PremiumPage() {
           </div>
         </div>
       </div>
-
-      {/* Modal de solicitud de prueba gratuita */}
-      {showTrialModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Solicitar prueba gratuita</h2>
-              <button
-                onClick={() => {
-                  setShowTrialModal(false);
-                  setCompanySize("");
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                Publica tu primera oferta totalmente gratis. Solo necesitas indicar el tamaño de tu empresa.
-              </p>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tamaño de la empresa *
-                </label>
-                <select
-                  value={companySize}
-                  onChange={(e) => setCompanySize(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  required
-                >
-                  <option value="">Selecciona una opción</option>
-                  <option value="1-10">1-10 trabajadores</option>
-                  <option value="11-50">11-50 trabajadores</option>
-                  <option value="51-100">51-100 trabajadores</option>
-                  <option value="101-250">101-250 trabajadores</option>
-                  <option value="251+">Más de 250 trabajadores</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowTrialModal(false);
-                  setCompanySize("");
-                }}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleRequestFreeTrial}
-                disabled={requestingTrial || !companySize.trim()}
-                className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {requestingTrial ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                    Enviando...
-                  </>
-                ) : (
-                  "Solicitar"
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Recibirás un email cuando tu solicitud sea aprobada por el administrador.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

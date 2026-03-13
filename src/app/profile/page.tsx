@@ -300,7 +300,7 @@ function SubscriptionTabContent({
               )}
             </button>
           </div>
-          <p className="text-xs text-slate-500 mt-4">7 días de prueba gratis, luego 99€/mes</p>
+          <p className="text-xs text-slate-500 mt-4">99€/mes • Sin permanencia</p>
         </div>
 
         <div className="bg-slate-50 rounded-xl p-6">
