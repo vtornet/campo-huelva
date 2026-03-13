@@ -207,7 +207,8 @@ export async function POST(request: Request) {
       startDate,
       endDate,
       externalLink,
-      couponCode
+      couponCode,
+      trialToken
     } = body;
 
     // Validación básica
@@ -299,13 +300,45 @@ export async function POST(request: Request) {
         }
       }
 
-      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'couponValid:', couponValid);
+      // Verificar token de prueba gratuita si se proporciona
+      let trialValid = false;
+      let trialRequest = null;
+
+      if (trialToken && (!hasPremium || isTrial) && !hasCredits && !couponValid) {
+        console.log('[POST CREATE] Verificando token de prueba:', trialToken);
+        trialRequest = await prisma.freeTrialRequest.findUnique({
+          where: { token: trialToken },
+        });
+
+        // El token debe estar APPROVED, no USED, y pertenecer a esta empresa
+        if (trialRequest &&
+            trialRequest.status === "APPROVED" &&
+            trialRequest.companyId === user.companyProfile.id) {
+          trialValid = true;
+          console.log('[POST CREATE] Token de prueba válido, permitiendo publicación');
+        } else if (trialRequest && trialRequest.status === "USED") {
+          console.log('[POST CREATE] Token de prueba ya usado');
+          return NextResponse.json({
+            error: "TRIAL_ALREADY_USED",
+            message: "Este enlace de prueba gratuita ya ha sido utilizado.",
+          }, { status: 403 });
+        } else if (trialRequest && trialRequest.companyId !== user.companyProfile.id) {
+          console.log('[POST CREATE] Token de prueba no pertenece a esta empresa');
+          return NextResponse.json({
+            error: "TRIAL_NOT_OWNER",
+            message: "Este enlace de prueba gratuita no pertenece a tu empresa.",
+          }, { status: 403 });
+        }
+      }
+
+      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'couponValid:', couponValid, 'trialValid:', trialValid);
 
       // Solo permitir con:
       // - Premium pagado (no trial) O
       // - Créditos de ofertas O
-      // - Cupón válido
-      if ((!hasPremium || isTrial) && !hasCredits && !couponValid) {
+      // - Cupón válido O
+      // - Token de prueba válido
+      if ((!hasPremium || isTrial) && !hasCredits && !couponValid && !trialValid) {
         return NextResponse.json({
           error: "PREMIUM_OR_CREDITS_REQUIRED",
           premiumRequired: true,
@@ -336,6 +369,18 @@ export async function POST(request: Request) {
           },
         });
         console.log(`[POST CREATE] Cupón ${coupon.code} marcado como usado`);
+      }
+
+      // Si usa token de prueba, marcarlo como usado
+      if (trialValid && trialRequest) {
+        await prisma.freeTrialRequest.update({
+          where: { id: trialRequest.id },
+          data: {
+            status: "USED",
+            usedAt: new Date(),
+          },
+        });
+        console.log(`[POST CREATE] Token de prueba marcado como USED`);
       }
     }
 

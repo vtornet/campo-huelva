@@ -258,30 +258,30 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
   - `PUT /api/admin/trials/[id]/approve` - Aprobar (genera token, envía email)
   - `DELETE /api/admin/trials/[id]` - Rechazar solicitud
 
-- [ ] **4. Modificar panel admin**
+- [x] **4. Modificar panel admin**
   - Cambiar pestaña "Cupones" → "Pruebas gratuitas"
   - Mostrar lista con: Empresa, Tamaño, Fecha, Acciones
   - Agregar modal con perfil completo al hacer clic en nombre empresa
 
-- [ ] **5. Sistema de tokens seguros**
+- [x] **5. Sistema de tokens seguros**
   - Generar token UUID único al aprobar
-  - Endpoint `/api/publish-with-trial?token=xxx`
+  - Validación en `/api/posts` al publicar
   - Token se marca como USED después de publicar
 
-- [ ] **6. Email de aprobación**
-  - Asunto: "¡Tu prueba gratuita está lista!"
+- [x] **6. Email de aprobación**
+  - Asunto: "¡Tu prueba gratuita está lista en Agro Red!"
   - Enlace: `${APP_URL}/publish?trialToken=xxx`
   - Botón CTA: "Publicar mi oferta ahora"
 
-- [ ] **7. Modificar `/publish` para aceptar token de prueba**
+- [x] **7. Modificar `/publish` para aceptar token de prueba**
   - Leer `trialToken` de searchParams
-  - Validar token con API
+  - Enviar token a `/api/posts` al crear post
   - Permitir publicación sin Premium si token válido
 
-- [ ] **8. Modificar `/api/posts` para aceptar token**
+- [x] **8. Modificar `/api/posts` para aceptar token**
   - Validar token antes de crear post
   - Marcar solicitud como USED
-  - Incrementar `usedCount` del post
+  - Verificar que el token pertenece a la empresa
 
 - [ ] **9. Eliminar sistema de cupones (obsoleto)**
   - Eliminar modelo `Coupon` de Prisma

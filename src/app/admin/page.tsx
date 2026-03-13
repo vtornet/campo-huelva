@@ -11,7 +11,7 @@ import { apiFetch } from "@/lib/api-client";
 // Forzar que esta página sea siempre dinámica (no pre-renderizar)
 export const dynamic = 'force-dynamic';
 
-type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs" | "analytics" | "coupons";
+type TabType = "overview" | "users" | "companies" | "posts" | "reports" | "logs" | "analytics" | "trials";
 type UserFilterType = "all" | "USER" | "FOREMAN" | "COMPANY" | "ENGINEER" | "ENCARGADO" | "TRACTORISTA" | "banned" | "silenced";
 
 export default function AdminPage() {
@@ -35,7 +35,7 @@ export default function AdminPage() {
     pendingReports: 0,
     pendingVerifications: 0,
     pendingApprovals: 0,
-    pendingCoupons: 0,
+    pendingTrials: 0,
     bannedUsers: 0,
     silencedUsers: 0,
   });
@@ -80,7 +80,7 @@ export default function AdminPage() {
         pendingReports: data.pendingReports || 0,
         pendingVerifications: data.pendingVerifications || 0,
         pendingApprovals: data.pendingApprovals || 0,
-        pendingCoupons: data.pendingCoupons || 0,
+        pendingTrials: data.pendingTrials || 0,
         bannedUsers: data.bannedUsers || 0,
         silencedUsers: data.silencedUsers || 0,
       });
@@ -163,11 +163,11 @@ export default function AdminPage() {
                 <span className="ml-auto bg-red-600 text-xs px-2 py-0.5 rounded-full">{stats.pendingReports}</span>
               )}
             </AdminTabButton>
-            <AdminTabButton active={activeTab === "coupons"} onClick={() => setActiveTab("coupons")}>
+            <AdminTabButton active={activeTab === "trials"} onClick={() => setActiveTab("trials")}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-              Cupones
-              {stats.pendingCoupons > 0 && (
-                <span className="ml-auto bg-amber-600 text-xs px-2 py-0.5 rounded-full">{stats.pendingCoupons}</span>
+              Pruebas
+              {stats.pendingTrials > 0 && (
+                <span className="ml-auto bg-amber-600 text-xs px-2 py-0.5 rounded-full">{stats.pendingTrials}</span>
               )}
             </AdminTabButton>
             <AdminTabButton active={activeTab === "logs"} onClick={() => setActiveTab("logs")}>
@@ -198,7 +198,7 @@ export default function AdminPage() {
             <button onClick={() => setActiveTab("reports")} className={`p-2 rounded ${activeTab === "reports" ? "bg-emerald-600" : ""}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </button>
-            <button onClick={() => setActiveTab("coupons")} className={`p-2 rounded ${activeTab === "coupons" ? "bg-emerald-600" : ""}`}>
+            <button onClick={() => setActiveTab("trials")} className={`p-2 rounded ${activeTab === "trials" ? "bg-emerald-600" : ""}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
             </button>
           </div>
@@ -212,7 +212,7 @@ export default function AdminPage() {
           {activeTab === "posts" && <AdminPosts adminId={user?.uid} onStatsUpdate={loadStats} />}
           {activeTab === "analytics" && <AdminAnalytics />}
           {activeTab === "reports" && <AdminReports onStatsUpdate={loadStats} adminId={user?.uid} />}
-          {activeTab === "coupons" && <AdminCoupons onStatsUpdate={loadStats} adminId={user?.uid} />}
+          {activeTab === "trials" && <AdminTrials onStatsUpdate={loadStats} />}
           {activeTab === "logs" && <AdminLogs />}
         </main>
       </div>
@@ -1778,98 +1778,55 @@ function AdminAnalytics() {
   );
 }
 
-function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adminId?: string }) {
+function AdminTrials({ onStatsUpdate }: { onStatsUpdate: () => void }) {
   const { showNotification } = useNotifications();
   const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
-  const { prompt, PromptDialogComponent } = usePromptDialog();
-  const [coupons, setCoupons] = useState<any[]>([]);
+  const [trials, setTrials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "ACTIVE" | "USED" | "EXPIRED" | "REVOKED">("all");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newCouponData, setNewCouponData] = useState({ code: "", maxUses: 1, notes: "" });
+  const [filter, setFilter] = useState<"all" | "PENDING" | "APPROVED" | "REJECTED" | "USED">("all");
+  const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
 
   useEffect(() => {
-    loadCoupons();
+    loadTrials();
   }, [filter]);
 
-  const loadCoupons = async () => {
+  const loadTrials = async () => {
     setLoading(true);
-    // Siempre cargar todos los cupones para incluir solicitudes pendientes
-    const res = await apiFetch("/api/admin/coupons");
+    const url = filter === "all" ? "/api/admin/trials" : `/api/admin/trials?status=${filter}`;
+    const res = await apiFetch(url);
     if (res.ok) {
       const data = await res.json();
-      setCoupons(data.coupons || []);
+      setTrials(data.trials || []);
     } else {
-      console.error("Error loading coupons:", res.status);
-      setCoupons([]);
+      console.error("Error loading trials:", res.status);
+      setTrials([]);
     }
     setLoading(false);
   };
 
-  const handleCreateCoupon = async () => {
-    if (!newCouponData.code.trim()) {
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: "El código del cupón es obligatorio",
-      });
-      return;
-    }
-
-    const res = await apiFetch("/api/admin/coupons", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCouponData),
-    });
-
-    if (res.ok) {
-      setShowCreateModal(false);
-      setNewCouponData({ code: "", maxUses: 1, notes: "" });
-      loadCoupons();
-      onStatsUpdate();
-      showNotification({
-        type: "success",
-        title: "Cupón creado",
-        message: "El cupón se ha creado correctamente",
-      });
-    } else {
-      const data = await res.json().catch(() => ({}));
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: data.error || "No se pudo crear el cupón",
-      });
-    }
-  };
-
-  const handleApproveRequest = async (couponId: string, code: string) => {
-    // Al aprobar, el cupón ya está creado, solo cambiamos el estado si es necesario
-    // En este caso, las solicitudes son cupones ACTIVE que pueden ser canjeados
-    // El admin puede rechazar (revocar) o dejar activo para que la empresa canjee
-
+  const handleApprove = async (trialId: string) => {
     const confirmed = await confirmDialog({
-      title: "Aprobar solicitud de cupón",
-      message: `¿Aprobar la solicitud del cupón ${code}? La empresa podrá canjearlo.`,
+      title: "Aprobar solicitud",
+      message: "¿Aprobar esta solicitud de prueba gratuita? Se enviará un email a la empresa.",
       type: "warning",
     });
 
     if (!confirmed) return;
 
-    // El cupón ya está ACTIVE, no necesitamos cambiar nada
-    // Solo enviamos email a la empresa
-    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/trials/${trialId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "approve", userId: adminId }),
+      body: JSON.stringify({ action: "approve" }),
     });
 
     if (res.ok) {
-      loadCoupons();
+      loadTrials();
       onStatsUpdate();
       showNotification({
         type: "success",
         title: "Solicitud aprobada",
-        message: "Se ha enviado un email a la empresa con el código del cupón",
+        message: "Se ha enviado un email a la empresa.",
       });
     } else {
       const data = await res.json().catch(() => ({}));
@@ -1881,28 +1838,28 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
     }
   };
 
-  const handleRejectRequest = async (couponId: string, code: string) => {
+  const handleReject = async (trialId: string) => {
     const confirmed = await confirmDialog({
       title: "Rechazar solicitud",
-      message: `¿Rechazar la solicitud del cupón ${code}?`,
+      message: "¿Rechazar esta solicitud?",
       type: "danger",
     });
 
     if (!confirmed) return;
 
-    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/trials/${trialId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "revoke", userId: adminId }),
+      body: JSON.stringify({ action: "reject" }),
     });
 
     if (res.ok) {
-      loadCoupons();
+      loadTrials();
       onStatsUpdate();
       showNotification({
         type: "success",
         title: "Solicitud rechazada",
-        message: "La solicitud ha sido rechazada",
+        message: "La solicitud ha sido rechazada.",
       });
     } else {
       const data = await res.json().catch(() => ({}));
@@ -1914,112 +1871,48 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
     }
   };
 
-  const handleRevokeCoupon = async (couponId: string, code: string) => {
+  const handleDelete = async (trialId: string) => {
     const confirmed = await confirmDialog({
-      title: "Revocar cupón",
-      message: `¿Revocar el cupón ${code}? Ya no podrá ser canjeado.`,
+      title: "Eliminar solicitud",
+      message: "¿Eliminar esta solicitud permanentemente?",
       type: "danger",
     });
 
     if (!confirmed) return;
 
-    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "revoke", userId: adminId }),
-    });
-
-    if (res.ok) {
-      loadCoupons();
-      showNotification({
-        type: "success",
-        title: "Cupón revocado",
-        message: "El cupón ha sido revocado",
-      });
-    } else {
-      const data = await res.json().catch(() => ({}));
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: data.error || "No se pudo revocar el cupón",
-      });
-    }
-  };
-
-  const handleReactivateCoupon = async (couponId: string) => {
-    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reactivate", userId: adminId }),
-    });
-
-    if (res.ok) {
-      loadCoupons();
-      showNotification({
-        type: "success",
-        title: "Cupón reactivado",
-        message: "El cupón ha sido reactivado",
-      });
-    } else {
-      const data = await res.json().catch(() => ({}));
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: data.error || "No se pudo reactivar el cupón",
-      });
-    }
-  };
-
-  const handleDeleteCoupon = async (couponId: string, code: string) => {
-    const confirmed = await confirmDialog({
-      title: "Eliminar cupón",
-      message: `¿Eliminar permanentemente el cupón ${code}?`,
-      type: "danger",
-    });
-
-    if (!confirmed) return;
-
-    const res = await apiFetch(`/api/admin/coupons/${couponId}`, {
+    const res = await apiFetch(`/api/admin/trials/${trialId}`, {
       method: "DELETE",
     });
 
     if (res.ok) {
-      loadCoupons();
+      loadTrials();
       onStatsUpdate();
       showNotification({
         type: "success",
-        title: "Cupón eliminado",
-        message: "El cupón ha sido eliminado",
+        title: "Solicitud eliminada",
+        message: "La solicitud ha sido eliminada.",
       });
     } else {
       const data = await res.json().catch(() => ({}));
       showNotification({
         type: "error",
         title: "Error",
-        message: data.error || "No se pudo eliminar el cupón",
+        message: data.error || "No se pudo eliminar la solicitud",
       });
     }
   };
 
-  // Separar solicitudes pendientes (cupones con notas que empiezan por "REQUEST:")
-  const pendingRequests = coupons.filter((c) =>
-    c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:")
-  );
-  // Otros cupones, filtrados por estado si se seleccionó uno
-  const otherCoupons = coupons.filter((c) => {
-    // Excluir solicitudes pendientes
-    if (c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:")) return false;
-    // Aplicar filtro de estado si no es "all"
-    if (filter !== "all" && c.status !== filter) return false;
-    return true;
-  });
+  const handleViewCompany = (company: any) => {
+    setSelectedCompany(company);
+    setShowCompanyModal(true);
+  };
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; label: string }> = {
-      ACTIVE: { color: "bg-emerald-600", label: "Activo" },
-      USED: { color: "bg-blue-600", label: "Usado" },
-      EXPIRED: { color: "bg-amber-600", label: "Caducado" },
-      REVOKED: { color: "bg-red-600", label: "Revocado" },
+      PENDING: { color: "bg-amber-600", label: "Pendiente" },
+      APPROVED: { color: "bg-emerald-600", label: "Aprobada" },
+      REJECTED: { color: "bg-red-600", label: "Rechazada" },
+      USED: { color: "bg-blue-600", label: "Usada" },
     };
     const badge = badges[status] || { color: "bg-slate-600", label: status };
     return <span className={`${badge.color} px-2 py-1 rounded text-xs`}>{badge.label}</span>;
@@ -2028,155 +1921,81 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   return (
     <div>
       <ConfirmDialogComponent />
-      <PromptDialogComponent />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h2 className="text-xl md:text-2xl font-bold">Gestión de Cupones</h2>
+        <h2 className="text-xl md:text-2xl font-bold">Solicitudes de Prueba Gratuita</h2>
         <div className="flex flex-wrap gap-2">
-          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todos</FilterButton>
-          <FilterButton active={filter === "ACTIVE"} onClick={() => setFilter("ACTIVE")}>Activos</FilterButton>
-          <FilterButton active={filter === "USED"} onClick={() => setFilter("USED")}>Usados</FilterButton>
-          <FilterButton active={filter === "EXPIRED"} onClick={() => setFilter("EXPIRED")}>Caducados</FilterButton>
-          <FilterButton active={filter === "REVOKED"} onClick={() => setFilter("REVOKED")}>Revocados</FilterButton>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Crear Cupón
-          </button>
+          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todas</FilterButton>
+          <FilterButton active={filter === "PENDING"} onClick={() => setFilter("PENDING")}>Pendientes</FilterButton>
+          <FilterButton active={filter === "APPROVED"} onClick={() => setFilter("APPROVED")}>Aprobadas</FilterButton>
+          <FilterButton active={filter === "USED"} onClick={() => setFilter("USED")}>Usadas</FilterButton>
         </div>
       </div>
 
-      {/* Solicitudes pendientes - solo en filtro "Todos" */}
-      {filter === "all" && pendingRequests.length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-amber-400 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Solicitudes Pendientes ({pendingRequests.length})
-          </h3>
-          <div className="bg-slate-800 rounded-xl overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Código</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Razón</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingRequests.map((coupon) => (
-                  <tr key={coupon.id} className="border-t border-slate-700 hover:bg-slate-750">
-                    <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-sm">{coupon.requestData?.companyName || "-"}</span>
-                        <span className="font-mono text-xs text-slate-400">{coupon.requestData?.companyId || ""}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="text-xs">{coupon.requestData?.email || "-"}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm max-w-xs truncate" title={coupon.requestData?.reason || coupon.notes}>
-                      {coupon.requestData?.reason || "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">
-                      {new Date(coupon.createdAt).toLocaleDateString("es-ES")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() => handleApproveRequest(coupon.id, coupon.code)}
-                          className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-xs"
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          onClick={() => handleRejectRequest(coupon.id, coupon.code)}
-                          className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Lista de cupones */}
       <div className="bg-slate-800 rounded-xl overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-700">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium">Código</th>
+              <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
+              <th className="px-4 py-3 text-left text-xs font-medium">Tamaño</th>
               <th className="px-4 py-3 text-left text-xs font-medium">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-medium">Usos</th>
-              <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Creado por</th>
-              <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Notas</th>
+              <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Fecha</th>
               <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center">
+                <td colSpan={5} className="px-4 py-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
                 </td>
               </tr>
-            ) : otherCoupons.length === 0 ? (
+            ) : trials.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                  No hay cupones
+                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                  No hay solicitudes
                 </td>
               </tr>
             ) : (
-              otherCoupons.map((coupon) => (
-                <tr key={coupon.id} className="border-t border-slate-700 hover:bg-slate-750">
-                  <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
-                  <td className="px-4 py-3">{getStatusBadge(coupon.status)}</td>
+              trials.map((trial) => (
+                <tr key={trial.id} className="border-t border-slate-700 hover:bg-slate-750">
                   <td className="px-4 py-3 text-sm">
-                    {coupon.usedCount}/{coupon.maxUses}
+                    <button
+                      onClick={() => handleViewCompany(trial.company)}
+                      className="text-left hover:text-emerald-400 transition-colors"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{trial.company?.companyName || "-"}</span>
+                        <span className="font-mono text-xs text-slate-400">{trial.company?.cif || ""}</span>
+                      </div>
+                    </button>
                   </td>
-                  <td className="px-4 py-3 text-sm hidden md:table-cell">
-                    {coupon.createdBy || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-sm hidden md:table-cell max-w-xs truncate" title={coupon.notes}>
-                    {coupon.notes || "-"}
+                  <td className="px-4 py-3 text-sm">{trial.companySize || "-"}</td>
+                  <td className="px-4 py-3">{getStatusBadge(trial.status)}</td>
+                  <td className="px-4 py-3 text-sm text-slate-400 hidden md:table-cell">
+                    {new Date(trial.createdAt).toLocaleDateString("es-ES")}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
-                      {coupon.status === "ACTIVE" && (
-                        <button
-                          onClick={() => handleRevokeCoupon(coupon.id, coupon.code)}
-                          className="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-xs"
-                          title="Revocar"
-                        >
-                          Revocar
-                        </button>
-                      )}
-                      {coupon.status === "REVOKED" && (
-                        <button
-                          onClick={() => handleReactivateCoupon(coupon.id)}
-                          className="bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded text-xs"
-                          title="Reactivar"
-                        >
-                          Reactivar
-                        </button>
+                      {trial.status === "PENDING" && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(trial.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-xs"
+                          >
+                            Aprobar
+                          </button>
+                          <button
+                            onClick={() => handleReject(trial.id)}
+                            className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
+                          >
+                            Rechazar
+                          </button>
+                        </>
                       )}
                       <button
-                        onClick={() => handleDeleteCoupon(coupon.id, coupon.code)}
-                        className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                        onClick={() => handleDelete(trial.id)}
+                        className="bg-slate-600 hover:bg-slate-700 px-3 py-1 rounded text-xs"
                         title="Eliminar"
                       >
                         Eliminar
@@ -2190,58 +2009,55 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
         </table>
       </div>
 
-      {/* Modal de crear cupón */}
-      {showCreateModal && (
+      {/* Modal de empresa */}
+      {showCompanyModal && selectedCompany && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Crear Nuevo Cupón</h3>
+          <div className="bg-slate-800 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold">Perfil de Empresa</h3>
+              <button
+                onClick={() => setShowCompanyModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Código</label>
-                <input
-                  type="text"
-                  value={newCouponData.code}
-                  onChange={(e) => setNewCouponData({ ...newCouponData, code: e.target.value.toUpperCase() })}
-                  placeholder="AGRO-XXXXX"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <label className="block text-xs font-medium text-slate-400 mb-1">Nombre</label>
+                <p className="text-sm">{selectedCompany.companyName || "-"}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Máximo de usos</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={newCouponData.maxUses}
-                  onChange={(e) => setNewCouponData({ ...newCouponData, maxUses: parseInt(e.target.value) || 1 })}
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <label className="block text-xs font-medium text-slate-400 mb-1">CIF</label>
+                <p className="text-sm font-mono">{selectedCompany.cif || "-"}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Notas (opcional)</label>
-                <textarea
-                  value={newCouponData.notes}
-                  onChange={(e) => setNewCouponData({ ...newCouponData, notes: e.target.value })}
-                  placeholder="Información adicional sobre este cupón..."
-                  rows={3}
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <label className="block text-xs font-medium text-slate-400 mb-1">Provincia</label>
+                <p className="text-sm">{selectedCompany.province || "-"}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Email</label>
+                <p className="text-sm">{selectedCompany.user?.email || "-"}</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Verificada</label>
+                  <p className="text-sm">{selectedCompany.isVerified ? "✅ Sí" : "❌ No"}</p>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Aprobada</label>
+                  <p className="text-sm">{selectedCompany.isApproved ? "✅ Sí" : "❌ No"}</p>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end mt-6">
               <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewCouponData({ code: "", maxUses: 1, notes: "" });
-                }}
+                onClick={() => setShowCompanyModal(false)}
                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateCoupon}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium"
-              >
-                Crear Cupón
+                Cerrar
               </button>
             </div>
           </div>

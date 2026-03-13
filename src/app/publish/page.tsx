@@ -17,6 +17,7 @@ function PublishForm() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "OFFER" o "DEMAND"
   const editId = searchParams.get("edit"); // ID de la publicación a editar
+  const trialToken = searchParams.get("trialToken"); // Token de prueba gratuita
   const isEditMode = !!editId;
 
   // Proteger la página: si no hay usuario, ir a login
@@ -241,6 +242,7 @@ function PublishForm() {
             uid: user.uid,
             type: isDemand ? "DEMAND" : (userRole === 'COMPANY' ? "OFFICIAL" : "SHARED"),
             couponCode: couponCode || undefined,
+            trialToken: trialToken || undefined,
           }),
         });
       }
