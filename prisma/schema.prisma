@@ -944,34 +944,6 @@ model OfferPackPurchase {
   @@index([createdAt])
 }
 
-// Cupones para publicación de ofertas gratis
-model Coupon {
-  id          String   @id @default(uuid())
-  code        String   @unique // Código único del cupón (ej: AGRO-ABC123)
-  status      String   @default("ACTIVE") // ACTIVE, USED, EXPIRED, REVOKED
-
-  // Límites de uso
-  maxUses     Int      @default(1) // Máximo número de usos permitidos
-  usedCount   Int      @default(0) // Cuántas veces se ha usado
-
-  // Fecha de expiración
-  expiresAt   DateTime? // Si es null, no expira
-
-  // Quién lo usó (si es de un solo uso)
-  usedBy      String?  // companyId que lo usó
-  usedAt      DateTime? // Cuándo se usó
-
-  // Metadatos
-  createdBy   String?  // UID del admin que lo creó
-  notes       String?  // Notas internas
-
-  createdAt   DateTime @default(now())
-
-  @@index([code])
-  @@index([status])
-  @@index([expiresAt])
-}
-
 // Solicitudes de prueba gratuita para empresas
 model FreeTrialRequest {
   id          String   @id @default(uuid())

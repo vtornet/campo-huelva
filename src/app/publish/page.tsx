@@ -50,10 +50,6 @@ function PublishForm() {
   const [isPremium, setIsPremium] = useState<boolean | null>(null); // null = cargando
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showPremiumBlock, setShowPremiumBlock] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [couponValid, setCouponValid] = useState(false);
-  const [couponMessage, setCouponMessage] = useState("");
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Si es DEMAND (Trabajador pidiendo trabajo), el modo es DEMAND.
   // Si no, es SHARED (Oferta compartida) u OFFICIAL (si es empresa, lo gestiona la API).
@@ -178,36 +174,6 @@ function PublishForm() {
     }
   }, [editId, user, typeParam, userRole]);
 
-  const validateCoupon = async () => {
-    if (!couponCode.trim()) return;
-
-    setValidatingCoupon(true);
-    setCouponMessage("");
-
-    try {
-      const res = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponCode.trim() }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.valid) {
-        setCouponValid(true);
-        setCouponMessage("¡Cupón válido! Podrás publicar 1 oferta gratis.");
-      } else {
-        setCouponValid(false);
-        setCouponMessage(data.error || "Cupón no válido. Verifica el código.");
-      }
-    } catch (error) {
-      setCouponValid(false);
-      setCouponMessage("Error al validar el cupón. Inténtalo de nuevo.");
-    } finally {
-      setValidatingCoupon(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -241,7 +207,6 @@ function PublishForm() {
             providesAccommodation: formData.providesAccommodation,
             uid: user.uid,
             type: isDemand ? "DEMAND" : (userRole === 'COMPANY' ? "OFFICIAL" : "SHARED"),
-            couponCode: couponCode || undefined,
             trialToken: trialToken || undefined,
           }),
         });
@@ -433,67 +398,6 @@ function PublishForm() {
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all duration-200"
             value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
         </div>
-
-        {/* Campo de cupón - solo para empresas sin premium publicando ofertas */}
-        {userRole === 'COMPANY' && postType === 'OFFER' && !isPremium && !isEditMode && (
-          <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              ¿Tienes un cupón de descuento? <span className="text-slate-500">(opcional)</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Ej: AGRO-XXXXX"
-                className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  couponValid
-                    ? "border-green-300 bg-green-50 focus:ring-green-500"
-                    : "border-slate-200 bg-white focus:ring-emerald-500"
-                }`}
-                value={couponCode}
-                onChange={(e) => {
-                  setCouponCode(e.target.value.toUpperCase());
-                  setCouponValid(false);
-                  setCouponMessage("");
-                }}
-                disabled={couponValid}
-              />
-              {!couponValid && (
-                <button
-                  type="button"
-                  onClick={validateCoupon}
-                  disabled={validatingCoupon || !couponCode.trim()}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {validatingCoupon ? "Verificando..." : "Validar"}
-                </button>
-              )}
-              {couponValid && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCouponCode("");
-                    setCouponValid(false);
-                    setCouponMessage("");
-                  }}
-                  className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition"
-                  title="Eliminar cupón"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            {couponMessage && (
-              <p className={`text-xs mt-2 ${couponValid ? "text-green-600" : "text-red-600"}`}>
-                {couponMessage}
-              </p>
-            )}
-            {couponValid && (
-              <p className="text-xs text-green-600 mt-2">
-                ✓ Cupón válido: Publicarás 1 oferta gratis
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Selector de tipo de tarea - solo para demandas */}
         {postType === 'DEMAND' && (

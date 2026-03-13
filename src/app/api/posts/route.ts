@@ -207,7 +207,6 @@ export async function POST(request: Request) {
       startDate,
       endDate,
       externalLink,
-      couponCode,
       trialToken
     } = body;
 
@@ -271,40 +270,17 @@ export async function POST(request: Request) {
         }, { status: 403 });
       }
 
-      // Verificar si tiene suscripción Premium activa O créditos de ofertas O cupón válido
+      // Verificar si tiene suscripción Premium activa O créditos de ofertas O token de prueba
       console.log('[POST CREATE] Verificando premium para userId:', user.id);
       const hasPremium = await hasActivePremiumSubscription(user.id);
       const hasCredits = (user.companyProfile?.offerCredits || 0) > 0;
       const isTrial = hasPremium?.isTrial || false;
 
-      // Verificar cupón si se proporciona
-      let couponValid = false;
-      let coupon = null;
-
-      if (couponCode && (!hasPremium || isTrial) && !hasCredits) {
-        console.log('[POST CREATE] Verificando cupón:', couponCode);
-        coupon = await prisma.coupon.findUnique({
-          where: { code: couponCode.toUpperCase() },
-        });
-
-        if (coupon &&
-            coupon.status === "ACTIVE" &&
-            (!coupon.expiresAt || new Date() < coupon.expiresAt) &&
-            coupon.usedCount < coupon.maxUses) {
-          // Verificar que no haya sido usado por esta empresa
-          const alreadyUsed = coupon.usedBy?.includes(user.companyProfile.id);
-          if (!alreadyUsed) {
-            couponValid = true;
-            console.log('[POST CREATE] Cupón válido, permitiendo publicación');
-          }
-        }
-      }
-
       // Verificar token de prueba gratuita si se proporciona
       let trialValid = false;
       let trialRequest = null;
 
-      if (trialToken && (!hasPremium || isTrial) && !hasCredits && !couponValid) {
+      if (trialToken && (!hasPremium || isTrial) && !hasCredits) {
         console.log('[POST CREATE] Verificando token de prueba:', trialToken);
         trialRequest = await prisma.freeTrialRequest.findUnique({
           where: { token: trialToken },
@@ -331,23 +307,22 @@ export async function POST(request: Request) {
         }
       }
 
-      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'couponValid:', couponValid, 'trialValid:', trialValid);
+      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'trialValid:', trialValid);
 
       // Solo permitir con:
       // - Premium pagado (no trial) O
       // - Créditos de ofertas O
-      // - Cupón válido O
       // - Token de prueba válido
-      if ((!hasPremium || isTrial) && !hasCredits && !couponValid && !trialValid) {
+      if ((!hasPremium || isTrial) && !hasCredits && !trialValid) {
         return NextResponse.json({
           error: "PREMIUM_OR_CREDITS_REQUIRED",
           premiumRequired: true,
-          message: "Para publicar ofertas necesitas una suscripción Premium, créditos de ofertas o un cupón válido.",
+          message: "Para publicar ofertas necesitas una suscripción Premium, créditos de ofertas o una prueba gratuita aprobada.",
         }, { status: 403 });
       }
 
-      // Si tiene créditos, consumir 1 al publicar (pero no si usa cupón)
-      if (hasCredits && !hasPremium && !couponValid) {
+      // Si tiene créditos, consumir 1 al publicar (pero no si usa token de prueba)
+      if (hasCredits && !hasPremium && !trialValid) {
         const credits = user.companyProfile.offerCredits || 0;
         await prisma.companyProfile.update({
           where: { id: user.companyProfile.id },
@@ -356,19 +331,6 @@ export async function POST(request: Request) {
           },
         });
         console.log(`[POST CREATE] Crédito consumido. Créditos restantes: ${credits - 1}`);
-      }
-
-      // Si usa cupón, marcarlo como usado
-      if (couponValid && coupon) {
-        await prisma.coupon.update({
-          where: { id: coupon.id },
-          data: {
-            usedCount: { increment: 1 },
-            usedBy: user.companyProfile.id,
-            usedAt: new Date(),
-          },
-        });
-        console.log(`[POST CREATE] Cupón ${coupon.code} marcado como usado`);
       }
 
       // Si usa token de prueba, marcarlo como usado

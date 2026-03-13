@@ -150,6 +150,15 @@ RESEND_FROM_EMAIL         # Email remitente
 - [x] Logo y descripción extendida
 - [x] Página pública de empresa
 
+### Sistema de Prueba Gratuita
+- [x] Empresas pueden solicitar prueba gratuita (solo tamaño empresa)
+- [x] Admin aprueba/rechaza solicitudes desde panel
+- [x] Email a empresa con enlace único de publicación
+- [x] Token UUID de un solo uso
+- [x] Validación de token al publicar oferta
+- [x] Solicitud marcada como USED tras publicar
+- [x] Panel admin: "Pruebas gratuitas" con lista y modal empresa
+
 ### Componentes de UI
 - [x] ConfirmDialog, PromptDialog (sin alerts nativos)
 - [x] Sistema de notificaciones toast
@@ -216,84 +225,6 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
 - [ ] Alertas de pago fallido con instrucciones
 
 ---
-
-## Sistema de Prueba Gratuita (En Desarrollo)
-
-**Objetivo**: Simplificar el onboarding de empresas permitiendo una publicación gratuita tras aprobación del admin.
-
-### Flujo
-1. Empresa solicita prueba gratuita → Indica solo **volumen de trabajadores**
-2. Admin recibe solicitud en panel → Aprueba/Rechaza
-3. Empresa recibe email con **enlace directo** para publicar oferta gratis
-4. Enlace es **token único** de un solo uso
-5. Empresa no puede solicitar prueba nuevamente
-
-### Pasos de Implementación
-
-- [x] **1. Crear modelo `FreeTrialRequest` en Prisma**
-  ```prisma
-  model FreeTrialRequest {
-    id          String   @id @default(uuid())
-    companyId   String
-    company     CompanyProfile @relation(fields: [companyId], references: [id])
-    companySize String   // Volumen de trabajadores
-    status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, USED
-    token       String?  @unique // Token único para publicar
-    approvedAt  DateTime?
-    usedAt      DateTime?
-    createdAt   DateTime @default(now())
-
-    @@index([status])
-    @@index([companyId])
-  }
-  ```
-
-- [x] **2. Crear `/api/trials/request`** (sustituye a `/api/coupons/request`)
-  - POST con `{ companySize }`
-  - Verifica que empresa no tenga solicitud previa (PENDING/APPROVED)
-  - Crea solicitud con status PENDING
-
-- [x] **3. Crear endpoints de admin para pruebas**
-  - `GET /api/admin/trials` - Listar solicitudes pendientes
-  - `PUT /api/admin/trials/[id]/approve` - Aprobar (genera token, envía email)
-  - `DELETE /api/admin/trials/[id]` - Rechazar solicitud
-
-- [x] **4. Modificar panel admin**
-  - Cambiar pestaña "Cupones" → "Pruebas gratuitas"
-  - Mostrar lista con: Empresa, Tamaño, Fecha, Acciones
-  - Agregar modal con perfil completo al hacer clic en nombre empresa
-
-- [x] **5. Sistema de tokens seguros**
-  - Generar token UUID único al aprobar
-  - Validación en `/api/posts` al publicar
-  - Token se marca como USED después de publicar
-
-- [x] **6. Email de aprobación**
-  - Asunto: "¡Tu prueba gratuita está lista en Agro Red!"
-  - Enlace: `${APP_URL}/publish?trialToken=xxx`
-  - Botón CTA: "Publicar mi oferta ahora"
-
-- [x] **7. Modificar `/publish` para aceptar token de prueba**
-  - Leer `trialToken` de searchParams
-  - Enviar token a `/api/posts` al crear post
-  - Permitir publicación sin Premium si token válido
-
-- [x] **8. Modificar `/api/posts` para aceptar token**
-  - Validar token antes de crear post
-  - Marcar solicitud como USED
-  - Verificar que el token pertenece a la empresa
-
-- [ ] **9. Eliminar sistema de cupones (obsoleto)**
-  - Eliminar modelo `Coupon` de Prisma
-  - Eliminar `/api/coupons/*` endpoints
-  - Eliminar `/api/admin/coupons/*` endpoints
-  - Eliminar componentes de UI de cupones
-  - Actualizar CLAUDE.md
-
-- [ ] **10. Actualizar documentación**
-  - Actualizar sección "Funcionalidades Implementadas"
-  - Agregar nueva sección "Sistema de Prueba Gratuita"
-  - Marcar cupones como obsoleto
 
 ## Reglas de Desarrollo
 
