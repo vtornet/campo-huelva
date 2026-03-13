@@ -41,9 +41,12 @@ export async function PUT(
     if (coupon.notes?.startsWith("REQUEST:") && action === "approve") {
       // Extraer datos de las notas
       // Formato definitivo: REQUEST:email|companyId|companyName|reason
-      // Formato anterior: REQUEST:userId|companyId|reason|companySize
-      // Formato viejo: REQUEST:companyId|reason|companySize
+      console.log("[APPROVE COUPON] Raw notes:", coupon.notes);
+      console.log("[APPROVE COUPON] Notes length:", coupon.notes?.length);
+      console.log("[APPROVE COUPON] Notes substring(9):", coupon.notes?.substring(9));
+
       const parts = coupon.notes.substring(9).split("|");
+      console.log("[APPROVE COUPON] Parts:", parts);
 
       let email: string;
       let companyId: string;
