@@ -7,6 +7,7 @@ import { PROVINCIAS, MUNICIPIOS_POR_PROVINCIA, TIPOS_TAREA, TIPOS_CONTRATO, PERI
 import AIImprovedTextarea from "@/components/AIImprovedTextarea";
 import { PageBackButton } from "@/components/BackButton";
 import { Crown, Lock } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 
 
 // Componente interno que lee los parámetros
@@ -84,15 +85,20 @@ function PublishForm() {
         if (trialToken) {
           console.log('[PUBLISH DEBUG] Validando trialToken:', trialToken);
           try {
-            const trialRes = await fetch(`/api/trials/validate?token=${trialToken}`);
+            const trialRes = await apiFetch(`/api/trials/validate?token=${trialToken}`);
             const trialData = await trialRes.json();
+            console.log('[PUBLISH DEBUG] trialData:', trialData);
             if (trialData.valid) {
-              console.log('[PUBLISH DEBUG] Token de prueba válido');
+              console.log('[PUBLISH DEBUG] Token de prueba válido, setTrialTokenValid(true)');
               setTrialTokenValid(true);
+            } else {
+              console.log('[PUBLISH DEBUG] Token no válido:', trialData.error);
             }
           } catch (err) {
             console.error('[PUBLISH DEBUG] Error validando token:', err);
           }
+        } else {
+          console.log('[PUBLISH DEBUG] No hay trialToken');
         }
 
         // Cargar datos del usuario (incluye rol)
@@ -275,6 +281,18 @@ function PublishForm() {
       </div>
     );
   }
+
+  // DEBUG: Mostrar valores antes de decidir bloqueo
+  console.log('[PUBLISH DEBUG] Decisión bloqueo Premium:', {
+    showPremiumBlock,
+    userRole,
+    isEditMode,
+    isPremium,
+    postType,
+    checkingAuth,
+    trialTokenValid,
+    trialToken
+  });
 
   // Mostrar bloqueo Premium para empresas sin suscripción (solo para nuevas ofertas OFICIAL)
   // Solo mostrar si YA hemos terminado de verificar (isPremium no es null) Y NO hay token válido
