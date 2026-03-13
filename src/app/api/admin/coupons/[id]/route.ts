@@ -46,15 +46,21 @@ export async function PUT(
       // Obtener datos de la empresa para enviar el email
       const company = await prisma.companyProfile.findUnique({
         where: { id: requestCompanyId },
-        include: { user: { select: { email: true } } },
       });
 
-      console.log("[APPROVE COUPON] Company data:", {
+      // Obtener email del usuario directamente
+      const user = company ? await prisma.user.findUnique({
+        where: { id: company.userId },
+        select: { email: true },
+      }) : null;
+
+      console.log("[APPROVE COUPON] Data:", {
         requestCompanyId,
         companyFound: !!company,
         companyName: company?.companyName,
-        userFound: !!company?.user,
-        userEmail: company?.user?.email,
+        userId: company?.userId,
+        userFound: !!user,
+        userEmail: user?.email,
       });
 
       // Aprobar: marcar como activo y limpiar notas
@@ -67,12 +73,12 @@ export async function PUT(
       });
 
       // Enviar email al usuario con el código
-      if (resend && company?.user?.email) {
+      if (resend && user?.email) {
         try {
-          console.log("[APPROVE COUPON] Sending email to:", company.user.email);
+          console.log("[APPROVE COUPON] Sending email to:", user.email);
           const result = await resend.emails.send({
             from: FROM_EMAIL,
-            to: company.user.email,
+            to: user.email,
             subject: "¡Tu cupón de Agro Red ha sido aprobado!",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -80,7 +86,7 @@ export async function PUT(
                   <h1 style="color: white; margin: 0;">🎉 ¡Buenas noticias!</h1>
                 </div>
                 <div style="padding: 30px; background-color: #f9fafb;">
-                  <p style="font-size: 16px; color: #374151;">Hola ${company.companyName},</p>
+                  <p style="font-size: 16px; color: #374151;">Hola ${company?.companyName || 'Empresa'},</p>
                   <p style="font-size: 16px; color: #374151;">Tu solicitud de cupón ha sido aprobada. Ya puedes publicar tu primera oferta en Agro Red.</p>
 
                   <div style="background: white; border: 2px dashed #047857; padding: 20px; text-align: center; margin: 30px 0; border-radius: 8px;">
@@ -119,14 +125,14 @@ export async function PUT(
           console.error("[APPROVE COUPON] Error sending email:", emailError);
         }
       } else {
-        console.log("[APPROVE COUPON] Email not sent. Resend available:", !!resend, "Email:", company?.user?.email);
+        console.log("[APPROVE COUPON] Email not sent. Resend:", !!resend, "User email:", user?.email);
       }
 
       return NextResponse.json({
         success: true,
         coupon: updated,
-        message: company?.user?.email
-          ? `Solicitud aprobada. Email enviado a ${company.user.email}`
+        message: user?.email
+          ? `Solicitud aprobada. Email enviado a ${user.email}`
           : "Solicitud aprobada",
       });
     }
