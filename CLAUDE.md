@@ -248,7 +248,7 @@ Las funcionalidades básicas de suscripciones están completas. Estas son mejora
   }
   ```
 
-- [ ] **2. Crear `/api/trials/request`** (sustituye a `/api/coupons/request`)
+- [x] **2. Crear `/api/trials/request`** (sustituye a `/api/coupons/request`)
   - POST con `{ companySize }`
   - Verifica que empresa no tenga solicitud previa (PENDING/APPROVED)
   - Crea solicitud con status PENDING
