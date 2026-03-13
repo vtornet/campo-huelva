@@ -277,7 +277,7 @@ export default function PremiumPage() {
                     </li>
                     <li className="flex items-start gap-2 text-green-800">
                       <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <span>Badge &quot;Empresa Premium&quot; en tu perfil</span>
+                      <span>Badge "Empresa Premium" en tu perfil</span>
                     </li>
                     <li className="flex items-start gap-2 text-green-800">
                       <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -403,7 +403,7 @@ export default function PremiumPage() {
                   {[
                     "Publicación de ofertas ilimitadas",
                     "Acceso completo al buscador de candidatos con filtros avanzados",
-                    "Badge &quot;Empresa Premium&quot; que destaca tu perfil",
+                    "Badge "Empresa Premium" que destaca tu perfil",
                     "Prioridad en los resultados de búsqueda",
                     "Soporte prioritario via email y chat",
                   ].map((feature, index) => (

@@ -810,7 +810,7 @@ export default function ProfileSearchPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-600 mt-0.5">✓</span>
-                <span>Badge &quot;Empresa Premium&quot; en tu perfil</span>
+                <span>Badge "Empresa Premium" en tu perfil</span>
               </li>
             </ul>
           </div>
