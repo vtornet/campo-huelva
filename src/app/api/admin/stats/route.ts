@@ -33,8 +33,8 @@ export async function GET() {
       prisma.companyProfile.count({ where: { isVerified: false } }),
       // Empresas verificadas pero no aprobadas
       prisma.companyProfile.count({ where: { isVerified: true, isApproved: false } }),
-      // Cupones pendientes (estado ACTIVE pero que fueron solicitados por empresas)
-      prisma.coupon.count({ where: { status: "ACTIVE" } }),
+      // Cupones pendientes (estado ACTIVE con notes que empiezan por "REQUEST:")
+      prisma.coupon.count({ where: { status: "ACTIVE", notes: { contains: "REQUEST:" } } }),
       prisma.user.count({ where: { isBanned: true } }),
       prisma.user.count({ where: { isSilenced: true } }),
     ]);

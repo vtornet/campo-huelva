@@ -1793,8 +1793,8 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
 
   const loadCoupons = async () => {
     setLoading(true);
-    const url = filter === "all" ? "/api/admin/coupons" : `/api/admin/coupons?status=${filter}`;
-    const res = await fetch(url);
+    // Siempre cargar todos los cupones para incluir solicitudes pendientes
+    const res = await fetch("/api/admin/coupons");
     if (res.ok) {
       const data = await res.json();
       setCoupons(data.coupons || []);
@@ -2004,9 +2004,14 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
   const pendingRequests = coupons.filter((c) =>
     c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:")
   );
-  const otherCoupons = coupons.filter((c) =>
-    !(c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:"))
-  );
+  // Otros cupones, filtrados por estado si se seleccionó uno
+  const otherCoupons = coupons.filter((c) => {
+    // Excluir solicitudes pendientes
+    if (c.status === "ACTIVE" && c.notes?.startsWith("REQUEST:")) return false;
+    // Aplicar filtro de estado si no es "all"
+    if (filter !== "all" && c.status !== filter) return false;
+    return true;
+  });
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; label: string }> = {
@@ -2044,8 +2049,8 @@ function AdminCoupons({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; a
         </div>
       </div>
 
-      {/* Solicitudes pendientes */}
-      {filter === "all" && pendingRequests.length > 0 && (
+      {/* Solicitudes pendientes - siempre visibles */}
+      {pendingRequests.length > 0 && (
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-4 text-amber-400 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
