@@ -584,6 +584,31 @@ export default function OfferDetailPage() {
                   </div>
                 )}
 
+                {/* Experiencia exigida */}
+                {offer.experienceRequired !== null && offer.experienceRequired !== undefined && (
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      offer.experienceRequired === 0 ? 'bg-slate-100' : 'bg-teal-100'
+                    }`}>
+                      <svg className={`w-5 h-5 ${
+                        offer.experienceRequired === 0 ? 'text-slate-500' : 'text-teal-600'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Experiencia</p>
+                      <p className="font-medium text-slate-800">
+                        {offer.experienceRequired === 0 ? (
+                          <span className="text-slate-600">No exigida</span>
+                        ) : (
+                          <span className="text-teal-700">{offer.experienceRequired} años</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Alojamiento */}
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${offer.providesAccommodation ? 'bg-amber-100' : 'bg-slate-100'}`}>

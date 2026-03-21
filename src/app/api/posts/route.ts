@@ -75,6 +75,7 @@ export async function GET(request: Request) {
         salaryAmount: true,
         salaryPeriod: true,
         hoursPerWeek: true,
+        experienceRequired: true,
         startDate: true,
         endDate: true,
         externalLink: true,
@@ -204,6 +205,7 @@ export async function POST(request: Request) {
       salaryAmount,
       salaryPeriod,
       hoursPerWeek,
+      experienceRequired,
       startDate,
       endDate,
       externalLink,
@@ -416,6 +418,9 @@ export async function POST(request: Request) {
       postData.salaryAmount = salaryAmount || null;
       postData.salaryPeriod = salaryPeriod || null;
       postData.hoursPerWeek = hoursPerWeek ? parseInt(hoursPerWeek) : null;
+      postData.experienceRequired = experienceRequired !== undefined && experienceRequired !== "" && experienceRequired !== "NOT_REQUIRED"
+        ? parseInt(experienceRequired)
+        : experienceRequired === "NOT_REQUIRED" ? 0 : null;
       postData.startDate = startDate || null;
       postData.endDate = endDate || null;
       // Enlace externo solo para ofertas compartidas (SHARED)

@@ -944,6 +944,19 @@ export default function Dashboard() {
                             Alojamiento
                           </span>
                         )}
+                        {/* Experiencia exigida */}
+                        {post.experienceRequired !== null && post.experienceRequired !== undefined && (
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium border ${
+                            post.experienceRequired === 0
+                              ? 'bg-slate-50 text-slate-600 border-slate-200'
+                              : 'bg-teal-50 text-teal-700 border-teal-100'
+                          }`}>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            {post.experienceRequired === 0 ? 'Sin experiencia' : `${post.experienceRequired} años`}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

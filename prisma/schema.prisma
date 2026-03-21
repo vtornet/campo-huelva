@@ -348,6 +348,7 @@ model Post {
   salaryAmount    String?  // Cantidad salarial (texto libre para flexibilidad)
   salaryPeriod    String?  // Periodo de salario: HORA, JORNADA, MENSUAL, ANUAL
   hoursPerWeek    Int?     // Horas semanales (jornada)
+  experienceRequired Int?  // Experiencia requerida en años (null = no exigida)
   startDate       String?  // Fecha de inicio estimada
   endDate         String?  // Fecha de fin (para contratos eventuales)
 

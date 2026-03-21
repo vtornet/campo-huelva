@@ -73,6 +73,7 @@ function PublishForm() {
     startDate: "",
     endDate: "",
     externalLink: "", // Enlace externo para ofertas compartidas (solo admin)
+    experienceRequired: "", // "" = no seleccionado, "NOT_REQUIRED" = no exigida, número = años
   });
 
   // Cargar rol del usuario y estado Premium
@@ -163,6 +164,7 @@ function PublishForm() {
             startDate: data.startDate || "",
             endDate: data.endDate || "",
             externalLink: data.externalLink || "",
+            experienceRequired: data.experienceRequired?.toString() || "",
           });
         })
         .catch(err => {
@@ -540,6 +542,52 @@ function PublishForm() {
                 <option value="20">Media jornada (20h)</option>
                 <option value="15">Part-time (15h)</option>
               </select>
+            </div>
+
+            {/* Experiencia exigida */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Experiencia exigida</label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    id="exp_not_required"
+                    name="experienceRequired"
+                    checked={formData.experienceRequired === "NOT_REQUIRED"}
+                    onChange={() => setFormData({ ...formData, experienceRequired: "NOT_REQUIRED" })}
+                    className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                  />
+                  <label htmlFor="exp_not_required" className="text-sm text-slate-700 cursor-pointer">
+                    No exigida
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    id="exp_required"
+                    name="experienceRequired"
+                    checked={formData.experienceRequired !== "" && formData.experienceRequired !== "NOT_REQUIRED"}
+                    onChange={() => setFormData({ ...formData, experienceRequired: "1" })}
+                    className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                  />
+                  <label htmlFor="exp_required" className="text-sm text-slate-700 cursor-pointer">
+                    Sí, indicar años:
+                  </label>
+                  {formData.experienceRequired !== "" && formData.experienceRequired !== "NOT_REQUIRED" && (
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={formData.experienceRequired}
+                      onChange={(e) => setFormData({ ...formData, experienceRequired: e.target.value || "1" })}
+                      className="w-20 px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-center"
+                    />
+                  )}
+                  {formData.experienceRequired !== "" && formData.experienceRequired !== "NOT_REQUIRED" && (
+                    <span className="text-sm text-slate-600">años</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Fechas */}

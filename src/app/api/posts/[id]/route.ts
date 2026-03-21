@@ -30,6 +30,7 @@ export async function GET(
         salaryAmount: true,
         salaryPeriod: true,
         hoursPerWeek: true,
+        experienceRequired: true,
         providesAccommodation: true,
         startDate: true,
         endDate: true,
@@ -192,6 +193,7 @@ export async function PUT(
       'salaryAmount',
       'salaryPeriod',
       'hoursPerWeek',
+      'experienceRequired',
       'startDate',
       'endDate',
       'externalLink'
@@ -210,6 +212,15 @@ export async function PUT(
             : typeof value === 'string'
               ? parseInt(value, 10) || null
               : value;
+        } else if (field === 'experienceRequired') {
+          // Campo especial: "NOT_REQUIRED" = 0, string vacío = null, número = número
+          if (value === 'NOT_REQUIRED') {
+            updateData[field] = 0;
+          } else if (value === '' || value === null || value === undefined) {
+            updateData[field] = null;
+          } else {
+            updateData[field] = typeof value === 'string' ? parseInt(value, 10) || null : value;
+          }
         } else if (field === 'providesAccommodation') {
           // Campo booleano: manejar explícitamente
           updateData[field] = value === true || value === 'true' || value === 1;
