@@ -333,12 +333,12 @@ function SubscriptionTabContent({
                 </div>
               </div>
               {subscription.cancelAtPeriodEnd && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  <p className="text-sm text-amber-700">
-                    ⚠️ Has solicitado cancelar tu suscripción. Se mantendrá activa hasta el {nextBillingDate} y luego se cancelará automáticamente.
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                  <p className="text-sm font-semibold text-amber-900 mb-1">
+                    📅 Suscripción cancelada - Disfrutarás de Premium hasta el {nextBillingDate}
                   </p>
-                  <p className="text-xs text-amber-600 mt-1">
-                    Si quieres mantener tu suscripción, ve a "Gestionar en Stripe" y reactiva el pago automático.
+                  <p className="text-xs text-amber-700">
+                    Tu suscripción se cancelará automáticamente después de esa fecha. Si quieres seguir con Premium, reactiva el pago automático en tu panel de Stripe.
                   </p>
                 </div>
               )}
@@ -544,11 +544,20 @@ function SubscriptionTabContent({
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-red-900 mb-1">Suscripción cancelada</h3>
-              <p className="text-red-700 text-sm">
-                {periodEndDate
-                  ? `Tu acceso a Premium finalizará el ${periodEndDate}.`
-                  : "Tu suscripción ha sido cancelada."}
-              </p>
+              {periodEndDate ? (
+                <>
+                  <p className="text-red-700 text-sm mb-2">
+                    Tu suscripción ha sido cancelada. Seguirás disfrutando de los beneficios Premium hasta el:
+                  </p>
+                  <p className="text-base font-bold text-red-800">
+                    📅 {periodEndDate}
+                  </p>
+                </>
+              ) : (
+                <p className="text-red-700 text-sm">
+                  Tu suscripción ha sido cancelada.
+                </p>
+              )}
             </div>
           </div>
         </div>
