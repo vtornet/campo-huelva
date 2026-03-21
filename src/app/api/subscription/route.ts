@@ -45,23 +45,26 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Si tiene stripeSubscriptionId, también cancelar en Stripe
+    // Si tiene stripeSubscriptionId, marcar para cancelar al final del periodo (no inmediatamente)
     if (subscription.stripeSubscriptionId) {
       try {
         const { getStripe } = await import("@/lib/stripe");
         const stripe = getStripe();
-        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+        // Importante: usar update con cancel_at_period_end: true, NO cancel()
+        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+          cancel_at_period_end: true,
+        });
       } catch (stripeError) {
-        console.error("Error cancelando en Stripe, continuando con cancelación local:", stripeError);
+        console.error("Error actualizando cancelación en Stripe, continuando con cancelación local:", stripeError);
         // Continuar con la cancelación local aunque falle en Stripe
       }
     }
 
     // Actualizar suscripción en base de datos
+    // MANTENER status como ACTIVE, solo marcar cancelAtPeriodEnd
     const updatedSubscription = await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        status: "CANCELED",
         cancelAtPeriodEnd: true,
         updatedAt: new Date(),
       },
