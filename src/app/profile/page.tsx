@@ -46,43 +46,6 @@ function SubscriptionTabContent({
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
 
-  const handleSkipTrial = async () => {
-    setProcessing(true);
-    try {
-      const res = await fetch("/api/stripe/create-checkout-direct", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: user.uid }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        if (error.error === "STRIPE_NOT_CONFIGURED") {
-          showNotification({
-            type: "warning",
-            title: "Sistema de pagos en mantenimiento",
-            message: "El sistema de pagos está siendo configurado. Contacta con soporte.",
-          });
-          return;
-        }
-        throw new Error(error.message || error.error || "Error al iniciar el proceso");
-      }
-
-      const { url } = await res.json();
-      if (url) {
-        window.location.href = url;
-      }
-    } catch (error: any) {
-      showNotification({
-        type: "error",
-        title: "Error",
-        message: error.message || "No se pudo iniciar el proceso de suscripción",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const handleSubscribe = async () => {
     setProcessing(true);
     try {
@@ -320,107 +283,8 @@ function SubscriptionTabContent({
     );
   }
 
-  // Vista: En trial
-  if (subscription.isTrial && subscription.status === "TRIALING") {
-    const daysRemaining = subscription.daysRemainingInTrial || 0;
-    const trialEndDate = subscription.trialEndsAt ? new Date(subscription.trialEndsAt).toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }) : "";
-
-    return (
-      <div className="space-y-6">
-        {/* Header con botón de recarga */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">Mi Suscripción</h2>
-          <button
-            onClick={loadSubscription}
-            disabled={subscriptionLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-          >
-            <svg className={`w-4 h-4 ${subscriptionLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span className="text-sm font-medium">Recargar</span>
-          </button>
-        </div>
-
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">🧪</span>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-amber-900 mb-1">Periodo de prueba activo</h3>
-              <p className="text-amber-700 text-sm mb-4">
-                Tu prueba gratuita termina el <strong>{trialEndDate}</strong> ({daysRemaining} días restantes)
-              </p>
-              <div className="bg-white/70 rounded-lg p-3 mb-4">
-                <p className="text-sm text-amber-800">
-                  <strong>Beneficios activos durante la prueba:</strong>
-                </p>
-                <ul className="text-sm text-amber-700 mt-2 space-y-1">
-                  <li>✓ Publicación de ofertas ilimitadas</li>
-                </ul>
-                <p className="text-xs text-amber-600 mt-2 font-medium">
-                  ⚠️ El buscador de candidatos estará disponible tras finalizar la prueba y suscribirte a Premium.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={handleSkipTrial}
-                  disabled={processing}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Procesando...
-                    </>
-                  ) : (
-                    <>
-                      <span>⚡</span>
-                      Saltar prueba - 99€
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleCancelSubscription}
-                  disabled={processing}
-                  className="px-4 py-2 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancelar prueba
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-50 rounded-xl p-6">
-          <h4 className="font-semibold text-slate-800 mb-2">📋 Información de suscripción</h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-slate-500">Estado:</span>
-              <span className="ml-2 font-medium text-amber-700">En prueba</span>
-            </div>
-            <div>
-              <span className="text-slate-500">Fin de prueba:</span>
-              <span className="ml-2 font-medium text-slate-800">{trialEndDate}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Vista: Suscripción activa
   if (subscription.status === "ACTIVE" || subscription.status === "TRIALING") {
-    const isTrial = subscription.isTrial;
-    const statusText = isTrial ? "en periodo de prueba" : "activa";
-    const statusColor = isTrial ? "text-amber-700" : "text-green-700";
-    const statusBg = isTrial ? "bg-amber-50" : "bg-green-50";
-
     const nextBillingDate = subscription.currentPeriodEnd
       ? new Date(subscription.currentPeriodEnd).toLocaleDateString("es-ES", {
           day: "numeric",
@@ -446,22 +310,22 @@ function SubscriptionTabContent({
           </button>
         </div>
 
-        <div className={`${statusBg} rounded-2xl p-6 border border-${isTrial ? "amber" : "green"}-200`}>
+        <div className={`bg-green-50 rounded-2xl p-6 border border-green-200`}>
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center flex-shrink-0">
               <span className="text-2xl">👑</span>
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-slate-900 mb-1">
-                {isTrial ? "🧪 Periodo de prueba" : "Suscripción Premium Activa"}
+                Suscripción Premium Activa
               </h3>
               <p className="text-slate-700 text-sm mb-4">
-                Tu suscripción está {statusText.toLowerCase()}. Disfruta de todos los beneficios Premium.
+                Tu suscripción está activa. Disfruta de todos los beneficios Premium.
               </p>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-slate-500">Estado:</span>
-                  <span className={`ml-2 font-medium ${statusColor}`}>{statusText}</span>
+                  <span className="ml-2 font-medium text-green-700">activa</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Próxima renovación:</span>
@@ -485,7 +349,7 @@ function SubscriptionTabContent({
         <div className="bg-slate-50 rounded-xl p-6">
           <h4 className="font-semibold text-slate-800 mb-4">✅ Beneficios activos</h4>
           <ul className="space-y-3">
-            {["Publicación de ofertas ilimitadas", isTrial ? "Buscador de candidatos (al finalizar prueba)" : "Acceso completo al buscador de candidatos", 'Badge "Empresa Premium" en tu perfil', "Prioridad en resultados de búsqueda", "Soporte prioritario"].map((benefit, i) => (
+            {["Publicación de ofertas ilimitadas", "Acceso completo al buscador de candidatos", 'Badge "Empresa Premium" en tu perfil', "Prioridad en resultados de búsqueda", "Soporte prioritario"].map((benefit, i) => (
               <li key={i} className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
