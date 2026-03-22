@@ -304,31 +304,6 @@ export default function PremiumPage() {
           </p>
         </div>
 
-        {/* Mensaje de bloqueo temporal de pagos */}
-        {!PREMIUM_ENABLED && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <AlertCircle className="w-8 h-8 text-amber-600 flex-shrink-0" />
-              <h2 className="text-xl font-bold text-amber-900">
-                Pagos temporalmente deshabilitados
-              </h2>
-            </div>
-            <p className="text-amber-800 mb-6">
-              Estamos construyendo nuestra base de datos de candidatos. Mientras tanto, puedes solicitar la publicación de una oferta gratuita.
-            </p>
-            <button
-              onClick={() => setShowTrialModal(true)}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2 mx-auto"
-            >
-              <Gift className="w-5 h-5" />
-              Solicitar oferta gratuita
-            </button>
-            <p className="text-xs text-amber-700 mt-4">
-              * Una oferta gratuita por empresa. Requiere aprobación previa.
-            </p>
-          </div>
-        )}
-
         {isPremium ? (
           // Vista de suscriptor actual
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -423,24 +398,50 @@ export default function PremiumPage() {
         ) : (
           // Vista de no suscriptor - mostrar pricing o mensaje de bloqueo
           <>
-            {/* Banner: Solicitar prueba gratuita (siempre visible para no Premium) */}
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-8 mb-8 text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Gift className="w-12 h-12 text-emerald-600" />
+            {/* Banner: Solicitar prueba gratuita */}
+            {!PREMIUM_ENABLED ? (
+              // Pagos deshabilitados: banner explicativo
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-8 mb-8 text-center">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <AlertCircle className="w-12 h-12 text-amber-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-amber-900 mb-2">
+                  Pagos temporalmente deshabilitados
+                </h2>
+                <p className="text-amber-800 mb-6">
+                  Estamos construyendo nuestra base de datos de candidatos. Mientras tanto, puedes solicitar la publicación de una oferta gratuita completando tu perfil de empresa.
+                </p>
+                <button
+                  onClick={() => setShowTrialModal(true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2"
+                >
+                  <Gift className="w-5 h-5" />
+                  Solicitar oferta gratuita
+                </button>
+                <p className="text-xs text-amber-700 mt-4">
+                  * Una oferta gratuita por empresa. Requiere aprobación previa.
+                </p>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                ¿Primera vez?
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Solicita una prueba gratuita y publica tu primera oferta totalmente gratis
-              </p>
-              <button
-                onClick={() => setShowTrialModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition"
-              >
-                Solicitar prueba gratis
-              </button>
-            </div>
+            ) : (
+              // Pagos habilitados: banner normal
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-8 mb-8 text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <Gift className="w-12 h-12 text-emerald-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  ¿Primera vez?
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Solicita una prueba gratuita y publica tu primera oferta totalmente gratis
+                </p>
+                <button
+                  onClick={() => setShowTrialModal(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition"
+                >
+                  Solicitar prueba gratis
+                </button>
+              </div>
+            )}
 
             {/* Planes de suscripción */}
             {PREMIUM_ENABLED ? (
