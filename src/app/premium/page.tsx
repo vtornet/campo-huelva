@@ -413,7 +413,7 @@ export default function PremiumPage() {
                 </p>
                 <button
                   onClick={() => setShowTrialModal(true)}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2"
+                  className="block mx-auto bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2"
                 >
                   <Gift className="w-5 h-5" />
                   Solicitar oferta gratuita
