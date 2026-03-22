@@ -750,7 +750,6 @@ export default function PremiumPage() {
           </div>
         </div>
       )}
-      <ConfirmDialogComponent />
     </div>
   );
 }
