@@ -961,6 +961,27 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                               >Activar 1m</button>
                             </>
                           );
+                        }
+
+                        // Detectar empresas canceladas pero con periodo vigente (status=CANCELED pero currentPeriodEnd en futuro)
+                        const isCanceledWithPeriod = !premium.isActive && c.subscription?.status === "CANCELED" && c.subscription?.currentPeriodEnd && new Date(c.subscription.currentPeriodEnd) > new Date();
+
+                        if (isCanceledWithPeriod) {
+                          // Cancelada pero periodo vigente: permitir revocar inmediatamente
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                title="Activar 1 mes"
+                              >Activar 1m</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
+                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                title="Revocar premium inmediatamente (quitar acceso ahora)"
+                              >⚠️ Revo. ya</button>
+                            </>
+                          );
                         } else if (!premium.isActive) {
                           // Sin suscripción activa: botones para activar
                           return (
