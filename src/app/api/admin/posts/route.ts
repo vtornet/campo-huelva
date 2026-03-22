@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || "all";
 
   try {
-    // Si filtra por BOARD, buscar en BoardPost
+    // Si filtra por BOARD, buscar solo en BoardPost
     if (type === "BOARD") {
       const where: any = {};
       if (filter !== "all") {
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       return NextResponse.json(formatted);
     }
 
-    // Para otros tipos o "all", buscar en Post
+    // Para "all" o tipos específicos (OFFICIAL, SHARED, DEMAND), buscar en Post
     const where: any = {};
 
     // Filtro por estado
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       where.status = filter;
     }
 
-    // Filtro por tipo
+    // Filtro por tipo (solo si no es "all")
     if (type !== "all") {
       where.type = type;
     }
@@ -83,6 +83,55 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       take: 50,
     });
+
+    // Si type es "all", también buscar en BoardPost y combinar resultados
+    if (type === "all") {
+      const boardWhere: any = {};
+      if (filter !== "all") {
+        boardWhere.status = filter;
+      }
+
+      const boardPosts = await prisma.boardPost.findMany({
+        where: boardWhere,
+        include: {
+          author: {
+            include: {
+              workerProfile: { select: { fullName: true } },
+              foremanProfile: { select: { fullName: true } },
+              engineerProfile: { select: { fullName: true } },
+              encargadoProfile: { select: { fullName: true } },
+              tractoristProfile: { select: { fullName: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      // Transformar BoardPost al mismo formato que Post
+      const formattedBoardPosts = boardPosts.map(post => ({
+        id: post.id,
+        type: "BOARD",
+        status: post.status,
+        title: post.content?.substring(0, 100) + (post.content?.length > 100 ? "..." : ""),
+        description: post.content || "",
+        location: "",
+        province: null,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        moderationReason: post.moderationReason,
+        publisher: post.author,
+        company: null,
+        contractType: null,
+      }));
+
+      // Combinar y ordenar por fecha de creación (más recientes primero)
+      const combinedPosts = [...posts, ...formattedBoardPosts].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      return NextResponse.json(combinedPosts);
+    }
 
     return NextResponse.json(posts);
   } catch (error) {
