@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { Check, Crown, X, Loader2, AlertCircle } from "lucide-react";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
+import { Check, Crown, X, Loader2, AlertCircle, Gift } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 // Variable de entorno para controlar si los pagos Premium están habilitados
@@ -24,14 +25,17 @@ export default function PremiumPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showNotification } = useNotifications();
+  const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
 
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [requestingTrial, setRequestingTrial] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [stripeConfig, setStripeConfig] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [purchasingOfferPack, setPurchasingOfferPack] = useState<string | null>(null);
+  const [trialRequested, setTrialRequested] = useState(false);
 
   // Flag para evitar procesar múltiples veces los parámetros de URL
   const paramsProcessed = useRef(false);
@@ -115,6 +119,48 @@ export default function PremiumPage() {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRequestFreeTrial() {
+    if (!user) return;
+
+    // Confirmar la solicitud
+    const confirmed = await confirmDialog({
+      title: "Solicitar oferta gratuita",
+      message: "¿Deseas solicitar una oferta gratuita para tu empresa? Esta solicitud requiere aprobación previa y está limitada a una por empresa.",
+      type: "warning",
+    });
+
+    if (!confirmed) return;
+
+    setRequestingTrial(true);
+    try {
+      const response = await apiFetch("/api/trials/request", {
+        method: "POST",
+        body: JSON.stringify({ companySize: "No especificado" }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Error al procesar la solicitud");
+      }
+
+      const data = await response.json();
+      setTrialRequested(true);
+      showNotification({
+        type: "success",
+        title: "Solicitud enviada",
+        message: data.message || "Te enviaremos un email cuando tu solicitud sea aprobada.",
+      });
+    } catch (error: any) {
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: error.message || "No se pudo procesar la solicitud",
+      });
+    } finally {
+      setRequestingTrial(false);
     }
   }
 
@@ -259,17 +305,38 @@ export default function PremiumPage() {
                 Pagos temporalmente deshabilitados
               </h2>
             </div>
-            <p className="text-amber-800 mb-4">
-              Estamos construyendo nuestra base de datos de candidatos. Mientras tanto, puedes solicitar la publicación de una oferta gratuita completando tu perfil de empresa.
+            <p className="text-amber-800 mb-6">
+              Estamos construyendo nuestra base de datos de candidatos. Mientras tanto, puedes solicitar la publicación de una oferta gratuita.
             </p>
-            <div className="bg-white rounded-xl p-4 text-left">
-              <h3 className="font-semibold text-amber-900 mb-2">¿Cómo solicitar una oferta gratuita?</h3>
-              <ol className="text-sm text-amber-800 space-y-1 list-decimal list-inside ml-4">
-                <li>Completa tu perfil de empresa con tus datos</li>
-                <li>Contacta con nosotros a través del formulario de contacto</li>
-                <li>Solicita la publicación de una oferta gratuita</li>
-              </ol>
-            </div>
+            {trialRequested ? (
+              <div className="bg-green-100 border border-green-300 rounded-xl p-4">
+                <p className="text-green-800 font-medium">
+                  <Gift className="w-5 h-5 inline mr-2" />
+                  ¡Solicitud enviada! Te notificaremos cuando sea aprobada.
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handleRequestFreeTrial}
+                disabled={requestingTrial}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {requestingTrial ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Gift className="w-5 h-5" />
+                    Solicitar oferta gratuita
+                  </>
+                )}
+              </button>
+            )}
+            <p className="text-xs text-amber-700 mt-4">
+              * Una oferta gratuita por empresa. Requiere aprobación previa.
+            </p>
           </div>
         )}
 
@@ -606,6 +673,7 @@ export default function PremiumPage() {
         </div>
         )}
       </div>
+      <ConfirmDialogComponent />
     </div>
   );
 }
