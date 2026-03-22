@@ -435,6 +435,56 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
     }
   };
 
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    // Confirmación con doble verificación
+    const emailConfirm = await prompt({
+      title: "⚠️ ELIMINAR USUARIO - ACCIÓN IRREVERSIBLE",
+      message: `Esta acción eliminará PERMANENTEMENTE al usuario y TODOS sus datos de la base de datos:\n\n• Perfil y datos personales\n• Publicaciones y comentarios\n• Inscripciones y contactos\n• Mensajes y notificaciones\n\nPara confirmar, escribe el email del usuario:\n${userEmail}`,
+      placeholder: userEmail,
+      type: "danger",
+      required: true,
+    });
+    if (emailConfirm === null) return;
+    if (emailConfirm !== userEmail) {
+      showNotification({
+        type: "error",
+        title: "Email incorrecto",
+        message: "El email no coincide. La acción ha sido cancelada.",
+      });
+      return;
+    }
+
+    // Preguntar si también eliminar de Firebase
+    const deleteFirebase = await confirmDialog({
+      title: "¿Eliminar también de Firebase?",
+      message: "Si seleccionas 'Sí', el usuario también se eliminará de Firebase Auth y no podrá recuperar su cuenta nunca más.",
+      type: "warning",
+    });
+
+    const res = await fetch("/api/admin/users/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, adminId, deleteFromFirebase: deleteFirebase }),
+    });
+
+    if (res.ok) {
+      loadUsers();
+      onStatsUpdate();
+      showNotification({
+        type: "success",
+        title: "Usuario eliminado",
+        message: `El usuario ${userEmail} ha sido eliminado permanentemente.${deleteFirebase ? " También eliminado de Firebase Auth." : ""}`,
+      });
+    } else {
+      const data = await res.json();
+      showNotification({
+        type: "error",
+        title: "Error al eliminar",
+        message: data.error || "Inténtalo de nuevo más tarde.",
+      });
+    }
+  };
+
   const getUserName = (u: any) => {
     if (u.workerProfile?.fullName) return u.workerProfile.fullName;
     if (u.foremanProfile?.fullName) return u.foremanProfile.fullName;
@@ -556,6 +606,13 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
                           ) : (
                             <button onClick={() => handleSilence(u.id, true)} className="bg-amber-600 hover:bg-amber-700 px-3 py-1 rounded text-xs">Silenciar</button>
                           )}
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.email)}
+                            className="bg-slate-700 hover:bg-slate-800 text-red-400 hover:text-red-300 px-3 py-1 rounded text-xs border border-red-900"
+                            title="Eliminar permanentemente"
+                          >
+                            🗑️ Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
