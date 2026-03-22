@@ -58,9 +58,11 @@ export async function GET(request: Request) {
     const isTrial = subscription?.isTrial && subscription?.trialEndsAt &&
       new Date(subscription.trialEndsAt) > new Date();
 
-    // Si la suscripción está ACTIVE o TRIALING en Stripe, está activa
-    // Stripe renueva automáticamente, no verificamos la fecha exacta
-    const isActive = subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
+    // Lógica simplificada: tiene Premium si currentPeriodEnd > ahora
+    // No importa el status (ACTIVE, CANCELED, etc.)
+    const now = new Date();
+    const isActive = subscription?.currentPeriodEnd &&
+      new Date(subscription.currentPeriodEnd) > now;
 
     // Debug logs
     console.log('[SUBSCRIPTION STATUS] userId:', userId);
@@ -70,7 +72,7 @@ export async function GET(request: Request) {
       currentPeriodEnd: subscription.currentPeriodEnd,
       trialEndsAt: subscription.trialEndsAt
     } : 'NO SUBSCRIPTION');
-    console.log('[SUBSCRIPTION STATUS] isActive:', isActive);
+    console.log('[SUBSCRIPTION STATUS] isActive (based on periodEnd):', isActive);
     console.log('[SUBSCRIPTION STATUS] isTrial:', isTrial);
     console.log('[SUBSCRIPTION STATUS] isPremium:', isActive || false);
 

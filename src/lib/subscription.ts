@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 /**
  * Verifica si una empresa tiene suscripción premium activa
+ * Lógica simplificada: tiene Premium si currentPeriodEnd > ahora
  * @param userId - ID del usuario de Firebase
  * @returns Objeto con hasPremium, isTrial, o null si no tiene suscripción
  */
@@ -46,14 +47,23 @@ export async function hasActivePremiumSubscription(
       new Date(subscription.trialEndsAt) > new Date()
     );
 
-    // Verificar si la suscripción está activa
-    const isActive = !!(
-      subscription &&
-      (subscription.status === "ACTIVE" || subscription.status === "TRIALING") &&
-      (isTrial || (!subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > new Date()))
+    // Lógica simplificada: tiene Premium si currentPeriodEnd > ahora
+    // No importa el status (ACTIVE, CANCELED, etc.)
+    const now = new Date();
+    const hasPremium = !!(
+      subscription.currentPeriodEnd &&
+      new Date(subscription.currentPeriodEnd) > now
     );
 
-    return { hasPremium: isActive, isTrial };
+    console.log('[hasActivePremiumSubscription] Result:', {
+      userId,
+      hasPremium,
+      isTrial,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      status: subscription.status
+    });
+
+    return { hasPremium, isTrial };
   } catch (error) {
     console.error("Error checking premium subscription:", error);
     return null;
@@ -74,7 +84,7 @@ export async function hasActivePremiumSubscriptionBool(
 
 /**
  * Verifica si una empresa ha pagado (no está solo en periodo de prueba)
- * Requiere que la suscripción esté ACTIVE y que haya pagado después del periodo de prueba
+ * Lógica simplificada: tiene suscripción pagada si currentPeriodEnd > ahora
  * @param userId - ID del usuario de Firebase
  * @returns true si ha pagado (suscripción activa fuera de prueba), false en caso contrario
  */
@@ -109,26 +119,20 @@ export async function hasPaidSubscription(
       return false;
     }
 
-    console.log('[hasPaidSubscription] subscription:', {
-      id: subscription.id,
-      status: subscription.status,
-      isTrial: subscription.isTrial,
-      trialEndsAt: subscription.trialEndsAt,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-    });
-
-    // Verificar si la suscripción está activa y NO es solo periodo de prueba
+    // Lógica simplificada: tiene suscripción si currentPeriodEnd > ahora
+    // No importa el status ni si es trial
     const now = new Date();
-    const isActiveStatus = subscription.status === "ACTIVE";
-    const isNotInTrial = !subscription.isTrial || !subscription.trialEndsAt || new Date(subscription.trialEndsAt) < now;
-    const isWithinPeriod = !subscription.currentPeriodEnd || new Date(subscription.currentPeriodEnd) > now;
+    const hasPaid = !!(
+      subscription.currentPeriodEnd &&
+      new Date(subscription.currentPeriodEnd) > now
+    );
 
-    const hasPaid = isActiveStatus && isNotInTrial && isWithinPeriod;
-
-    console.log('[hasPaidSubscription] isActiveStatus:', isActiveStatus);
-    console.log('[hasPaidSubscription] isNotInTrial:', isNotInTrial);
-    console.log('[hasPaidSubscription] isWithinPeriod:', isWithinPeriod);
-    console.log('[hasPaidSubscription] hasPaid:', hasPaid);
+    console.log('[hasPaidSubscription] Result:', {
+      userId,
+      hasPaid,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      status: subscription.status
+    });
 
     return hasPaid;
   } catch (error) {
@@ -155,6 +159,7 @@ export async function canAccessCandidateSearch(userId: string): Promise<boolean>
 
 /**
  * Obtiene información detallada de la suscripción de una empresa
+ * Lógica simplificada: isActive = currentPeriodEnd > ahora
  */
 export async function getSubscriptionInfo(userId: string) {
   try {
@@ -174,21 +179,13 @@ export async function getSubscriptionInfo(userId: string) {
     }
 
     const sub = user.companyProfile.subscription;
+    const now = new Date();
 
     // Verificar si está en periodo de prueba
-    const isTrial = sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date();
+    const isTrial = sub.isTrial && sub.trialEndsAt && new Date(sub.trialEndsAt) > now;
 
-    // Verificar si la suscripción está activa
-    let isActive = false;
-    if (sub.status === "ACTIVE" || sub.status === "TRIALING") {
-      // Si está en periodo de prueba, verificar por trialEndsAt
-      if (isTrial) {
-        isActive = true;
-      } else {
-        // Si no está en prueba, verificar por currentPeriodEnd
-        isActive = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
-      }
-    }
+    // Lógica simplificada: isActive = currentPeriodEnd > ahora
+    const isActive = !!(sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) > now);
 
     return {
       isActive,
