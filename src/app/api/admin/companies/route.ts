@@ -9,6 +9,7 @@ export async function GET(request: Request) {
 
   try {
     const where: any = {};
+    const now = new Date();
 
     // Filtro por estado de verificación
     if (filter === "verified") {
@@ -29,29 +30,31 @@ export async function GET(request: Request) {
       where.isVerified = true;
       where.isApproved = false;
     }
-    // Filtros por estado premium
+    // Filtros por estado premium (lógica simplificada basada en currentPeriodEnd)
     else if (filter === "premium") {
-      // Empresas con suscripción activa (y no en cancelación pendiente)
+      // Premium activo: currentPeriodEnd > ahora Y status = ACTIVE (no canceladas)
       where.subscription = {
         status: "ACTIVE",
-        cancelAtPeriodEnd: false
+        currentPeriodEnd: { gt: now }
       };
     } else if (filter === "cancel_pending") {
-      // Empresas con cancelación pendiente
+      // Canceladas pero en periodo: status = CANCELED Y currentPeriodEnd > ahora
       where.subscription = {
-        status: "ACTIVE",
-        cancelAtPeriodEnd: true
+        status: "CANCELED",
+        currentPeriodEnd: { gt: now }
       };
     } else if (filter === "paid") {
       // Igual que premium (obsoleto, mantenido por compatibilidad)
       where.subscription = {
-        status: "ACTIVE"
+        status: "ACTIVE",
+        currentPeriodEnd: { gt: now }
       };
     } else if (filter === "inactive") {
-      // Empresas sin suscripción o con suscripción inactiva
+      // Sin Premium activo: sin subscription O currentPeriodEnd <= ahora
       where.OR = [
         { subscription: null },
-        { subscription: { status: { not: "ACTIVE" } } }
+        { subscription: { currentPeriodEnd: { lte: now } } },
+        { subscription: { currentPeriodEnd: null } }
       ];
     } else if (filter === "restricted") {
       // Empresas baneadas o silenciadas

@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       }
 
       case "revoke": {
-        // Revocar suscripción premium
+        // Revocar suscripción premium inmediatamente
         if (!company.subscription) {
           return NextResponse.json({ error: "La empresa no tiene suscripción" }, { status: 400 });
         }
@@ -122,11 +122,16 @@ export async function POST(request: Request) {
           }
         }
 
+        // Establecer currentPeriodEnd en el pasado para quitar acceso inmediatamente
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
         await prisma.subscription.update({
           where: { id: company.subscription.id },
           data: {
             status: SubscriptionStatus.CANCELED,
             cancelAtPeriodEnd: true,
+            currentPeriodEnd: yesterday, // Clave: terminar el periodo ayer
             // Limpiar el ID de Stripe para que no se sincronice más
             stripeSubscriptionId: null,
           }
@@ -140,13 +145,13 @@ export async function POST(request: Request) {
             fromStatus: oldStatus,
             toStatus: SubscriptionStatus.CANCELED,
             changedBy: userId,
-            changeReason: "Revocación manual por admin"
+            changeReason: "Revocación inmediata por admin (acceso Premium terminado)"
           }
         });
 
         return NextResponse.json({
           success: true,
-          message: "Suscripción revocada correctamente (incluyendo en Stripe)"
+          message: "Suscripción revocada inmediatamente. La empresa ya no tiene acceso a Premium."
         });
       }
 

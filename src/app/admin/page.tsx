@@ -617,65 +617,55 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
   const [filter, setFilter] = useState<"all" | "pending_approval" | "verified" | "unverified" | "premium" | "cancel_pending" | "inactive" | "restricted">("all");
 
   // Función auxiliar para determinar el estado premium de una empresa
+  // Lógica simplificada: tiene Premium si currentPeriodEnd > ahora
   const getPremiumStatus = (company: any) => {
     const sub = company.subscription;
-    if (!sub) {
+    const now = new Date();
+    const endDate = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+    const hasActivePeriod = endDate && endDate > now;
+    const hasStripe = !!sub?.stripeSubscriptionId;
+    const isCanceled = sub?.status === "CANCELED";
+
+    if (!sub || !hasActivePeriod) {
+      // Sin Premium
       return {
         label: "Sin Premium",
         shortLabel: "No",
         color: "bg-slate-600",
         textColor: "text-slate-100",
-        isActive: false,
-        origin: null,
+        hasActivePeriod: false,
+        isCanceled: false,
+        origin: hasStripe ? "Stripe" : null,
         endDate: null,
-        cancelPending: false
       };
     }
 
-    const now = new Date();
-    const endDate = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
-    const isActive = sub.status === "ACTIVE" && (!endDate || endDate > now);
-    const hasStripe = !!sub.stripeSubscriptionId;
-    const cancelPending = sub.cancelAtPeriodEnd && isActive;
-
-    if (cancelPending) {
-      const formattedDate = endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    if (isCanceled) {
+      // Cancelada pero aún en periodo
+      const formattedDate = endDate.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
       return {
-        label: `Cancelación pendiente`,
-        shortLabel: "⏳ Cancelando",
+        label: "⏳ Cancelada (en periodo)",
+        shortLabel: "⏳ Cancelada",
         color: "bg-amber-600",
         textColor: "text-amber-100",
-        isActive: true,
+        hasActivePeriod: true,
+        isCanceled: true,
         origin: hasStripe ? "Stripe" : "Manual",
         endDate: formattedDate,
-        cancelPending: true
-      };
-    }
-
-    if (!isActive) {
-      return {
-        label: "Sin Premium",
-        shortLabel: "No",
-        color: "bg-slate-600",
-        textColor: "text-slate-100",
-        isActive: false,
-        origin: hasStripe ? "Stripe" : "Manual",
-        endDate: endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) || null,
-        cancelPending: false
       };
     }
 
     // Premium activo
-    const formattedDate = endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+    const formattedDate = endDate.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
     return {
-      label: `👑 Premium`,
+      label: "👑 Premium",
       shortLabel: "👑 Premium",
       color: "bg-emerald-600",
       textColor: "text-emerald-100",
-      isActive: true,
+      hasActivePeriod: true,
+      isCanceled: false,
       origin: hasStripe ? "Stripe" : "Manual",
       endDate: formattedDate,
-      cancelPending: false
     };
   };
 
@@ -894,7 +884,7 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                           <span className={`${premium.color} ${premium.textColor} px-2 py-1 rounded text-xs inline-flex items-center gap-1 w-fit`}>
                             {premium.shortLabel}
                           </span>
-                          {(premium.isActive || premium.endDate) && (
+                          {(premium.hasActivePeriod || premium.endDate) && (
                             <span className="text-xs text-slate-400">
                               {premium.endDate ? `hasta ${premium.endDate}` : ""}
                               {premium.endDate && premium.origin ? ` • ${premium.origin}` : ""}
@@ -939,83 +929,30 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                       {/* Separador */}
                       <span className="border-l border-slate-600 mx-1"></span>
 
-                      {/* Botones de gestión de suscripción premium */}
+                      {/* Botones de gestión de suscripción premium - Lógica simplificada */}
                       {(() => {
                         const premium = getPremiumStatus(c);
-                        const hasStripeId = c.subscription?.stripeSubscriptionId;
-                        const isDesynced = !premium.isActive && hasStripeId;
 
-                        if (isDesynced) {
-                          // Caso especial: cancelada en BD pero activa en Stripe
+                        if (premium.isCanceled) {
+                          // Cancelada pero en periodo: Retirar, Activar 1m, Revo. ya
                           return (
                             <>
                               <button
-                                onClick={() => handleSubscriptionAction(c.id, "force_revoke")}
-                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                                title="Cancelar suscripción en Stripe (desincronizada)"
-                              >Sync Stripe</button>
-                              <button
                                 onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
                                 className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                title="Activar 1 mes manualmente"
+                                title="Activar 1 mes"
                               >Activar 1m</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
+                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                title="Revocar premium inmediatamente"
+                              >⚠️ Revo. ya</button>
                             </>
                           );
                         }
 
-                        // Detectar empresas canceladas pero con periodo vigente (status=CANCELED pero currentPeriodEnd en futuro)
-                        const isCanceledWithPeriod = !premium.isActive && c.subscription?.status === "CANCELED" && c.subscription?.currentPeriodEnd && new Date(c.subscription.currentPeriodEnd) > new Date();
-
-                        if (isCanceledWithPeriod) {
-                          // Cancelada pero periodo vigente: permitir revocar inmediatamente
-                          return (
-                            <>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
-                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                title="Activar 1 mes"
-                              >Activar 1m</button>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
-                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                                title="Revocar premium inmediatamente (quitar acceso ahora)"
-                              >⚠️ Revo. ya</button>
-                            </>
-                          );
-                        } else if (!premium.isActive) {
-                          // Sin suscripción activa: botones para activar
-                          return (
-                            <>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
-                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                title="Activar 1 mes"
-                              >Activar 1m</button>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "activate", 3)}
-                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                title="Activar 3 meses"
-                              >Activar 3m</button>
-                            </>
-                          );
-                        } else if (premium.cancelPending) {
-                          // Cancelación pendiente: permitir reactivar
-                          return (
-                            <>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "extend", 1)}
-                                className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
-                                title="Extender 1 mes y reactivar"
-                              >+1 mes</button>
-                              <button
-                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
-                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                                title="Cancelar inmediatamente"
-                              >Revo. ahora</button>
-                            </>
-                          );
-                        } else {
-                          // Premium activo: botones para extender o programar cancelación
+                        if (premium.hasActivePeriod) {
+                          // Premium activo: +1 mes, +3 meses, Cancelar fin, Revo. ya
                           return (
                             <>
                               <button
@@ -1037,10 +974,21 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                                 onClick={() => handleSubscriptionAction(c.id, "revoke")}
                                 className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
                                 title="Revocar premium inmediatamente"
-                              >Revo. ya</button>
+                              >⚠️ Revo. ya</button>
                             </>
                           );
                         }
+
+                        // Sin Premium: Retirar, Activar 1m
+                        return (
+                          <>
+                            <button
+                              onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                              className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                              title="Activar 1 mes"
+                            >Activar 1m</button>
+                          </>
+                        );
                       })()}
                     </div>
                   </td>
