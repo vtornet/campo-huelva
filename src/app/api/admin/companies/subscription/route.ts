@@ -229,6 +229,56 @@ export async function POST(request: Request) {
         });
       }
 
+      case "schedule_cancel": {
+        // Programar cancelación al final del periodo (no inmediata)
+        if (!company.subscription) {
+          return NextResponse.json({ error: "La empresa no tiene suscripción" }, { status: 400 });
+        }
+
+        const oldStatus = company.subscription.status;
+
+        // Si hay suscripción en Stripe, actualizarla también
+        if (company.subscription.stripeSubscriptionId) {
+          try {
+            const { getStripe } = await import("@/lib/stripe");
+            const stripe = getStripe();
+            await stripe.subscriptions.update(company.subscription.stripeSubscriptionId, {
+              cancel_at_period_end: true,
+            });
+          } catch (stripeError) {
+            console.error("Error programando cancelación en Stripe, continuando con cancelación local:", stripeError);
+          }
+        }
+
+        await prisma.subscription.update({
+          where: { id: company.subscription.id },
+          data: {
+            cancelAtPeriodEnd: true,
+          }
+        });
+
+        // Registrar historial
+        await prisma.subscriptionHistory.create({
+          data: {
+            subscriptionId: company.subscription.id,
+            action: SubscriptionAction.CANCELED,
+            fromStatus: oldStatus,
+            toStatus: company.subscription.status, // Mantener ACTIVE
+            changedBy: userId,
+            changeReason: "Cancelación programada por admin (al fin del periodo)"
+          }
+        });
+
+        const endDate = company.subscription.currentPeriodEnd
+          ? new Date(company.subscription.currentPeriodEnd).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+          : "fin del periodo";
+
+        return NextResponse.json({
+          success: true,
+          message: `Suscripción se cancelará el ${endDate}. La empresa mantendrá Premium hasta entonces.`
+        });
+      }
+
       default:
         return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     }

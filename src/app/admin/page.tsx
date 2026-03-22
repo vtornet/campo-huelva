@@ -614,23 +614,92 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
   const { confirm: confirmDialog, ConfirmDialogComponent } = useConfirmDialog();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "approved" | "unapproved" | "premium" | "paid" | "inactive">("all");
+  const [filter, setFilter] = useState<"all" | "pending_approval" | "verified" | "unverified" | "premium" | "cancel_pending" | "inactive" | "restricted">("all");
 
   // Función auxiliar para determinar el estado premium de una empresa
   const getPremiumStatus = (company: any) => {
     const sub = company.subscription;
     if (!sub) {
-      return { label: "No", color: "bg-slate-600", isActive: false };
+      return {
+        label: "Sin Premium",
+        shortLabel: "No",
+        color: "bg-slate-600",
+        textColor: "text-slate-100",
+        isActive: false,
+        origin: null,
+        endDate: null,
+        cancelPending: false
+      };
     }
 
     const now = new Date();
-    const isActive = sub.status === "ACTIVE" && (!sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > now);
+    const endDate = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+    const isActive = sub.status === "ACTIVE" && (!endDate || endDate > now);
+    const hasStripe = !!sub.stripeSubscriptionId;
+    const cancelPending = sub.cancelAtPeriodEnd && isActive;
 
-    if (!isActive) {
-      return { label: "Inactiva", color: "bg-red-600", isActive: false };
+    if (cancelPending) {
+      const formattedDate = endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+      return {
+        label: `Cancelación pendiente`,
+        shortLabel: "⏳ Cancelando",
+        color: "bg-amber-600",
+        textColor: "text-amber-100",
+        isActive: true,
+        origin: hasStripe ? "Stripe" : "Manual",
+        endDate: formattedDate,
+        cancelPending: true
+      };
     }
 
-    return { label: "👑 Premium", color: "bg-emerald-600", isActive: true };
+    if (!isActive) {
+      return {
+        label: "Sin Premium",
+        shortLabel: "No",
+        color: "bg-slate-600",
+        textColor: "text-slate-100",
+        isActive: false,
+        origin: hasStripe ? "Stripe" : "Manual",
+        endDate: endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) || null,
+        cancelPending: false
+      };
+    }
+
+    // Premium activo
+    const formattedDate = endDate?.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+    return {
+      label: `👑 Premium`,
+      shortLabel: "👑 Premium",
+      color: "bg-emerald-600",
+      textColor: "text-emerald-100",
+      isActive: true,
+      origin: hasStripe ? "Stripe" : "Manual",
+      endDate: formattedDate,
+      cancelPending: false
+    };
+  };
+
+  // Función auxiliar para obtener el estado de verificación consolidado
+  const getVerificationStatus = (company: any) => {
+    if (!company.isVerified) {
+      return {
+        label: "Pendiente verificación",
+        color: "bg-slate-600",
+        step: 1
+      };
+    }
+    if (!company.isApproved) {
+      return {
+        label: "Pendiente aprobación",
+        color: "bg-blue-600",
+        step: 2
+      };
+    }
+    return {
+      label: "✅ Aprobada",
+      color: "bg-emerald-600",
+      step: 3
+    };
   };
 
   useEffect(() => {
@@ -721,12 +790,20 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
         message: `¿Activar suscripción premium por ${months || 1} mes(es)? La empresa podrá acceder a todas las funciones premium.`
       },
       revoke: {
-        title: "Revocar Premium",
-        message: "¿Revocar la suscripción premium? La empresa perderá acceso a las funciones premium."
+        title: "Revocar Premium inmediatamente",
+        message: "¿Revocar la suscripción premium ahora? La empresa perderá acceso inmediatamente a las funciones premium."
+      },
+      schedule_cancel: {
+        title: "Programar cancelación",
+        message: "¿Programar la cancelación de la suscripción? La empresa mantendrá Premium hasta el final del periodo actual y luego se cancelará automáticamente."
       },
       extend: {
         title: "Extender Suscripción",
         message: `¿Extender la suscripción ${months || 1} mes(es)?`
+      },
+      force_revoke: {
+        title: "Sincronizar con Stripe",
+        message: "¿Cancelar la suscripción en Stripe? Esto se usa cuando la suscripción local está cancelada pero sigue activa en Stripe."
       }
     };
 
@@ -736,7 +813,7 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
     const confirmed = await confirmDialog({
       title: confirmMsg.title,
       message: confirmMsg.message,
-      type: action === "revoke" ? "danger" : "warning",
+      type: action === "revoke" || action === "force_revoke" ? "danger" : "warning",
     });
     if (!confirmed) return;
 
@@ -771,13 +848,13 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
         <h2 className="text-xl md:text-2xl font-bold">Gestión de Empresas</h2>
         <div className="flex flex-wrap gap-2">
           <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todas</FilterButton>
+          <FilterButton active={filter === "pending_approval"} onClick={() => setFilter("pending_approval")}>Pendientes aprobar</FilterButton>
           <FilterButton active={filter === "verified"} onClick={() => setFilter("verified")}>Verificadas</FilterButton>
-          <FilterButton active={filter === "unverified"} onClick={() => setFilter("unverified")}>Sin Verificar</FilterButton>
-          <FilterButton active={filter === "approved"} onClick={() => setFilter("approved")}>Aprobadas</FilterButton>
-          <FilterButton active={filter === "unapproved"} onClick={() => setFilter("unapproved")}>Por Aprobar</FilterButton>
+          <FilterButton active={filter === "unverified"} onClick={() => setFilter("unverified")}>Sin verificar</FilterButton>
           <FilterButton active={filter === "premium"} onClick={() => setFilter("premium")}>👑 Premium</FilterButton>
-          <FilterButton active={filter === "paid"} onClick={() => setFilter("paid")}>💰 Pagadas</FilterButton>
-          <FilterButton active={filter === "inactive"} onClick={() => setFilter("inactive")}>❌ Sin Premium</FilterButton>
+          <FilterButton active={filter === "cancel_pending"} onClick={() => setFilter("cancel_pending")}>⏳ Cancelando</FilterButton>
+          <FilterButton active={filter === "inactive"} onClick={() => setFilter("inactive")}>Sin Premium</FilterButton>
+          <FilterButton active={filter === "restricted"} onClick={() => setFilter("restricted")}>🔒 Restringidas</FilterButton>
         </div>
       </div>
 
@@ -791,11 +868,10 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
             <thead className="bg-slate-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium">Empresa</th>
-                <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">CIF</th>
+                <th className="px-4 py-3 text-left text-xs font-medium hidden lg:table-cell">CIF</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Ubicación</th>
-                <th className="px-4 py-3 text-left text-xs font-medium">Premium</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Estado Premium</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Verificación</th>
-                <th className="px-4 py-3 text-left text-xs font-medium">Aprobación</th>
                 <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
               </tr>
             </thead>
@@ -808,115 +884,143 @@ function AdminCompanies({ onStatsUpdate, adminId }: { onStatsUpdate: () => void;
                     {c.user?.isBanned && <span className="bg-red-600 px-2 py-0.5 rounded text-xs">🔒 Baneada</span>}
                     {c.user?.isSilenced && <span className="bg-amber-600 px-2 py-0.5 rounded text-xs ml-1">🔇 Silenciada</span>}
                   </td>
-                  <td className="px-4 py-3 font-mono text-sm hidden md:table-cell">{c.cif}</td>
+                  <td className="px-4 py-3 font-mono text-sm hidden lg:table-cell">{c.cif}</td>
                   <td className="px-4 py-3 text-sm">{c.city ? `${c.city}, ${c.province}` : c.province || "-"}</td>
                   <td className="px-4 py-3">
                     {(() => {
                       const premium = getPremiumStatus(c);
                       return (
-                        <span className={`${premium.color} px-2 py-1 rounded text-xs inline-flex items-center gap-1`}>
-                          {premium.label}
+                        <div className="flex flex-col gap-1">
+                          <span className={`${premium.color} ${premium.textColor} px-2 py-1 rounded text-xs inline-flex items-center gap-1 w-fit`}>
+                            {premium.shortLabel}
+                          </span>
+                          {(premium.isActive || premium.endDate) && (
+                            <span className="text-xs text-slate-400">
+                              {premium.endDate ? `hasta ${premium.endDate}` : ""}
+                              {premium.endDate && premium.origin ? ` • ${premium.origin}` : ""}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const verification = getVerificationStatus(c);
+                      return (
+                        <span className={`${verification.color} px-2 py-1 rounded text-xs inline-flex items-center gap-1`}>
+                          {verification.label}
                         </span>
                       );
                     })()}
                   </td>
                   <td className="px-4 py-3">
-                    {c.isVerified ? (
-                      <span className="bg-emerald-600 px-2 py-1 rounded text-xs inline-flex items-center gap-1">
-                        ✅ Verificada
-                      </span>
-                    ) : (
-                      <span className="bg-slate-600 px-2 py-1 rounded text-xs">⏳ Pendiente</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {c.isApproved ? (
-                      <span className="bg-blue-600 px-2 py-1 rounded text-xs inline-flex items-center gap-1">
-                        ✅ Aprobada
-                      </span>
-                    ) : (
-                      <span className="bg-orange-600 px-2 py-1 rounded text-xs">⏳ Por Aprobar</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
-                      {c.isVerified ? (
-                        <button onClick={() => handleVerify(c.id, false)} className="bg-slate-600 hover:bg-slate-700 px-3 py-1 rounded text-xs">Retirar Verif.</button>
+                      {/* Botones de verificación/aprobación */}
+                      {!c.isVerified ? (
+                        <button
+                          onClick={() => handleVerify(c.id, true)}
+                          className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-xs"
+                        >✓ Verificar</button>
+                      ) : !c.isApproved ? (
+                        <button
+                          onClick={() => handleApprove(c.id, true)}
+                          className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs"
+                        >✓ Aprobar</button>
                       ) : (
-                        <button onClick={() => handleVerify(c.id, true)} className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-xs">Verificar</button>
-                      )}
-                      {c.isVerified && (
                         <>
-                          {c.isApproved ? (
-                            <button onClick={() => handleApprove(c.id, false)} className="bg-orange-600 hover:bg-orange-700 px-3 py-1 rounded text-xs">Retirar Apr.</button>
-                          ) : (
-                            <button onClick={() => handleApprove(c.id, true)} className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">Aprobar</button>
-                          )}
+                          <button
+                            onClick={() => handleApprove(c.id, false)}
+                            className="bg-slate-600 hover:bg-slate-700 px-2 py-1 rounded text-xs"
+                          >Retirar</button>
                         </>
                       )}
-                      {/* Botones de gestión de suscripción premium */}
-                      <div className="border-l border-slate-600 pl-2 flex gap-1">
-                        {(() => {
-                          const premium = getPremiumStatus(c);
-                          const hasStripeId = c.subscription?.stripeSubscriptionId;
-                          const isCanceledWithStripe = premium.label === "Inactiva" && hasStripeId;
 
-                          if (isCanceledWithStripe) {
-                            // Caso especial: cancelada en BD pero activa en Stripe
-                            return (
-                              <>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "force_revoke")}
-                                  className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                                  title="Cancelar en Stripe (desincronizado)"
-                                >⚠️ Cancelar Stripe</button>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
-                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                  title="Activar 1 mes"
-                                >+1m</button>
-                              </>
-                            );
-                          } else if (!premium.isActive) {
-                            // Sin suscripción activa: botones para activar
-                            return (
-                              <>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
-                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                  title="Activar 1 mes"
-                                >+1m</button>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "activate", 3)}
-                                  className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
-                                  title="Activar 3 meses"
-                                >+3m</button>
-                              </>
-                            );
-                          } else {
-                            // Con suscripción activa: botones para extender o revocar
-                            return (
-                              <>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "extend", 1)}
-                                  className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
-                                  title="Extender 1 mes"
-                                >+1m</button>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "extend", 3)}
-                                  className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
-                                  title="Extender 3 meses"
-                                >+3m</button>
-                                <button
-                                  onClick={() => handleSubscriptionAction(c.id, "revoke")}
-                                  className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                                  title="Revocar premium"
-                                >❌</button>
-                              </>
-                            );
-                          }
-                        })()}
-                      </div>
+                      {/* Separador */}
+                      <span className="border-l border-slate-600 mx-1"></span>
+
+                      {/* Botones de gestión de suscripción premium */}
+                      {(() => {
+                        const premium = getPremiumStatus(c);
+                        const hasStripeId = c.subscription?.stripeSubscriptionId;
+                        const isDesynced = !premium.isActive && hasStripeId;
+
+                        if (isDesynced) {
+                          // Caso especial: cancelada en BD pero activa en Stripe
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "force_revoke")}
+                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                title="Cancelar suscripción en Stripe (desincronizada)"
+                              >Sync Stripe</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                title="Activar 1 mes manualmente"
+                              >Activar 1m</button>
+                            </>
+                          );
+                        } else if (!premium.isActive) {
+                          // Sin suscripción activa: botones para activar
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "activate", 1)}
+                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                title="Activar 1 mes"
+                              >Activar 1m</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "activate", 3)}
+                                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs"
+                                title="Activar 3 meses"
+                              >Activar 3m</button>
+                            </>
+                          );
+                        } else if (premium.cancelPending) {
+                          // Cancelación pendiente: permitir reactivar
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "extend", 1)}
+                                className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
+                                title="Extender 1 mes y reactivar"
+                              >+1 mes</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
+                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                title="Cancelar inmediatamente"
+                              >Revo. ahora</button>
+                            </>
+                          );
+                        } else {
+                          // Premium activo: botones para extender o programar cancelación
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "extend", 1)}
+                                className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
+                                title="Extender 1 mes"
+                              >+1 mes</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "extend", 3)}
+                                className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-xs"
+                                title="Extender 3 meses"
+                              >+3 meses</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "schedule_cancel")}
+                                className="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-xs"
+                                title="Cancelar al final del periodo"
+                              >Cancelar fin</button>
+                              <button
+                                onClick={() => handleSubscriptionAction(c.id, "revoke")}
+                                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+                                title="Revocar premium inmediatamente"
+                              >Revo. ya</button>
+                            </>
+                          );
+                        }
+                      })()}
                     </div>
                   </td>
                 </tr>

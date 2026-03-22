@@ -16,7 +16,12 @@ export async function GET(request: Request) {
     } else if (filter === "unverified") {
       where.isVerified = false;
     }
-    // Filtro por estado de aprobación
+    // Filtro pendientes de aprobación (verificadas pero no aprobadas)
+    else if (filter === "pending_approval") {
+      where.isVerified = true;
+      where.isApproved = false;
+    }
+    // Filtro por estado de aprobación (obsoleto, mantener por compatibilidad)
     else if (filter === "approved") {
       where.isApproved = true;
     } else if (filter === "unapproved") {
@@ -26,12 +31,19 @@ export async function GET(request: Request) {
     }
     // Filtros por estado premium
     else if (filter === "premium") {
-      // Empresas con suscripción activa
+      // Empresas con suscripción activa (y no en cancelación pendiente)
       where.subscription = {
-        status: "ACTIVE"
+        status: "ACTIVE",
+        cancelAtPeriodEnd: false
+      };
+    } else if (filter === "cancel_pending") {
+      // Empresas con cancelación pendiente
+      where.subscription = {
+        status: "ACTIVE",
+        cancelAtPeriodEnd: true
       };
     } else if (filter === "paid") {
-      // Igual que premium (ya no hay trial)
+      // Igual que premium (obsoleto, mantenido por compatibilidad)
       where.subscription = {
         status: "ACTIVE"
       };
@@ -41,6 +53,14 @@ export async function GET(request: Request) {
         { subscription: null },
         { subscription: { status: { not: "ACTIVE" } } }
       ];
+    } else if (filter === "restricted") {
+      // Empresas baneadas o silenciadas
+      where.user = {
+        OR: [
+          { isBanned: true },
+          { isSilenced: true }
+        ]
+      };
     }
 
     const companies = await prisma.companyProfile.findMany({
