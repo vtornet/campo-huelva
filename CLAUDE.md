@@ -8,7 +8,7 @@ Este archivo proporciona orientación a Claude Code (o cualquier desarrollador) 
 
 - **Origen**: Grupo de Facebook con +34.000 usuarios activos en Huelva
 - **Despliegue**: https://agroredjob.com (Railway)
-- **Última actualización**: 12 de marzo de 2026
+- **Última actualización**: 22 de marzo de 2026
 
 ### Visión de Producto
 
@@ -94,7 +94,13 @@ DATABASE_URL              # PostgreSQL (Railway)
 STRIPE_SECRET_KEY         # Clave secreta
 STRIPE_WEBHOOK_SECRET     # Webhook signature
 STRIPE_PREMIUM_PRICE_ID   # Precio suscripción premium
+NEXT_PUBLIC_PREMIUM_ENABLED  # "false" para bloquear pagos, "true" o vacío para activar
 ```
+
+**Control de Pagos**:
+- **Pagos BLOQUEADOS actualmente**: `NEXT_PUBLIC_PREMIUM_ENABLED=false` en Railway
+- Las empresas pueden solicitar prueba gratuita como alternativa
+- Para desbloquear: Cambiar `NEXT_PUBLIC_PREMIUM_ENABLED` a `"true"` o vacío en Railway
 
 **Email (Resend)**:
 ```
@@ -141,7 +147,7 @@ RESEND_FROM_EMAIL         # Email remitente
 - [x] Restricción: solo empresas Premium pueden buscar
 
 ### Empresa (Premium)
-- [x] Suscripciones con Stripe (99€/mes, 7 días trial)
+- [x] Suscripciones con Stripe (99€/mes, 7 días trial) - **PAGOS BLOQUEADOS TEMPORALMENTE**
 - [x] Sincronización automática con Stripe
 - [x] Emails de confirmación de pago
 - [x] Historial de facturas
@@ -149,6 +155,7 @@ RESEND_FROM_EMAIL         # Email remitente
 - [x] Galería de fotos (hasta 6)
 - [x] Logo y descripción extendida
 - [x] Página pública de empresa
+- [x] Alternativa: Prueba gratuita de 1 publicación (aprobada por admin)
 
 ### Sistema de Prueba Gratuita
 - [x] Empresas pueden solicitar prueba gratuita (solo tamaño empresa)
@@ -162,6 +169,25 @@ RESEND_FROM_EMAIL         # Email remitente
 - [x] Solicitud marcada como USED tras publicar
 - [x] Panel admin: "Pruebas gratuitas" con lista y modal empresa
 - [x] Sistema de cupones eliminado completamente
+
+### Gestión de Pagos Stripe
+
+**Estado actual**: Pagos BLOQUEADOS (marzo 2026)
+
+**Cómo funciona el bloqueo**:
+- La variable `NEXT_PUBLIC_PREMIUM_ENABLED=false` oculta el botón de suscripción
+- Las empresas ven un banner indicando que deben solicitar prueba gratuita
+- El admin puede aprobar solicitudes de prueba desde el panel
+
+**Para desbloquear pagos**:
+1. Ir a Railway dashboard
+2. Buscar variable `NEXT_PUBLIC_PREMIUM_ENABLED`
+3. Cambiar valor a `"true"` o eliminarla
+4. Redesplegar la aplicación
+
+**Para bloquear pagos**:
+1. En Railway, establecer `NEXT_PUBLIC_PREMIUM_ENABLED="false"`
+2. Redesplegar
 
 ### Componentes de UI
 - [x] ConfirmDialog, PromptDialog (sin alerts nativos)
