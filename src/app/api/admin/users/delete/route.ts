@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       where: {
         OR: [
           { blockerId: userId },
-          { blockedId: userId },
+          { blockedById: userId },
         ],
       },
     });
