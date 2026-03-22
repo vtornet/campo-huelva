@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { auth } from "@/lib/firebase-admin";
+import { initFirebaseAdmin } from "@/lib/firebase-admin";
 
 const prisma = new PrismaClient();
 
@@ -118,7 +118,10 @@ export async function POST(request: Request) {
     // 3. Opcional: Eliminar de Firebase Auth
     if (deleteFromFirebase) {
       try {
-        await auth.deleteUser(userId);
+        const adminAuth = initFirebaseAdmin();
+        if (adminAuth) {
+          await adminAuth.deleteUser(userId);
+        }
       } catch (firebaseError: any) {
         // Si el usuario no existe en Firebase, no es un error crítico
         if (firebaseError.code !== "auth/user-not-found") {
