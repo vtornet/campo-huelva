@@ -4,8 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/components/Notifications";
-import { Check, Crown, X, Loader2 } from "lucide-react";
+import { Check, Crown, X, Loader2, AlertCircle } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+
+// Variable de entorno para controlar si los pagos Premium están habilitados
+const PREMIUM_ENABLED = process.env.NEXT_PUBLIC_PREMIUM_ENABLED !== "false";
 
 type SubscriptionStatus = {
   isPremium: boolean;
@@ -247,6 +250,29 @@ export default function PremiumPage() {
           </p>
         </div>
 
+        {/* Mensaje de bloqueo temporal de pagos */}
+        {!PREMIUM_ENABLED && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <AlertCircle className="w-8 h-8 text-amber-600 flex-shrink-0" />
+              <h2 className="text-xl font-bold text-amber-900">
+                Pagos temporalmente deshabilitados
+              </h2>
+            </div>
+            <p className="text-amber-800 mb-4">
+              Estamos construyendo nuestra base de datos de candidatos. Mientras tanto, puedes solicitar la publicación de una oferta gratuita completando tu perfil de empresa.
+            </p>
+            <div className="bg-white rounded-xl p-4 text-left">
+              <h3 className="font-semibold text-amber-900 mb-2">¿Cómo solicitar una oferta gratuita?</h3>
+              <ol className="text-sm text-amber-800 space-y-1 list-decimal list-inside ml-4">
+                <li>Completa tu perfil de empresa con tus datos</li>
+                <li>Contacta con nosotros a través del formulario de contacto</li>
+                <li>Solicita la publicación de una oferta gratuita</li>
+              </ol>
+            </div>
+          </div>
+        )}
+
         {isPremium ? (
           // Vista de suscriptor actual
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -339,10 +365,11 @@ export default function PremiumPage() {
             </div>
           </div>
         ) : (
-          // Vista de no suscriptor - mostrar pricing
+          // Vista de no suscriptor - mostrar pricing o mensaje de bloqueo
           <>
             {/* Planes de suscripción */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            {PREMIUM_ENABLED ? (
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8">
               <div className="text-center mb-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">
@@ -436,10 +463,12 @@ export default function PremiumPage() {
               </button>
             </div>
           </div>
+            ) : null}
           </>
         )}
 
         {/* Sección: Publicar ofertas sin suscripción */}
+        {PREMIUM_ENABLED && (
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mt-8">
           <div className="p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
@@ -575,6 +604,7 @@ export default function PremiumPage() {
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
