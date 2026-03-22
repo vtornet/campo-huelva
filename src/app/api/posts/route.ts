@@ -276,13 +276,15 @@ export async function POST(request: Request) {
       console.log('[POST CREATE] Verificando premium para userId:', user.id);
       const hasPremium = await hasActivePremiumSubscription(user.id);
       const hasCredits = (user.companyProfile?.offerCredits || 0) > 0;
+      const isPremium = hasPremium?.hasPremium || false;
       const isTrial = hasPremium?.isTrial || false;
 
       // Verificar token de prueba gratuita si se proporciona
       let trialValid = false;
       let trialRequest = null;
 
-      if (trialToken && (!hasPremium || isTrial) && !hasCredits) {
+      // Siempre validar token si se proporciona (incluso si tiene premium)
+      if (trialToken) {
         console.log('[POST CREATE] Verificando token de prueba:', trialToken);
         trialRequest = await prisma.freeTrialRequest.findUnique({
           where: { token: trialToken },
@@ -309,13 +311,13 @@ export async function POST(request: Request) {
         }
       }
 
-      console.log('[POST CREATE] hasPremium:', hasPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'trialValid:', trialValid);
+      console.log('[POST CREATE] isPremium:', isPremium, 'hasCredits:', hasCredits, 'isTrial:', isTrial, 'trialValid:', trialValid);
 
       // Solo permitir con:
       // - Premium pagado (no trial) O
       // - Créditos de ofertas O
       // - Token de prueba válido
-      if ((!hasPremium || isTrial) && !hasCredits && !trialValid) {
+      if (!isPremium && !hasCredits && !trialValid) {
         return NextResponse.json({
           error: "PREMIUM_OR_CREDITS_REQUIRED",
           premiumRequired: true,
@@ -324,7 +326,7 @@ export async function POST(request: Request) {
       }
 
       // Si tiene créditos, consumir 1 al publicar (pero no si usa token de prueba)
-      if (hasCredits && !hasPremium && !trialValid) {
+      if (hasCredits && !isPremium && !trialValid) {
         const credits = user.companyProfile.offerCredits || 0;
         await prisma.companyProfile.update({
           where: { id: user.companyProfile.id },
