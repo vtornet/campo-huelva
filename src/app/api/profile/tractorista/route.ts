@@ -78,60 +78,40 @@ export async function PUT(request: Request) {
           }, { status: 400 });
         }
       }
-      // Actualizamos la fecha de modificación del nombre
-      await prisma.tractoristProfile.update({
-        where: { userId: uid },
-        data: { nameLastModified: new Date() }
-      });
-    } else if (!existingProfile && fullName) {
-      // Nuevo perfil - establecer fecha de modificación
-      await prisma.tractoristProfile.update({
-        where: { userId: uid },
-        data: { nameLastModified: new Date() }
-      });
     }
 
-    // 3. Guardamos el perfil
+    // 3. Verificar si el nombre cambió para actualizar nameLastModified
+    const nameChanged = existingProfile && existingProfile.fullName !== fullName;
+
+    // 4. Guardamos el perfil (incluyendo nameLastModified en el upsert)
+    const profileData = {
+      fullName,
+      city,
+      province,
+      phone,
+      bio,
+      yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
+      machineryTypes: machineryTypes || [],
+      toolTypes: toolTypes || [],
+      cropExperience: cropExperience || [],
+      hasTractorLicense,
+      hasSprayerLicense,
+      hasHarvesterLicense,
+      isAvailableSeason,
+      canTravel,
+      phytosanitaryLevel,
+      foodHandler,
+      profileImage,
+      // Solo actualizar nameLastModified si el nombre cambió o si es un perfil nuevo con nombre
+      ...(nameChanged || !existingProfile?.nameLastModified ? { nameLastModified: new Date() } : {}),
+    };
+
     const updatedProfile = await prisma.tractoristProfile.upsert({
       where: { userId: uid },
-      update: {
-        city,
-        province,
-        phone,
-        bio,
-        yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-        machineryTypes: machineryTypes || [],
-        toolTypes: toolTypes || [],
-        cropExperience: cropExperience || [],
-        hasTractorLicense,
-        hasSprayerLicense,
-        hasHarvesterLicense,
-        isAvailableSeason,
-        canTravel,
-        phytosanitaryLevel,
-        foodHandler,
-        profileImage,
-      },
+      update: profileData,
       create: {
         userId: uid,
-        fullName,
-        city,
-        province,
-        phone,
-        bio,
-        yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-        machineryTypes: machineryTypes || [],
-        toolTypes: toolTypes || [],
-        cropExperience: cropExperience || [],
-        hasTractorLicense,
-        hasSprayerLicense,
-        hasHarvesterLicense,
-        isAvailableSeason,
-        canTravel,
-        phytosanitaryLevel,
-        foodHandler,
-        profileImage,
-        nameLastModified: fullName ? new Date() : null,
+        ...profileData
       }
     });
 

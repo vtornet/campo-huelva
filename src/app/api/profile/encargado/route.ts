@@ -67,7 +67,6 @@ export async function PUT(request: Request) {
     });
 
     // Control de modificación de nombre (60 días)
-    let updateFullName = fullName;
     if (existingProfile && existingProfile.fullName && existingProfile.fullName !== fullName) {
       if (existingProfile.nameLastModified) {
         const daysSinceLastChange = Math.floor(
@@ -79,62 +78,40 @@ export async function PUT(request: Request) {
           }, { status: 400 });
         }
       }
-      // Actualizamos la fecha de modificación del nombre
-      await prisma.encargadoProfile.update({
-        where: { userId: uid },
-        data: { nameLastModified: new Date() }
-      });
-    } else if (!existingProfile) {
-      // Nuevo perfil - establecer fecha de modificación si hay nombre
-      if (fullName) {
-        await prisma.encargadoProfile.update({
-          where: { userId: uid },
-          data: { nameLastModified: new Date() }
-        });
-      }
     }
 
-    // 3. Guardamos el perfil
+    // 3. Verificar si el nombre cambió para actualizar nameLastModified
+    const nameChanged = existingProfile && existingProfile.fullName !== fullName;
+
+    // 4. Guardamos el perfil (incluyendo nameLastModified en el upsert)
+    const profileData = {
+      fullName,
+      city,
+      province,
+      phone,
+      bio,
+      yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
+      canDriveTractor,
+      cropExperience: cropExperience || [],
+      needsAccommodation,
+      workArea: workArea || [],
+      phytosanitaryLevel,
+      foodHandler,
+      warehouseExperience: warehouseExperience || [],
+      hasFarmTransformation,
+      hasOfficeSkills,
+      hasReportSkills,
+      profileImage,
+      // Solo actualizar nameLastModified si el nombre cambió o si es un perfil nuevo con nombre
+      ...(nameChanged || !existingProfile?.nameLastModified ? { nameLastModified: new Date() } : {}),
+    };
+
     const updatedProfile = await prisma.encargadoProfile.upsert({
       where: { userId: uid },
-      update: {
-        city,
-        province,
-        phone,
-        bio,
-        yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-        canDriveTractor,
-        cropExperience: cropExperience || [],
-        needsAccommodation,
-        workArea: workArea || [],
-        phytosanitaryLevel,
-        foodHandler,
-        warehouseExperience: warehouseExperience || [],
-        hasFarmTransformation,
-        hasOfficeSkills,
-        hasReportSkills,
-        profileImage,
-      },
+      update: profileData,
       create: {
         userId: uid,
-        fullName,
-        city,
-        province,
-        phone,
-        bio,
-        yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-        canDriveTractor,
-        cropExperience: cropExperience || [],
-        needsAccommodation,
-        workArea: workArea || [],
-        phytosanitaryLevel,
-        foodHandler,
-        warehouseExperience: warehouseExperience || [],
-        hasFarmTransformation,
-        hasOfficeSkills,
-        hasReportSkills,
-        profileImage,
-        nameLastModified: fullName ? new Date() : null,
+        ...profileData
       }
     });
 
