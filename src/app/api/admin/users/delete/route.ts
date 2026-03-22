@@ -94,14 +94,32 @@ export async function POST(request: Request) {
       },
     });
 
-    // Eliminar likes y shares de posts
+    // Eliminar likes y shares de posts (propios y de otros en posts del usuario)
     await prisma.like.deleteMany({ where: { userId } });
     await prisma.share.deleteMany({ where: { userId } });
-
-    // Eliminar inscripciones (como trabajador)
     await prisma.application.deleteMany({ where: { userId } });
 
-    // Eliminar posts del usuario
+    // IMPORTANT: Obtener los IDs de los posts del usuario antes de eliminarlos
+    const userPosts = await prisma.post.findMany({
+      where: { publisherId: userId },
+      select: { id: true },
+    });
+    const userPostIds = userPosts.map((p) => p.id);
+
+    // Eliminar todas las referencias externas a esos posts (likes, shares, apps de OTROS usuarios)
+    if (userPostIds.length > 0) {
+      await prisma.like.deleteMany({
+        where: { postId: { in: userPostIds } },
+      });
+      await prisma.share.deleteMany({
+        where: { postId: { in: userPostIds } },
+      });
+      await prisma.application.deleteMany({
+        where: { postId: { in: userPostIds } },
+      });
+    }
+
+    // Ahora sí, eliminar los posts del usuario
     await prisma.post.deleteMany({ where: { publisherId: userId } });
 
     // Eliminar perfiles
