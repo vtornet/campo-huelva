@@ -316,7 +316,8 @@ export default function ContactsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          participantIds: [user.uid, contactUserId]
+          userId1: user.uid,
+          userId2: contactUserId
         })
       });
 
