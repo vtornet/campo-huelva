@@ -9,6 +9,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId1, userId2, autoAcceptContact = false } = body;
 
+    console.log('[find-or-create] Request:', { userId1, userId2, autoAcceptContact });
+
     if (!userId1 || !userId2) {
       return NextResponse.json({ error: "Faltan IDs de usuarios" }, { status: 400 });
     }
@@ -29,17 +31,28 @@ export async function POST(request: Request) {
 
     // Si no son contactos y se permite auto-aceptar, crear y aceptar el contacto automáticamente
     if (!contact && autoAcceptContact) {
-      contact = await prisma.contact.create({
-        data: {
-          requesterId: userId1,
-          recipientId: userId2,
-          status: ContactStatus.ACCEPTED,
-          acceptedAt: new Date(),
-        }
-      });
+      console.log('[find-or-create] Creating contact automatically');
+      try {
+        contact = await prisma.contact.create({
+          data: {
+            requesterId: userId1,
+            recipientId: userId2,
+            status: ContactStatus.ACCEPTED,
+            acceptedAt: new Date(),
+          }
+        });
+        console.log('[find-or-create] Contact created:', contact.id);
+      } catch (contactError) {
+        console.error('[find-or-create] Error creating contact:', contactError);
+        return NextResponse.json({
+          error: "Error al crear contacto",
+          details: String(contactError)
+        }, { status: 500 });
+      }
     }
 
     if (!contact) {
+      console.log('[find-or-create] No contact found and autoAcceptContact is false');
       return NextResponse.json({
         error: "Para enviar mensajes, primero debes añadir a esta persona como contacto",
         errorCode: "NOT_CONTACT"
@@ -118,7 +131,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error("Error finding/creating conversation:", error);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    console.error("[find-or-create] Error:", error);
+    return NextResponse.json({ error: "Error interno", details: String(error) }, { status: 500 });
   }
 }
