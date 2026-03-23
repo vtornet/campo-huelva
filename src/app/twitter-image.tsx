@@ -12,67 +12,86 @@ export const size = {
 export const contentType = 'image/png'
 
 export default async function Image() {
-  return new ImageResponse(
+  // Cargar el logo desde el filesystem
+  const logoResponse = await fetch(
+    new URL('../../public/logo.png', import.meta.url)
+  )
+  const logo = await logoResponse.arrayBuffer()
+
+  return new ImageResponse
+(
     (
       <div
         style={{
           fontSize: 128,
-          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+          background: 'white',
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
           fontFamily: 'system-ui',
+          gap: 40,
         }}
       >
-        <div
+        {/* Logo de Agro Red */}
+        <img
+          src={logo as any}
+          alt="Agro Red Logo"
+          width={200}
+          height={56}
           style={{
-            fontSize: 80,
-            marginBottom: 20,
-            opacity: 0.9,
+            objectFit: 'contain',
           }}
-        >
-          🌾
-        </div>
+        />
 
+        {/* Texto descriptivo */}
         <div
           style={{
-            fontSize: 72,
-            fontWeight: 'bold',
-            letterSpacing: '-0.05em',
-            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 16,
           }}
         >
-          Agro Red
-        </div>
+          {/* Título principal */}
+          <div
+            style={{
+              fontSize: 64,
+              fontWeight: 'bold',
+              letterSpacing: '-0.03em',
+              color: '#1e293b',
+            }}
+          >
+            Agro Red
+          </div>
 
-        <div
-          style={{
-            fontSize: 42,
-            fontWeight: 500,
-            opacity: 0.9,
-            marginTop: 20,
-            textAlign: 'center',
-          }}
-        >
-          Empleo Agrícola
-        </div>
+          {/* Subtítulo */}
+          <div
+            style={{
+              fontSize: 32,
+              fontWeight: 500,
+              color: '#059669',
+            }}
+          >
+            Empleo Agrícola
+          </div>
 
-        <div
-          style={{
-            fontSize: 28,
-            fontWeight: 600,
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            padding: '12px 32px',
-            borderRadius: 9999,
-            marginTop: 40,
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          Conectando a trabajadores agrícolas y empresas
+          {/* Badge */}
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              backgroundColor: '#ecfdf5',
+              color: '#047857',
+              padding: '8px 20px',
+              borderRadius: 8,
+              marginTop: 8,
+            }}
+          >
+            Conectando trabajadores y empresas
+          </div>
         </div>
       </div>
     ),
