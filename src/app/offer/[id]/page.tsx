@@ -286,12 +286,14 @@ export default function OfferDetailPage() {
 
     // Buscar o crear conversación y redirigir (sin mensaje automático)
     try {
+      const isDemand = offer.type?.toUpperCase() === 'DEMAND';
       const res = await fetch('/api/messages/find-or-create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId1: user.uid,
           userId2: otherUserId,
+          autoAcceptContact: isDemand, // Auto-aceptar contacto para demandas
         })
       });
 
