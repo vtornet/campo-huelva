@@ -29,9 +29,9 @@ export async function POST(request: Request) {
       }
     });
 
-    // Si no son contactos y se permite auto-aceptar, crear y aceptar el contacto automáticamente
+    // Si no son contactos y se permite auto-aceptar, crear contacto automáticamente
     if (!contact && autoAcceptContact) {
-      console.log('[find-or-create] Creating contact automatically');
+      console.log('[find-or-create] Creating contact automatically for demand');
       try {
         contact = await prisma.contact.create({
           data: {
@@ -42,12 +42,38 @@ export async function POST(request: Request) {
           }
         });
         console.log('[find-or-create] Contact created:', contact.id);
-      } catch (contactError) {
-        console.error('[find-or-create] Error creating contact:', contactError);
-        return NextResponse.json({
-          error: "Error al crear contacto",
-          details: String(contactError)
-        }, { status: 500 });
+      } catch (contactError: any) {
+        // Si ya existe un contacto, verificar su estado
+        if (contactError.code === 'P2002') {
+          const existingContact = await prisma.contact.findFirst({
+            where: {
+              OR: [
+                { requesterId: userId1, recipientId: userId2 },
+                { requesterId: userId2, recipientId: userId1 }
+              ]
+            }
+          });
+
+          if (existingContact?.status === ContactStatus.PENDING) {
+            return NextResponse.json({
+              error: "Hay una solicitud de contacto pendiente. El otro usuario debe aceptarla antes de poder chatear.",
+              errorCode: "CONTACT_PENDING"
+            }, { status: 403 });
+          }
+
+          // Si existe en otro estado (ej. ACCEPTED), usarlo
+          if (existingContact?.status === ContactStatus.ACCEPTED) {
+            contact = existingContact;
+          } else {
+            // Otro estado no esperado
+            return NextResponse.json({
+              error: "No se puede iniciar la conversación. Estado de contacto no válido.",
+              errorCode: "INVALID_CONTACT_STATE"
+            }, { status: 403 });
+          }
+        } else {
+          throw contactError;
+        }
       }
     }
 

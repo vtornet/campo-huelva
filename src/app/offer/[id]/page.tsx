@@ -301,11 +301,26 @@ export default function OfferDetailPage() {
         const data = await res.json();
         router.push(`/messages/${data.conversationId}`);
       } else {
-        showNotification({
-          type: "error",
-          title: "Error al iniciar conversación",
-          message: "Inténtalo de nuevo más tarde.",
-        });
+        const data = await res.json();
+        if (data.errorCode === 'CONTACT_PENDING') {
+          showNotification({
+            type: "info",
+            title: "Solicitud pendiente",
+            message: data.error || "Hay una solicitud de contacto pendiente.",
+          });
+        } else if (data.errorCode === 'NOT_CONTACT') {
+          showNotification({
+            type: "info",
+            title: "Primero añade como contacto",
+            message: "Para enviar mensajes, primero debes añadir a esta persona como contacto.",
+          });
+        } else {
+          showNotification({
+            type: "error",
+            title: "Error al iniciar conversación",
+            message: data.error || "Inténtalo de nuevo más tarde.",
+          });
+        }
       }
     } catch (error) {
       console.error('Error contacting:', error);
