@@ -541,7 +541,17 @@ export default function Dashboard() {
     }
 
     // Obtener ID del otro usuario
+    console.log('[handleContact] post data:', {
+      postId: post.id,
+      postType: post.type,
+      hasCompany: !!post.company,
+      companyUserId: post.company?.user?.id,
+      hasPublisher: !!post.publisher,
+      publisherId: post.publisher?.id,
+      publisherKeys: post.publisher ? Object.keys(post.publisher) : 'no publisher'
+    });
     const otherUserId = post.company?.user?.id || post.publisher?.id;
+    console.log('[handleContact] otherUserId:', otherUserId);
     if (!otherUserId) {
       showNotification({
         type: "error",
