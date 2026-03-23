@@ -544,6 +544,7 @@ export default function Dashboard() {
     console.log('[handleContact] post data:', {
       postId: post.id,
       postType: post.type,
+      postTypeTypeof: typeof post.type,
       hasCompany: !!post.company,
       companyUserId: post.company?.user?.id,
       hasPublisher: !!post.publisher,
@@ -572,13 +573,15 @@ export default function Dashboard() {
 
     // Buscar o crear conversación y redirigir (sin mensaje automático)
     try {
+      const isDemand = post.type?.toUpperCase() === 'DEMAND';
+      console.log('[handleContact] isDemand:', isDemand, 'post.type:', post.type);
       const res = await fetch("/api/messages/find-or-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId1: user.uid,
           userId2: otherUserId,
-          autoAcceptContact: post.type === 'DEMAND', // Auto-aceptar contacto para demandas
+          autoAcceptContact: isDemand, // Auto-aceptar contacto para demandas
         })
       });
 
