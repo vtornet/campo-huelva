@@ -220,6 +220,10 @@ export default function Dashboard() {
       return;
     }
 
+    // Para ofertas y demandas: limpiar posts inmediatamente y mostrar loading
+    setPosts([]);
+    setLoadingPosts(true);
+
     setPage(1);
     setHasMore(true);
     fetchPosts(true);
