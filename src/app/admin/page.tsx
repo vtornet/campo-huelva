@@ -559,6 +559,7 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium">Usuario</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Rol</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Registro</th>
                   <th className="px-4 py-3 text-left text-xs font-medium hidden md:table-cell">Estado</th>
                   <th className="px-4 py-3 text-left text-xs font-medium">Acciones</th>
                 </tr>
@@ -586,6 +587,11 @@ function AdminUsers({ onStatsUpdate, adminId }: { onStatsUpdate: () => void; adm
                           <option value="COMPANY">Empresa</option>
                           <option value="ADMIN">Admin</option>
                         </select>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <span className="text-xs text-slate-400">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-ES", { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </span>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="flex flex-wrap gap-1">
