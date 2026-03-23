@@ -568,6 +568,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           userId1: user.uid,
           userId2: otherUserId,
+          autoAcceptContact: post.type === 'DEMAND', // Auto-aceptar contacto para demandas
         })
       });
 

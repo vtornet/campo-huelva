@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userId1, userId2 } = body;
+    const { userId1, userId2, autoAcceptContact = false } = body;
 
     if (!userId1 || !userId2) {
       return NextResponse.json({ error: "Faltan IDs de usuarios" }, { status: 400 });
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Los IDs deben ser diferentes" }, { status: 400 });
     }
 
-    // Verificar que son contactos aceptados (sin excepción para empresas)
-    const contact = await prisma.contact.findFirst({
+    // Verificar que son contactos aceptados
+    let contact = await prisma.contact.findFirst({
       where: {
         OR: [
           { requesterId: userId1, recipientId: userId2, status: ContactStatus.ACCEPTED },
@@ -26,6 +26,18 @@ export async function POST(request: Request) {
         ]
       }
     });
+
+    // Si no son contactos y se permite auto-aceptar, crear y aceptar el contacto automáticamente
+    if (!contact && autoAcceptContact) {
+      contact = await prisma.contact.create({
+        data: {
+          requesterId: userId1,
+          recipientId: userId2,
+          status: ContactStatus.ACCEPTED,
+          acceptedAt: new Date(),
+        }
+      });
+    }
 
     if (!contact) {
       return NextResponse.json({
